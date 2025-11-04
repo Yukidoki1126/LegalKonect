@@ -1,0 +1,14 @@
+{
+  "name": "legalkonect",
+  "version": "1.0.0",
+  "description": "LegalKonect - Legal Consultation Platform",
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && php artisan serve",
+    "start:frontend": "cd frontend && npm start",
+    "install:all": "cd backend && composer install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
