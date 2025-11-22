@@ -113,8 +113,11 @@ class AuthController extends Controller
 
     public function profile(Request $request)
     {
+        $user = $request->user();
+        $user->load('lawyer'); // Load the lawyer relationship
+
         return response()->json([
-            'user' => $request->user()
+            'user' => $user
         ]);
     }
 
@@ -339,6 +342,48 @@ public function updateProfile(Request $request)
 
             return response()->json([
                 'message' => 'Authentication failed'
+            ], 500);
+        }
+    }
+
+    /**
+     * Cleanup orphaned user account (user with no lawyer profile)
+     * This is used when lawyer registration fails after user creation
+     */
+    public function cleanupOrphanedAccount(Request $request)
+    {
+        $user = $request->user();
+
+        // Only allow cleanup if user has no lawyer profile and no appointments
+        if ($user->lawyer) {
+            return response()->json([
+                'message' => 'Cannot delete account with existing lawyer profile'
+            ], 422);
+        }
+
+        // Check if user has any appointments
+        $appointmentsCount = $user->appointments()->count();
+        if ($appointmentsCount > 0) {
+            return response()->json([
+                'message' => 'Cannot delete account with existing appointments'
+            ], 422);
+        }
+
+        try {
+            // Delete the user account
+            $user->delete();
+
+            return response()->json([
+                'message' => 'Account cleaned up successfully'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to cleanup orphaned account', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to cleanup account'
             ], 500);
         }
     }

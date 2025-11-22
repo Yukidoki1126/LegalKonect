@@ -152,7 +152,7 @@ const loadDescriptiveAnalytics = async () => {
               : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
           }`}
         >
-          Overview Analytics
+          Summary
         </button>
         <button
           onClick={() => setActiveTab('descriptive')}
@@ -162,7 +162,7 @@ const loadDescriptiveAnalytics = async () => {
               : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
           }`}
         >
-          Descriptive Analytics
+          Reports
         </button>
       </div>
 

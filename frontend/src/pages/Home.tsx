@@ -7,364 +7,348 @@ import {
   CheckCircle, TrendingUp, Zap, Building2, Heart,
   FileText, Video, Phone, Mail, ChevronRight,
   Briefcase, MessageCircle, Clock, Globe, Lock,
-  CreditCard, UserCheck, Gavel, FileCheck
+  CreditCard, UserCheck, Gavel, FileCheck, ArrowUpRight,
+  Target, Eye, ThumbsUp, BookOpen
 } from 'lucide-react';
 
 export default function Home() {
   const navigate = useNavigate();
-  const [scrollY, setScrollY] = useState(0);
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState({
-    stats: false,
-    features: false,
-    lawyers: false,
-    testimonials: false
-  });
+  const [isVisible, setIsVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
-  // Reviews state
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [averageRating, setAverageRating] = useState<number | null>(null);
-  const [totalReviews, setTotalReviews] = useState(0);
-
-  // Animated counter hook
-  const useAnimatedCounter = (end: number, duration: number, isVisible: boolean) => {
-    const [count, setCount] = useState(0);
-
-    useEffect(() => {
-      if (!isVisible) return;
-
-      const startTime = Date.now();
-      const timer = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const current = Math.floor(progress * end);
-
-        if (progress >= 1) {
-          setCount(end);
-          clearInterval(timer);
-        } else {
-          setCount(current);
-        }
-      }, 16);
-
-      return () => clearInterval(timer);
-    }, [end, duration, isVisible]);
-
-    return count;
-  };
-
+  // Check if user is already logged in and redirect accordingly
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
 
-      // Trigger animations on scroll
-      const checkVisibility = (elementId: string, key: keyof typeof isVisible) => {
-        const element = document.getElementById(elementId);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const isInView = rect.top < window.innerHeight * 0.8;
-          if (isInView && !isVisible[key]) {
-            setIsVisible(prev => ({ ...prev, [key]: true }));
-          }
-        }
-      };
-
-      checkVisibility('stats-section', 'stats');
-      checkVisibility('features-section', 'features');
-      checkVisibility('lawyers-section', 'lawyers');
-      checkVisibility('testimonials-section', 'testimonials');
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('mousemove', handleMouseMove);
-    handleScroll(); // Initial check
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [isVisible]);
-
-  // Fetch real reviews
-  useEffect(() => {
-    const fetchReviews = async () => {
+    if (token && userStr) {
       try {
-        const response = await api.get('/reviews');
-        setReviews(response.data.reviews);
-        setAverageRating(response.data.average_rating);
-        setTotalReviews(response.data.total_count);
+        const user = JSON.parse(userStr);
+        if (user.lawyer) {
+          if (user.lawyer.status === 'approved') {
+            navigate('/lawyer/dashboard', { replace: true });
+          } else if (user.lawyer.status === 'pending') {
+            navigate('/pending-approval', { replace: true });
+          }
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       } catch (error) {
-        console.error('Error fetching reviews:', error);
-      } finally {
-        setReviewsLoading(false);
+        console.error('Error parsing user data:', error);
       }
-    };
+    }
+  }, [navigate]);
 
-    fetchReviews();
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const hero = document.getElementById('hero-section');
+    if (hero) observer.observe(hero);
+
+    return () => observer.disconnect();
   }, []);
 
   const stats = [
-    { value: 500, suffix: '+', label: 'Verified Lawyers', icon: Users, color: 'from-blue-500 to-purple-500' },
-    { value: 10000, suffix: '+', label: 'Consultations', icon: Calendar, color: 'from-purple-500 to-pink-500' },
-    { value: 98, suffix: '%', label: 'Success Rate', icon: TrendingUp, color: 'from-pink-500 to-rose-500' },
-    { value: 4.9, suffix: '', label: 'Client Rating', icon: Star, color: 'from-orange-500 to-red-500' }
+    { value: 500, suffix: '+', label: 'Verified Lawyers', icon: Users },
+    { value: 10000, suffix: '+', label: 'Successful Cases', icon: FileCheck },
+    { value: 98, suffix: '%', label: 'Client Satisfaction', icon: ThumbsUp },
+    { value: 24, suffix: '/7', label: 'Support Available', icon: Clock }
   ];
 
   const features = [
     {
       icon: Shield,
-      title: 'Verified Professionals',
-      description: 'Every lawyer is thoroughly vetted with credentials and background checks',
-      color: 'from-blue-400 to-purple-400'
+      title: 'Verified Excellence',
+      description: 'Every legal professional undergoes rigorous verification and background checks',
+      color: 'from-blue-500 to-cyan-500'
     },
     {
-      icon: MapPin,
-      title: 'Location Based',
-      description: 'Find lawyers near you with distance and directions',
-      color: 'from-purple-400 to-pink-400'
+      icon: Target,
+      title: 'Precision Matching',
+      description: 'AI-powered matching connects you with the perfect legal expert for your case',
+      color: 'from-purple-500 to-pink-500'
     },
     {
-      icon: Calendar,
-      title: 'Instant Booking',
-      description: 'Book consultations instantly with availability scheduling',
-      color: 'from-pink-400 to-rose-400'
-    },
-    {
-      icon: Award,
-      title: 'Top Rated',
-      description: 'Access highly-rated lawyers with proven track records',
-      color: 'from-rose-400 to-orange-400'
-    },
-    {
-      icon: Briefcase,
-      title: 'Case Management',
-      description: 'Track your legal cases with integrated management tools',
-      color: 'from-orange-400 to-yellow-400'
+      icon: Zap,
+      title: 'Instant Access',
+      description: 'Connect with lawyers immediately through our streamlined booking platform',
+      color: 'from-orange-500 to-red-500'
     },
     {
       icon: Lock,
-      title: 'Secure & Private',
-      description: 'Your information is protected with end-to-end encryption',
-      color: 'from-teal-400 to-cyan-400'
+      title: 'Secure & Confidential',
+      description: 'End-to-end encryption ensures your legal matters remain completely private',
+      color: 'from-green-500 to-emerald-500'
     }
   ];
 
   const specializations = [
-    { name: 'Corporate Law', icon: Building2, count: '120+ lawyers' },
-    { name: 'Criminal Defense', icon: Shield, count: '85+ lawyers' },
-    { name: 'Family Law', icon: Heart, count: '95+ lawyers' },
-    { name: 'Real Estate', icon: MapPin, count: '75+ lawyers' }
+    { 
+      name: 'Corporate Law', 
+      icon: Building2, 
+      lawyers: '120+ Experts',
+      color: 'from-blue-500 to-blue-600'
+    },
+    { 
+      name: 'Criminal Defense', 
+      icon: Shield, 
+      lawyers: '85+ Specialists',
+      color: 'from-red-500 to-red-600'
+    },
+    { 
+      name: 'Family Law', 
+      icon: Heart, 
+      lawyers: '95+ Advisors',
+      color: 'from-pink-500 to-pink-600'
+    },
+    { 
+      name: 'Real Estate', 
+      icon: MapPin, 
+      lawyers: '75+ Professionals',
+      color: 'from-green-500 to-green-600'
+    }
+  ];
+
+  const process = [
+    {
+      step: '01',
+      title: 'Describe Your Case',
+      description: 'Tell us about your legal situation in simple terms',
+      icon: FileText
+    },
+    {
+      step: '02',
+      title: 'Match with Experts',
+      description: 'Get matched with verified lawyers specializing in your needs',
+      icon: UserCheck
+    },
+    {
+      step: '03',
+      title: 'Schedule Consultation',
+      description: 'Book a consultation at your convenience',
+      icon: Calendar
+    },
+    {
+      step: '04',
+      title: 'Resolve with Confidence',
+      description: 'Move forward with expert legal guidance',
+      icon: Gavel
+    }
   ];
 
   const testimonials = [
     {
-      name: 'Maria Santos',
-      role: 'Business Owner',
-      content: 'LegalKonect connected me with an exceptional corporate lawyer. The platform is intuitive and the quality of lawyers is outstanding.',
+      name: 'Sarah Chen',
+      role: 'Startup Founder',
+      content: 'LegalKonect helped us navigate complex incorporation processes with ease. The platform connected us with exactly the right corporate lawyer.',
       rating: 5,
-      image: '👩‍💼'
+      case: 'Business Incorporation'
     },
     {
-      name: 'Juan Dela Cruz',
-      role: 'Real Estate Investor',
-      content: 'Found the perfect property lawyer within minutes. Professional service and seamless booking process.',
+      name: 'Michael Rodriguez',
+      role: 'Property Investor',
+      content: 'Found a real estate attorney who understood my specific needs within minutes. The entire process was seamless and professional.',
       rating: 5,
-      image: '👨‍💼'
+      case: 'Real Estate Transaction'
     },
     {
-      name: 'Anna Reyes',
-      role: 'Entrepreneur',
-      content: 'The payment system is secure and the lawyers are top-notch. Highly recommend for anyone seeking legal consultation.',
+      name: 'Emily Watson',
+      role: 'Family Matters',
+      content: 'During a difficult time, LegalKonect connected me with a compassionate family lawyer who made all the difference.',
       rating: 5,
-      image: '👩‍💻'
+      case: 'Family Law Consultation'
     }
   ];
 
-  const processSteps = [
-    { icon: Search, title: 'Search', description: 'Find lawyers by specialization' },
-    { icon: UserCheck, title: 'Verify', description: 'Check credentials & reviews' },
-    { icon: Calendar, title: 'Book', description: 'Schedule your consultation' },
-    { icon: Gavel, title: 'Connect', description: 'Get expert legal guidance' }
-  ];
+  const AnimatedCounter = ({ value, suffix, duration = 2000 }: { value: number; suffix: string; duration?: number }) => {
+    const [count, setCount] = useState(0);
 
-  const AnimatedCounter = ({ value, suffix }: { value: number; suffix: string }) => {
-    const count = useAnimatedCounter(value, 2000, isVisible.stats);
+    useEffect(() => {
+      if (!isVisible) return;
+
+      let start = 0;
+      const end = value;
+      const increment = end / (duration / 16);
+      
+      const timer = setInterval(() => {
+        start += increment;
+        if (start >= end) {
+          setCount(end);
+          clearInterval(timer);
+        } else {
+          setCount(Math.floor(start));
+        }
+      }, 16);
+
+      return () => clearInterval(timer);
+    }, [value, duration, isVisible]);
+
     return (
-      <span>
-        {suffix === '' ? count.toFixed(1) : count.toLocaleString()}{suffix}
+      <span className="font-bold">
+        {suffix === '%' ? count : count.toLocaleString()}{suffix}
       </span>
     );
   };
 
   return (
-    <div className="min-h-screen overflow-hidden">
-      {/* Hero Section with Gradient Background */}
-      <section className="relative min-h-screen py-16 lg:py-20 flex items-center"
-        style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 25%, #60a5fa 50%, #93c5fd 75%, #dbeafe 100%)',
-        }}>
+    <div className="min-h-screen bg-white overflow-hidden">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-lg z-50 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 lg:h-20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-400 rounded-xl flex items-center justify-center">
+                <Scale className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-900">LegalKonect</span>
+            </div>
+            
+            <div className="hidden lg:flex items-center gap-8">
+              <a href="#features" className="text-gray-700 hover:text-blue-600 transition-colors">Features</a>
+              <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 transition-colors">How It Works</a>
+              <a href="#specializations" className="text-gray-700 hover:text-blue-600 transition-colors">Specializations</a>
+              <a href="#testimonials" className="text-gray-700 hover:text-blue-600 transition-colors">Success Stories</a>
+            </div>
 
-        {/* Animated Background Blobs */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/login')}
+                className="px-6 py-2.5 text-gray-700 hover:text-blue-600 transition-colors font-medium"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => navigate('/lawyers')}
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+              >
+                Find Lawyers
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section id="hero-section" className="pt-32 pb-20 lg:pt-40 lg:pb-28 relative">
+        {/* Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="blob blob-1" />
-          <div className="blob blob-2" />
-          <div className="blob blob-3" />
-          <div className="blob blob-4" />
+          <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-100 rounded-full blur-3xl opacity-50 animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-100 rounded-full blur-3xl opacity-30 animate-pulse" />
         </div>
 
-        {/* Glass Morphism Card Container */}
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 w-full z-10">
-          <div className="glass-card rounded-3xl p-8 lg:p-12 backdrop-blur-xl">
-            <div className="grid lg:grid-cols-2 gap-10 items-center">
-              {/* Left Content */}
-              <div className="space-y-7">
-                <div className="space-y-5">
-                  <div className="mb-5">
-                    <img src="/logo.png" alt="LegalKonect" className="h-16 lg:h-18 mb-4" />
-                  </div>
-                  <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                    Boost Your
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400 block">
-                      Legal Journey
-                    </span>
-                    Faster
-                  </h1>
-
-                  <p className="text-lg lg:text-xl text-gray-700 leading-relaxed">
-                    Connect with verified legal professionals instantly.
-                    Experience seamless consultations with top-rated lawyers
-                    in your area. Your legal solution is just one click away.
-                  </p>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div className="space-y-8">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-3 px-4 py-2 bg-blue-50 rounded-full border border-blue-100">
+                  <Sparkles className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-600">Trusted by 10,000+ Clients</span>
                 </div>
 
-                <div className="flex flex-wrap gap-4">
-                  <button
-                    onClick={() => navigate('/lawyers')}
-                    className="group px-7 py-3.5 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-full font-semibold hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                  >
-                    Get Started
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                  Legal Expertise
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400 block">
+                    Made Accessible
+                  </span>
+                </h1>
 
-                  <button
-                    onClick={() => navigate('/lawyer/register')}
-                    className="px-7 py-3.5 bg-white/30 backdrop-blur text-gray-900 rounded-full font-semibold border-2 border-white/50 hover:bg-white/40 hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                  >
-                    Join as Lawyer
-                  </button>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="flex flex-wrap gap-7 pt-7 border-t border-white/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-white/30 backdrop-blur flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900">100%</div>
-                      <div className="text-sm text-gray-700">Verified</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-white/30 backdrop-blur flex items-center justify-center">
-                      <Clock className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900">24/7</div>
-                      <div className="text-sm text-gray-700">Available</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-white/30 backdrop-blur flex items-center justify-center">
-                      <Globe className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900">PH</div>
-                      <div className="text-sm text-gray-700">Coverage</div>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-xl text-gray-600 leading-relaxed">
+                  Connect with verified legal professionals who understand your unique needs. 
+                  Experience seamless consultations, transparent pricing, and results that matter.
+                </p>
               </div>
 
-              {/* Right Content - 3D Illustration */}
-              <div className="relative lg:block hidden">
-                <div className="relative animate-float">
-                  {/* Main Rocket Illustration */}
-                  <div className="rocket-container">
-                    <svg viewBox="0 0 400 400" className="w-full h-full">
-                      {/* Rocket Body */}
-                      <defs>
-                        <linearGradient id="rocketGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#f093fb" />
-                          <stop offset="100%" stopColor="#f5576c" />
-                        </linearGradient>
-                        <linearGradient id="windowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#667eea" />
-                          <stop offset="100%" stopColor="#764ba2" />
-                        </linearGradient>
-                      </defs>
-                      
-                      {/* Clouds */}
-                      <ellipse cx="100" cy="320" rx="60" ry="20" fill="white" opacity="0.8" />
-                      <ellipse cx="300" cy="340" rx="70" ry="25" fill="white" opacity="0.6" />
-                      <ellipse cx="200" cy="360" rx="80" ry="30" fill="white" opacity="0.7" />
-                      
-                      {/* Rocket */}
-                      <g transform="translate(200, 180) rotate(-45 0 0)">
-                        {/* Body */}
-                        <rect x="-40" y="-80" width="80" height="120" rx="40" fill="url(#rocketGradient)" />
-                        {/* Top */}
-                        <path d="M -40 -80 Q 0 -120 40 -80" fill="url(#rocketGradient)" />
-                        {/* Window */}
-                        <circle cx="0" cy="-20" r="20" fill="url(#windowGradient)" />
-                        <circle cx="0" cy="-20" r="15" fill="white" opacity="0.3" />
-                        {/* Fins */}
-                        <path d="M -40 20 L -60 60 L -40 40 Z" fill="#f5576c" />
-                        <path d="M 40 20 L 60 60 L 40 40 Z" fill="#f5576c" />
-                        {/* Flame */}
-                        <ellipse cx="0" cy="60" rx="25" ry="40" fill="#ffeaa7" opacity="0.8" className="animate-pulse" />
-                        <ellipse cx="0" cy="60" rx="15" ry="30" fill="#fdcb6e" opacity="0.9" className="animate-pulse" />
-                      </g>
-                      
-                      {/* Person riding */}
-                      <g transform="translate(160, 140)">
-                        <circle cx="0" cy="0" r="15" fill="#2d3436" />
-                        <rect x="-15" y="10" width="30" height="35" rx="5" fill="#ff6348" />
-                        <rect x="-20" y="15" width="8" height="20" rx="3" fill="#ff6348" />
-                        <rect x="12" y="15" width="8" height="20" rx="3" fill="#ff6348" />
-                      </g>
-                      
-                      {/* Stars */}
-                      <circle cx="50" cy="50" r="2" fill="white" className="animate-twinkle" />
-                      <circle cx="350" cy="80" r="2" fill="white" className="animate-twinkle" style={{ animationDelay: '0.5s' }} />
-                      <circle cx="320" cy="150" r="2" fill="white" className="animate-twinkle" style={{ animationDelay: '1s' }} />
-                      <circle cx="80" cy="180" r="2" fill="white" className="animate-twinkle" style={{ animationDelay: '1.5s' }} />
-                    </svg>
-                  </div>
-                  
-                  {/* Floating Elements */}
-                  <div className="absolute -top-8 -right-8 w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full opacity-60 animate-bounce" style={{ animationDelay: '0.5s' }} />
-                  <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-40 animate-bounce" style={{ animationDelay: '1s' }} />
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() => navigate('/lawyers')}
+                  className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-xl font-semibold hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-3"
+                >
+                  Find Your Lawyer
+                  <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                </button>
 
-                  {/* Legal Icons Floating */}
-                  <div className="absolute top-8 right-8 p-3 bg-white/80 rounded-xl shadow-lg animate-float" style={{ animationDelay: '0.3s' }}>
-                    <Scale className="w-6 h-6 text-blue-600" />
-                  </div>
+                <button
+                  onClick={() => navigate('/lawyer/register')}
+                  className="px-8 py-4 bg-white text-gray-700 rounded-xl font-semibold border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                  Join as Lawyer
+                </button>
+              </div>
 
-                  <div className="absolute bottom-20 left-8 p-3 bg-white/80 rounded-xl shadow-lg animate-float" style={{ animationDelay: '0.6s' }}>
-                    <Gavel className="w-6 h-6 text-blue-500" />
-                  </div>
+              {/* Trust Indicators */}
+              <div className="flex flex-wrap gap-6 pt-8">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="text-gray-600">Verified Professionals</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-blue-500" />
+                  <span className="text-gray-600">24/7 Availability</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-purple-500" />
+                  <span className="text-gray-600">Secure & Confidential</span>
+                </div>
+              </div>
+            </div>
 
-                  <div className="absolute top-1/2 -right-4 p-3 bg-white/80 rounded-xl shadow-lg animate-float" style={{ animationDelay: '0.9s' }}>
-                    <FileCheck className="w-6 h-6 text-blue-600" />
+            {/* Right Content - Visual */}
+            <div className="relative">
+              <div className="relative bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-8 lg:p-12 border border-gray-100 shadow-2xl">
+                {/* Main Card */}
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mb-6 transform rotate-1 hover:rotate-0 transition-transform duration-300">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-400 rounded-xl flex items-center justify-center">
+                      <Scale className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">Corporate Legal Advisory</div>
+                      <div className="text-sm text-gray-500">Available Now</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                      <span className="text-sm text-gray-600 ml-2">4.9 (128 reviews)</span>
+                    </div>
+                    <div className="text-lg font-bold text-blue-600">$150/hr</div>
+                  </div>
+                </div>
+
+                {/* Floating Elements */}
+                <div className="absolute top-4 right-4 bg-white rounded-xl p-3 shadow-lg border border-gray-100 transform -rotate-6">
+                  <Target className="w-6 h-6 text-green-500" />
+                </div>
+
+                <div className="absolute bottom-4 left-4 bg-white rounded-xl p-3 shadow-lg border border-gray-100 transform rotate-6">
+                  <Zap className="w-6 h-6 text-orange-500" />
+                </div>
+
+                {/* Stats Bar */}
+                <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-2xl p-6 text-white">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-2xl font-bold">98%</div>
+                      <div className="text-sm opacity-90">Case Success Rate</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">24h</div>
+                      <div className="text-sm opacity-90">Avg. Response</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">4.9★</div>
+                      <div className="text-sm opacity-90">Client Rating</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -373,74 +357,128 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section id="features-section" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+      {/* Stats Section */}
+      <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Why Choose LegalKonect
-            </h2>
-            <p className="text-xl text-gray-600">
-              Modern solutions for your legal needs
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group relative p-8 bg-white rounded-3xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden"
-                style={{
-                  animation: isVisible.features ? `fadeInUp 0.6s ease-out ${index * 0.1}s both` : 'none'
-                }}
-              >
-                {/* Background Gradient */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
-                
-                <div className="relative z-10">
-                  <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${feature.color} mb-6`}>
-                    <feature.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-blue-400 rounded-2xl flex items-center justify-center mb-4">
+                  <stat.icon className="w-8 h-8 text-white" />
                 </div>
+                <div className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                </div>
+                <div className="text-gray-600 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 bg-gradient-to-b from-white to-gray-50">
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              How It Works
+              Why LegalKonect Stands Out
             </h2>
-            <p className="text-xl text-gray-600">
-              Your legal journey in 4 simple steps
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              We've reimagined legal services to provide you with an experience that's modern, 
+              transparent, and truly client-focused.
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {processSteps.map((step, index) => (
-              <div key={index} className="relative">
-                <div className="text-center group">
-                  <div className="relative inline-block mb-4">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center shadow-lg group-hover:shadow-xl transform group-hover:scale-110 transition-all duration-300">
-                      <step.icon className="w-10 h-10 text-white" />
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Features Grid */}
+            <div className="grid gap-6">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                      <feature.icon className="w-6 h-6 text-white" />
                     </div>
-                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full border-4 border-blue-600 flex items-center justify-center text-sm font-bold text-blue-600">
-                      {index + 1}
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                      <p className="text-gray-600">{feature.description}</p>
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{step.title}</h3>
+                </div>
+              ))}
+            </div>
+
+            {/* Visual */}
+            <div className="relative">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-8 border border-gray-100">
+                <div className="grid gap-4">
+                  <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-900">Case Matching</div>
+                      <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="w-16 h-full bg-green-500 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-900">Expert Verification</div>
+                      <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="w-20 h-full bg-blue-500 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-900">Client Satisfaction</div>
+                      <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="w-18 h-full bg-purple-500 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 bg-gradient-to-r from-blue-600 to-blue-400 rounded-2xl p-6 text-white text-center">
+                  <div className="text-2xl font-bold mb-2">95% Faster Matching</div>
+                  <div className="text-sm opacity-90">Compared to traditional methods</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+              Simple Process, Powerful Results
+            </h2>
+            <p className="text-xl text-gray-600">
+              Your journey to legal resolution in four straightforward steps
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-4 gap-8">
+            {process.map((step, index) => (
+              <div key={index} className="relative text-center group">
+                <div className="relative z-10">
+                  <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-600 to-blue-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <step.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="text-sm font-semibold text-blue-600 mb-2">{step.step}</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{step.title}</h3>
                   <p className="text-gray-600">{step.description}</p>
                 </div>
 
                 {/* Connector */}
-                {index < processSteps.length - 1 && (
-                  <div className="hidden lg:block absolute top-10 left-full w-full h-1 bg-gradient-to-r from-blue-600 to-blue-400 opacity-30" />
+                {index < process.length - 1 && (
+                  <div className="hidden lg:block absolute top-10 left-3/4 w-full h-1 bg-gradient-to-r from-blue-200 to-blue-100" />
                 )}
               </div>
             ))}
@@ -449,255 +487,158 @@ export default function Home() {
       </section>
 
       {/* Specializations */}
-      <section id="lawyers-section" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+      <section id="specializations" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Legal Specializations
+              Find Your Legal Expert
             </h2>
             <p className="text-xl text-gray-600">
-              Find experts in every area of law
+              Specialized lawyers for every legal need
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {specializations.map((spec, index) => (
               <button
                 key={index}
                 onClick={() => navigate('/lawyers', { state: { specialization: spec.name } })}
-                className="group p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-left"
-                style={{
-                  animation: isVisible.lawyers ? `fadeInUp 0.6s ease-out ${index * 0.1}s both` : 'none'
-                }}
+                className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-xl transition-all duration-300 text-left"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
-                    <spec.icon className="w-7 h-7 text-white" />
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transform group-hover:translate-x-2 transition-all" />
+                <div className={`w-12 h-12 bg-gradient-to-br ${spec.color} rounded-xl flex items-center justify-center mb-4`}>
+                  <spec.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{spec.name}</h3>
-                <p className="text-sm text-gray-500">{spec.count}</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{spec.name}</h3>
+                <p className="text-sm text-gray-500 mb-4">{spec.lawyers}</p>
+                <div className="flex items-center text-blue-600 group-hover:translate-x-2 transition-transform">
+                  <span className="text-sm font-medium">Find Experts</span>
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </div>
               </button>
             ))}
           </div>
-          
-          <div className="text-center mt-10">
+
+          <div className="text-center mt-12">
             <button
               onClick={() => navigate('/lawyers')}
-              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-full font-semibold hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-xl font-semibold hover:shadow-xl transform hover:scale-105 transition-all duration-300"
             >
-              View All Lawyers
+              Browse All Specializations
             </button>
           </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials-section" className="py-20 bg-gradient-to-b from-white to-gray-50">
+      <section id="testimonials" className="py-20 bg-gray-50">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Client Success Stories
+              Success Stories
             </h2>
             <p className="text-xl text-gray-600">
-              Real experiences from real people
+              Real clients, real results
             </p>
           </div>
-          
-          <div className="relative">
-            <div className="overflow-hidden rounded-3xl">
-              <div
-                className="flex transition-transform duration-500 ease-in-out"
-                style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
-              >
-                {testimonials.map((testimonial, index) => (
-                  <div key={index} className="w-full flex-shrink-0 px-4">
-                    <div className="bg-white rounded-3xl p-10 shadow-xl">
-                      <div className="flex justify-center mb-6">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
-                      
-                      <p className="text-xl text-gray-700 mb-8 text-center italic">
-                        "{testimonial.content}"
-                      </p>
-                      
-                      <div className="flex items-center justify-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-3xl">
-                          {testimonial.image}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                          <div className="text-sm text-gray-500">{testimonial.role}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                
+                <p className="text-gray-700 mb-6 italic">"{testimonial.content}"</p>
+                
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="font-semibold text-gray-900">{testimonial.name}</div>
+                  <div className="text-sm text-gray-500 mb-2">{testimonial.role}</div>
+                  <div className="text-xs text-blue-600 font-medium">{testimonial.case}</div>
+                </div>
               </div>
-            </div>
-            
-            {/* Navigation */}
-            <div className="flex justify-center gap-2 mt-8">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveTestimonial(index)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    activeTestimonial === index
-                      ? 'w-8 bg-gradient-to-r from-blue-600 to-blue-400'
-                      : 'w-2 bg-gray-300 hover:bg-gray-400'
-                  }`}
-                />
-              ))}
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-400 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-10" />
-        <div className="relative max-w-4xl mx-auto px-6 lg:px-8 text-center">
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-400">
+        <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center">
           <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
-            Ready to Get Started?
+            Ready to Find Your Legal Match?
           </h2>
           <p className="text-xl text-white/90 mb-10">
-            Join thousands who found their perfect legal match
+            Join thousands of clients who found the perfect legal representation through LegalKonect
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/lawyers')}
-              className="px-10 py-4 bg-white text-blue-600 rounded-full font-semibold hover:bg-gray-100 hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              className="px-10 py-4 bg-white text-blue-600 rounded-xl font-semibold hover:shadow-xl transform hover:scale-105 transition-all duration-300"
             >
-              Find a Lawyer
+              Find Your Lawyer Now
             </button>
             <button
               onClick={() => navigate('/register')}
-              className="px-10 py-4 bg-transparent text-white rounded-full font-semibold border-2 border-white hover:bg-white hover:text-blue-600 transition-all duration-300"
+              className="px-10 py-4 bg-transparent text-white rounded-xl font-semibold border-2 border-white hover:bg-white hover:text-blue-600 transition-all duration-300"
             >
-              Create Account
+              Create Free Account
             </button>
           </div>
         </div>
       </section>
 
-      {/* Add Custom Styles */}
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-20px);
-          }
-        }
-        
-        @keyframes twinkle {
-          0%, 100% {
-            opacity: 0.3;
-          }
-          50% {
-            opacity: 1;
-          }
-        }
-        
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        
-        .animate-twinkle {
-          animation: twinkle 2s ease-in-out infinite;
-        }
-        
-        .glass-card {
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        
-        .blob {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(60px);
-          mix-blend-mode: multiply;
-          animation: blob 7s infinite;
-          pointer-events: none;
-        }
-        
-        .blob-1 {
-          top: 10%;
-          left: 10%;
-          width: 300px;
-          height: 300px;
-          background: rgba(102, 126, 234, 0.3);
-        }
-        
-        .blob-2 {
-          top: 50%;
-          right: 20%;
-          width: 250px;
-          height: 250px;
-          background: rgba(240, 147, 251, 0.3);
-          animation-delay: 2s;
-        }
-        
-        .blob-3 {
-          bottom: 20%;
-          left: 30%;
-          width: 200px;
-          height: 200px;
-          background: rgba(255, 234, 167, 0.3);
-          animation-delay: 4s;
-        }
-        
-        .blob-4 {
-          bottom: 10%;
-          right: 10%;
-          width: 280px;
-          height: 280px;
-          background: rgba(223, 230, 233, 0.3);
-          animation-delay: 6s;
-        }
-        
-        @keyframes blob {
-          0%, 100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          25% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          50% {
-            transform: translate(-20px, 30px) scale(0.9);
-          }
-          75% {
-            transform: translate(50px, 20px) scale(1.05);
-          }
-        }
-        
-        .rocket-container {
-          width: 100%;
-          max-width: 360px;
-          height: 360px;
-          margin: 0 auto;
-        }
-      `}</style>
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-16">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center">
+                  <Scale className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold">LegalKonect</span>
+              </div>
+              <p className="text-gray-400">
+                Connecting you with trusted legal professionals for all your legal needs.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">For Clients</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Find Lawyers</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Legal Resources</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">For Lawyers</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Join Platform</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Resources</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Success Guide</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Company</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 LegalKonect. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

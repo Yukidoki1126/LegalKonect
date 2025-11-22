@@ -112,13 +112,16 @@ class ReviewController extends Controller
         'appointment_id' => $appointment->id,
         'rating' => $validated['rating'],
         'comment' => $validated['comment'],
-        'is_approved' => false, // Requires admin approval
+        'is_approved' => true, // Auto-approve all reviews
     ]);
 
     \Log::info('Review created successfully: ID=' . $review->id);
 
+    // Update lawyer's rating and review count
+    $this->updateLawyerRating($appointment->lawyer_id);
+
     return response()->json([
-        'message' => 'Review submitted successfully! It will be visible after admin approval.',
+        'message' => 'Review submitted successfully!',
         'review' => $review
     ], 201);
 }
@@ -151,8 +154,10 @@ class ReviewController extends Controller
         $review->update([
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
-            'is_approved' => false, // Reset approval status
         ]);
+
+        // Recalculate lawyer's rating
+        $this->updateLawyerRating($review->lawyer_id);
 
         return response()->json([
             'message' => 'Review updated successfully!',
@@ -169,8 +174,35 @@ class ReviewController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        $lawyerId = $review->lawyer_id;
         $review->delete();
 
+        // Recalculate lawyer's rating after deletion
+        $this->updateLawyerRating($lawyerId);
+
         return response()->json(['message' => 'Review deleted successfully']);
+    }
+
+    // Helper method to update lawyer's rating and review count
+    private function updateLawyerRating($lawyerId)
+    {
+        $lawyer = \App\Models\Lawyer::findOrFail($lawyerId);
+
+        // Get all approved reviews for this lawyer
+        $reviews = Review::where('lawyer_id', $lawyerId)
+            ->where('is_approved', true)
+            ->get();
+
+        // Calculate average rating and total count
+        $totalReviews = $reviews->count();
+        $averageRating = $totalReviews > 0 ? $reviews->avg('rating') : 0;
+
+        // Update lawyer record
+        $lawyer->update([
+            'rating' => round($averageRating, 2),
+            'total_reviews' => $totalReviews
+        ]);
+
+        \Log::info("Updated lawyer #{$lawyerId} rating: {$averageRating} ({$totalReviews} reviews)");
     }
 }

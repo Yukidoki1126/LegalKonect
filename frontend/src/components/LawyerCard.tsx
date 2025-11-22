@@ -60,11 +60,6 @@ const LawyerCard: React.FC<LawyerCardProps> = ({ lawyer }) => {
         </div>
       </div>
 
-      {/* Bio */}
-      {lawyer.bio && (
-        <p className="text-gray-600 text-sm mb-3 line-clamp-3">{lawyer.bio}</p>
-      )}
-
       {/* Info Grid */}
       <div className="grid grid-cols-2 gap-4 mb-3">
         <div>

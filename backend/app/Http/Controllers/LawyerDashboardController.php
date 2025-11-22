@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Appointment;
+use App\Models\Review;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -25,35 +26,58 @@ class LawyerDashboardController extends Controller
         }
 
         $stats = [
-            'pending_count' => $lawyer->appointments()
-                ->where('status', 'pending')
+            'active_cases_count' => DB::table('cases')
+                ->where('lawyer_id', $lawyer->id)
+                ->where('status', 'active')
                 ->count(),
-            
+
             'upcoming_count' => $lawyer->appointments()
                 ->where('status', 'confirmed')
                 ->where('appointment_date', '>=', now()->toDateString())
                 ->count(),
-            
+
             'completed_count' => $lawyer->appointments()
                 ->where('status', 'completed')
                 ->count(),
-            
+
             'total_earnings' => $lawyer->appointments()
                 ->where('payment_status', 'paid')
                 ->whereIn('status', ['confirmed', 'completed'])
                 ->sum('consultation_fee'),
-            
+
             'this_month_earnings' => $lawyer->appointments()
                 ->where('payment_status', 'paid')
                 ->whereIn('status', ['confirmed', 'completed'])
                 ->whereMonth('appointment_date', now()->month)
                 ->whereYear('appointment_date', now()->year)
                 ->sum('consultation_fee'),
+
+            // Review stats
+            'average_rating' => $lawyer->rating ?? 0,
+            'total_reviews' => $lawyer->total_reviews ?? 0,
         ];
+
+        // Get recent reviews (last 5)
+        $recentReviews = Review::with('user:id,name')
+            ->where('lawyer_id', $lawyer->id)
+            ->where('is_approved', true)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($review) {
+                return [
+                    'id' => $review->id,
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'client_name' => $review->user->name,
+                    'created_at' => $review->created_at->format('M d, Y'),
+                ];
+            });
 
         return response()->json([
             'lawyer' => $lawyer,
-            'stats' => $stats
+            'stats' => $stats,
+            'recent_reviews' => $recentReviews
         ]);
     }
 
@@ -152,9 +176,10 @@ class LawyerDashboardController extends Controller
 
         $lawyer = $request->user()->lawyer;
 
+        // Allow declining appointments that are pending or confirmed
         $appointment = Appointment::where('id', $appointmentId)
             ->where('lawyer_id', $lawyer->id)
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'confirmed'])
             ->first();
 
         if (!$appointment) {
@@ -164,7 +189,7 @@ class LawyerDashboardController extends Controller
         }
 
         $appointment->status = 'cancelled';
-        $appointment->cancelled_by = 'lawyer';
+        $appointment->cancelled_by = $request->user()->id; // Set to the user ID of the lawyer
         $appointment->cancellation_reason = $request->reason;
         $appointment->cancelled_at = now();
         $appointment->save();
@@ -329,6 +354,9 @@ class LawyerDashboardController extends Controller
             'rating' => $lawyer->rating,
             'total_reviews' => $lawyer->total_reviews,
             'is_available' => $lawyer->is_available,
+            'verification_status' => $lawyer->verification_status,
+            'verified_at' => $lawyer->verified_at,
+            'verification_notes' => $lawyer->verification_notes,
             'specializations' => $lawyer->specializations,
             'created_at' => $lawyer->created_at,
             'updated_at' => $lawyer->updated_at,
@@ -563,6 +591,88 @@ class LawyerDashboardController extends Controller
             'message' => 'Availability updated successfully',
             'date' => $validated['date'],
             'is_available' => $validated['is_available'],
+        ]);
+    }
+
+    /**
+     * Get lawyer's appointments in calendar format
+     * Returns appointments directly from database (not from Google Calendar)
+     */
+    public function getCalendarAppointments(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $lawyer = $request->user()->lawyer;
+
+        if (!$lawyer) {
+            return response()->json([
+                'error' => 'Lawyer profile not found'
+            ], 404);
+        }
+
+        // Get appointments within the date range
+        $appointments = $lawyer->appointments()
+            ->with('user')
+            ->where('appointment_date', '>=', $request->start_date)
+            ->where('appointment_date', '<=', $request->end_date)
+            ->whereIn('status', ['pending', 'confirmed', 'completed'])
+            ->orderBy('appointment_date')
+            ->orderBy('appointment_time')
+            ->get();
+
+        // Format appointments as calendar events
+        $events = $appointments->map(function ($appointment) {
+            // Combine date and time for start datetime
+            // Extract date only from appointment_date (which may contain datetime)
+            $dateOnly = \Carbon\Carbon::parse($appointment->appointment_date)->format('Y-m-d');
+
+            // Extract time only from appointment_time (remove microseconds if present)
+            $timeOnly = substr($appointment->appointment_time, 0, 8); // Get HH:MM:SS
+
+            // Parse datetime in Philippine timezone (Asia/Manila)
+            $startDateTime = \Carbon\Carbon::parse($dateOnly . ' ' . $timeOnly, 'Asia/Manila');
+
+            // Ensure duration_minutes is a valid integer
+            $durationMinutes = (int)($appointment->duration_minutes ?? 60);
+            if ($durationMinutes <= 0 || $durationMinutes > 480) {
+                $durationMinutes = 60; // Default to 60 minutes if invalid
+            }
+
+            $endDateTime = $startDateTime->copy()->addMinutes($durationMinutes);
+
+            // Determine color based on status
+            $colorMap = [
+                'pending' => '5',     // Yellow
+                'confirmed' => '10',  // Emerald Green
+                'completed' => '8',   // Teal
+            ];
+
+            return [
+                'id' => 'apt_' . $appointment->id,
+                'summary' => 'Consultation - ' . $appointment->user->name,
+                'description' => "Client: {$appointment->user->name}\nEmail: {$appointment->user->email}\nMeeting Type: {$appointment->meeting_type}\nStatus: {$appointment->status}\n\nClient Notes:\n{$appointment->client_notes}",
+                'start' => $startDateTime->toIso8601String(),
+                'end' => $endDateTime->toIso8601String(),
+                'color' => $colorMap[$appointment->status] ?? '10',
+                'is_all_day' => false,
+                'appointment_id' => $appointment->id,
+                'status' => $appointment->status,
+                'payment_status' => $appointment->payment_status,
+            ];
+        });
+
+        Log::info('Calendar appointments fetched from database', [
+            'lawyer_id' => $lawyer->id,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'count' => $events->count()
+        ]);
+
+        return response()->json([
+            'events' => $events
         ]);
     }
 }

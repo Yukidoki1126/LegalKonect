@@ -47,34 +47,14 @@ class AppointmentController extends Controller
             'google_calendar_connected' => $lawyer->google_calendar_connected
         ]);
 
-        // If lawyer has Google Calendar connected, get availability from there
-        if ($lawyer->google_calendar_connected) {
-            Log::info('Attempting to get slots from Google Calendar', ['lawyer_id' => $lawyerId]);
-            try {
-                $calendarSlots = $this->getAvailabilitySlotsFromGoogleCalendar($lawyer, $date);
-                if (!empty($calendarSlots)) {
-                    $schedules = collect($calendarSlots);
-                    Log::info('Using Google Calendar schedules', [
-                        'lawyer_id' => $lawyerId,
-                        'slot_count' => count($calendarSlots)
-                    ]);
-                } else {
-                    Log::warning('Google Calendar returned no slots', ['lawyer_id' => $lawyerId]);
-                }
-            } catch (\Exception $e) {
-                Log::warning('Failed to get Google Calendar slots, falling back to database', [
-                    'lawyer_id' => $lawyerId,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-            }
-        } else {
-            Log::info('Google Calendar not connected, using database schedules', ['lawyer_id' => $lawyerId]);
-        }
+        // No longer using Google Calendar for availability slots
+        // Only database schedules are used for availability
+        // Google Calendar is only for displaying confirmed consultations
+        Log::info('Using database schedules for availability (Google Calendar sync disabled)', ['lawyer_id' => $lawyerId]);
 
-        // Fallback to database schedules if no Google Calendar slots found
+        // Get schedules from database
         if ($schedules->isEmpty()) {
-            Log::info('Falling back to database schedules', ['lawyer_id' => $lawyerId, 'day_name' => $dayName]);
+            Log::info('Getting schedules from database', ['lawyer_id' => $lawyerId, 'day_name' => $dayName]);
             $schedules = DB::table('lawyer_schedules')
                 ->where('lawyer_id', $lawyerId)
                 ->where('day_of_week', $dayName)
@@ -245,14 +225,14 @@ class AppointmentController extends Controller
                 throw new \Exception('You already have an appointment booked at this time with this lawyer.');
             }
 
-            // Create the appointment
+            // Create the appointment with confirmed status (auto-confirm since lawyer set availability)
             $appointment = Appointment::create([
                 'user_id' => $user->id,
                 'lawyer_id' => $request->lawyer_id,
                 'appointment_date' => $request->appointment_date,
                 'appointment_time' => $request->appointment_time,
                 'duration_minutes' => 60,
-                'status' => 'pending',
+                'status' => 'confirmed',
                 'consultation_fee' => $lawyer->hourly_rate,
                 'payment_status' => 'unpaid',
                 'client_notes' => $request->client_notes,
@@ -380,11 +360,22 @@ class AppointmentController extends Controller
                     'appointment_user_id' => $appointment->user_id,
                     'requesting_user_id' => $user->id
                 ]);
-                
+
                 return response()->json([
                     'message' => 'Unauthorized access to this appointment'
                 ], 403);
             }
+
+            // Log the appointment structure for debugging
+            Log::info('Returning appointment data', [
+                'has_lawyer' => $appointment->lawyer ? 'yes' : 'no',
+                'lawyer_id' => $appointment->lawyer_id,
+                'lawyer_data' => $appointment->lawyer ? [
+                    'first_name' => $appointment->lawyer->first_name,
+                    'last_name' => $appointment->lawyer->last_name,
+                    'specializations_count' => $appointment->lawyer->specializations->count()
+                ] : null
+            ]);
 
             return response()->json([
                 'appointment' => $appointment
@@ -409,19 +400,45 @@ class AppointmentController extends Controller
      */
     public function cancel(Request $request, $id)
     {
+        Log::info('Cancel appointment request received', [
+            'appointment_id' => $id,
+            'user_id' => auth()->id(),
+            'request_data' => $request->all()
+        ]);
+
         $request->validate([
             'cancellation_reason' => 'required|string|max:500',
         ]);
 
         $appointment = Appointment::findOrFail($id);
 
+        Log::info('Appointment found', [
+            'appointment_id' => $id,
+            'appointment_user_id' => $appointment->user_id,
+            'current_user_id' => auth()->id(),
+            'appointment_status' => $appointment->status,
+            'appointment_date' => $appointment->appointment_date
+        ]);
+
         // Verify user owns this appointment
-        if ($appointment->user_id !== auth()->id()) {
+        if ($appointment->user_id != auth()->id()) {
+            Log::warning('Unauthorized cancel attempt', [
+                'appointment_id' => $id,
+                'appointment_user_id' => $appointment->user_id,
+                'appointment_user_id_type' => gettype($appointment->user_id),
+                'attempting_user_id' => auth()->id(),
+                'attempting_user_id_type' => gettype(auth()->id())
+            ]);
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         // Check if appointment can be cancelled
         if (!$appointment->canBeCancelled()) {
+            Log::warning('Appointment cannot be cancelled', [
+                'appointment_id' => $id,
+                'status' => $appointment->status,
+                'date' => $appointment->appointment_date
+            ]);
             return response()->json([
                 'message' => 'This appointment cannot be cancelled'
             ], 422);
@@ -433,6 +450,8 @@ class AppointmentController extends Controller
             'cancelled_at' => now(),
             'cancelled_by' => auth()->id(),
         ]);
+
+        Log::info('Appointment cancelled successfully', ['appointment_id' => $id]);
 
         return response()->json([
             'message' => 'Appointment cancelled successfully',

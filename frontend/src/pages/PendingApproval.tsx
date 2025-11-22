@@ -36,13 +36,13 @@ const PendingApproval = () => {
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Your Profile Status: Pending
+                Your Profile Status: Pending Verification
               </h3>
               <p className="text-gray-700 mb-4">
-                Our admin team is currently reviewing your lawyer registration. This process typically takes 1-3 business days.
+                Our admin team is currently reviewing your lawyer registration and verifying your submitted documents (IBP Card, Government ID, and credentials). This process typically takes 1-3 business days.
               </p>
               <p className="text-gray-700">
-                You will receive an email notification at your registered email address once your account has been approved.
+                You will receive an email notification at your registered email address once your account and credentials have been verified and approved.
               </p>
             </div>
           </div>
@@ -57,7 +57,7 @@ const PendingApproval = () => {
               </div>
               <div className="ml-4">
                 <p className="text-gray-700">
-                  <strong>Verification:</strong> Our team verifies your license number and professional credentials
+                  <strong>Document Verification:</strong> Our admin team reviews your submitted documents (IBP Card, Government ID, PRC License, etc.)
                 </p>
               </div>
             </div>
@@ -68,7 +68,7 @@ const PendingApproval = () => {
               </div>
               <div className="ml-4">
                 <p className="text-gray-700">
-                  <strong>Review:</strong> Your profile information and specializations are reviewed
+                  <strong>Credential Verification:</strong> Your IBP number, license number, and professional credentials are verified
                 </p>
               </div>
             </div>
@@ -79,7 +79,18 @@ const PendingApproval = () => {
               </div>
               <div className="ml-4">
                 <p className="text-gray-700">
-                  <strong>Approval:</strong> Once approved, you'll get full access to your lawyer dashboard
+                  <strong>Profile Review:</strong> Your profile information and specializations are reviewed for completeness
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold">4</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-gray-700">
+                  <strong>Approval & Access:</strong> Once verified and approved, you'll get full access to your lawyer dashboard and can start accepting clients
                 </p>
               </div>
             </div>

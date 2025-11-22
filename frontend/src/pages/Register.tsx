@@ -99,6 +99,29 @@ const Register: React.FC = () => {
           </p>
         </div>
 
+        {/* Lawyer Registration CTA */}
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl shadow-sm p-4 border border-amber-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <svg className="h-8 w-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Are you a lawyer?</p>
+                <p className="text-xs text-gray-600">Register as a legal professional instead</p>
+              </div>
+            </div>
+            <Link
+              to="/lawyer/register"
+              className="flex-shrink-0 px-4 py-2 bg-amber-600 text-white text-sm font-semibold rounded-lg hover:bg-amber-700 transition-colors shadow-sm"
+            >
+              Lawyer Sign Up
+            </Link>
+          </div>
+        </div>
+
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-6 backdrop-blur-sm bg-opacity-90 border border-gray-100">
           <form className="space-y-3.5" onSubmit={handleSubmit}>

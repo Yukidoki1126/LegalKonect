@@ -1,46 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
 
 const LawyerLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const checkLawyerStatus = async () => {
-      try {
-        const response = await api.get('/user');
-        const lawyer = response.data.lawyer;
-
-        if (!lawyer) {
-          navigate('/dashboard'); // Not a lawyer
-        } else if (lawyer.status !== 'approved') {
-          navigate('/pending-approval'); // Not approved yet
-        }
-      } catch (error) {
-        console.error('Error checking lawyer status:', error);
-        navigate('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkLawyerStatus();
-  }, [navigate]);
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="text-xl">Loading...</div>
-    </div>;
-  }
-
   const handleLogout = () => {
-  sessionStorage.removeItem('token');
-  sessionStorage.removeItem('user');
-  window.location.href = '/login';
-};
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -140,6 +110,20 @@ const LawyerLayout: React.FC = () => {
                 <path fill="currentColor" opacity="0.3" d="M7 13h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
               </svg>
               Google Calendar
+            </Link>
+
+            <Link
+              to="/lawyer/schedule"
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                isActive('/lawyer/schedule')
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Weekly Schedule
             </Link>
 
             <Link
@@ -246,6 +230,21 @@ const LawyerLayout: React.FC = () => {
               </Link>
 
               <Link
+                to="/lawyer/schedule"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium rounded-lg transition-colors ${
+                  isActive('/lawyer/schedule')
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Weekly Schedule
+              </Link>
+
+              <Link
                 to="/lawyer/earnings"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium rounded-lg transition-colors ${
@@ -280,7 +279,7 @@ const LawyerLayout: React.FC = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-64 p-3 sm:p-4 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
+        <main className="flex-1 lg:ml-64 px-3 sm:px-4 md:px-6 lg:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8 max-w-full overflow-x-hidden">
           <Outlet />
         </main>
       </div>

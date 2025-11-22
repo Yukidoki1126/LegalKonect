@@ -108,7 +108,20 @@ class AdminDashboardController extends Controller
     {
         $users = User::with('lawyer')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'status' => $user->status,
+                    'is_lawyer' => $user->lawyer !== null,
+                    'lawyer_id' => $user->lawyer ? $user->lawyer->id : null,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ];
+            });
 
         return response()->json($users);
     }
@@ -234,7 +247,7 @@ class AdminDashboardController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:pending,approved'
+            'status' => 'required|in:pending,approved,suspended,rejected'
         ]);
 
         $lawyer = Lawyer::findOrFail($id);

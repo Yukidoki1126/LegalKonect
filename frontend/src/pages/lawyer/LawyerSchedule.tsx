@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../../services/api';
+import { lawyerApi } from '../../services/lawyerApi';
 
 interface Schedule {
   id: number;
@@ -15,6 +15,14 @@ interface Schedule {
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const LawyerSchedule: React.FC = () => {
+  // Helper function to convert 24-hour time to 12-hour format
+  const formatTime12Hour = (time24: string) => {
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,18 +38,21 @@ const LawyerSchedule: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchSchedules();
+    fetchSchedules(false).finally(() => {
+      setLoading(false);
+    });
   }, []);
 
-  const fetchSchedules = async () => {
+  const fetchSchedules = async (showLoading = false) => {
     try {
-      const response = await api.get('/lawyer/schedules');
-      setSchedules(response.data);
+      if (showLoading) setLoading(true);
+      const data = await lawyerApi.getSchedules();
+      setSchedules(data);
     } catch (err: any) {
       console.error('Error fetching schedules:', err);
       setError('Failed to load schedules');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -59,7 +70,7 @@ const LawyerSchedule: React.FC = () => {
     setSuccess('');
 
     try {
-      await api.post('/lawyer/schedules', formData);
+      await lawyerApi.createSchedule(formData);
       setSuccess('Schedule added successfully!');
       setShowAddModal(false);
       setFormData({
@@ -67,7 +78,7 @@ const LawyerSchedule: React.FC = () => {
         start_time: '09:00',
         end_time: '17:00',
       });
-      fetchSchedules();
+      fetchSchedules(false);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to add schedule');
@@ -82,10 +93,10 @@ const LawyerSchedule: React.FC = () => {
     setSuccess('');
 
     try {
-      await api.put(`/lawyer/schedules/${editingSchedule.id}`, formData);
+      await lawyerApi.updateSchedule(editingSchedule.id, formData);
       setSuccess('Schedule updated successfully!');
       setEditingSchedule(null);
-      fetchSchedules();
+      fetchSchedules(false);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update schedule');
@@ -96,10 +107,10 @@ const LawyerSchedule: React.FC = () => {
     if (!deletingSchedule) return;
 
     try {
-      await api.delete(`/lawyer/schedules/${deletingSchedule.id}`);
+      await lawyerApi.deleteSchedule(deletingSchedule.id);
       setSuccess('Schedule deleted successfully!');
       setDeletingSchedule(null);
-      fetchSchedules();
+      fetchSchedules(false);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete schedule');
@@ -109,8 +120,8 @@ const LawyerSchedule: React.FC = () => {
 
   const handleToggleActive = async (id: number) => {
     try {
-      await api.post(`/lawyer/schedules/${id}/toggle`);
-      fetchSchedules();
+      await lawyerApi.toggleSchedule(id);
+      fetchSchedules(false);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to toggle schedule status');
     }
@@ -146,8 +157,51 @@ const LawyerSchedule: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="max-w-full overflow-x-hidden">
+        {/* Header Skeleton */}
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 animate-pulse">
+          <div>
+            <div className="h-8 sm:h-9 bg-gray-200 rounded-lg w-48 sm:w-56 mb-2"></div>
+            <div className="h-5 bg-gray-200 rounded-lg w-64 sm:w-80"></div>
+          </div>
+          <div className="h-10 bg-gray-200 rounded-lg w-full sm:w-40"></div>
+        </div>
+
+        {/* Weekly Schedule Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 animate-pulse">
+          {DAYS_OF_WEEK.map((day) => (
+            <div key={day} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+              {/* Day Header */}
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="h-6 bg-gray-200 rounded w-24"></div>
+                <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
+              </div>
+
+              {/* Time Slots */}
+              <div className="space-y-2 sm:space-y-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="p-2 sm:p-3 rounded-lg border bg-gray-50 border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="h-4 bg-gray-200 rounded w-28"></div>
+                      <div className="h-6 bg-gray-200 rounded w-16"></div>
+                    </div>
+                    <div className="flex gap-1 sm:gap-2">
+                      <div className="h-7 w-7 bg-gray-200 rounded"></div>
+                      <div className="h-7 w-7 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State Skeleton */}
+        <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center animate-pulse">
+          <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-6 bg-gray-200 rounded w-48 mx-auto mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-80 mx-auto"></div>
+        </div>
       </div>
     );
   }
@@ -185,7 +239,7 @@ const LawyerSchedule: React.FC = () => {
         }
       `}</style>
 
-      <div className="max-w-full overflow-x-hidden">
+      <div className="max-w-full overflow-x-hidden animate-fadeIn">
         {/* Header */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
@@ -271,7 +325,7 @@ const LawyerSchedule: React.FC = () => {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs sm:text-sm font-medium text-gray-900">
-                        {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
+                        {formatTime12Hour(schedule.start_time.substring(0, 5))} - {formatTime12Hour(schedule.end_time.substring(0, 5))}
                       </span>
                       <button
                         onClick={() => handleToggleActive(schedule.id)}

@@ -16,6 +16,9 @@ interface LawyerProfile {
   office_hours: string;
   profile_photo?: string | null;
   is_available: boolean;
+  verification_status?: 'pending' | 'verified' | 'rejected';
+  verified_at?: string | null;
+  verification_notes?: string | null;
   specializations: Array<{ id: number; name: string }>;
 }
 
@@ -31,7 +34,12 @@ const LawyerProfile: React.FC = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [currentProfilePhoto, setCurrentProfilePhoto] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified' | 'rejected' | null>(null);
+  const [verifiedAt, setVerifiedAt] = useState<string | null>(null);
+  const [verificationNotes, setVerificationNotes] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -50,14 +58,18 @@ const LawyerProfile: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchProfile();
-    fetchSpecializations();
+    Promise.all([fetchProfile(), fetchSpecializations()]).finally(() => {
+      setLoading(false);
+    });
   }, []);
 
   const fetchProfile = async () => {
     try {
       const data = await lawyerApi.getProfile();
       setCurrentProfilePhoto(data.profile_photo || null);
+      setVerificationStatus(data.verification_status || null);
+      setVerifiedAt(data.verified_at || null);
+      setVerificationNotes(data.verification_notes || null);
       setFormData({
         first_name: data.first_name || '',
         last_name: data.last_name || '',
@@ -76,8 +88,6 @@ const LawyerProfile: React.FC = () => {
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -122,11 +132,12 @@ const LawyerProfile: React.FC = () => {
 
     try {
       await lawyerApi.updateProfile(formData);
-      setSuccess('Profile updated successfully!');
+      setSuccessMessage('Profile updated successfully!');
+      setShowSuccessModal(true);
       fetchProfile();
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      // Auto-dismiss modal after 3 seconds
+      setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (err: any) {
       console.error('Error updating profile:', err);
       setError(err.response?.data?.message || 'Failed to update profile');
@@ -148,8 +159,9 @@ const LawyerProfile: React.FC = () => {
       // Handle both response structures
       const profilePhoto = response.lawyer?.profile_photo || response.profile_photo || null;
       setCurrentProfilePhoto(profilePhoto);
-      setSuccess('Profile photo uploaded successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      setSuccessMessage('Profile photo uploaded successfully!');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (err: any) {
       console.error('Error uploading profile photo:', err);
       console.error('Error details:', err.response?.data);
@@ -178,8 +190,9 @@ const LawyerProfile: React.FC = () => {
       const response = await lawyerApi.deleteProfilePhoto();
       console.log('Delete response:', response);
       setCurrentProfilePhoto(null);
-      setSuccess('Profile photo deleted successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      setSuccessMessage('Profile photo deleted successfully!');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (err: any) {
       console.error('Error deleting profile photo:', err);
       console.error('Error details:', err.response?.data);
@@ -191,14 +204,96 @@ const LawyerProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="max-w-4xl mx-auto">
+        {/* Header Skeleton */}
+        <div className="mb-6 animate-pulse">
+          <div className="h-9 bg-gray-200 rounded-lg w-48 mb-2"></div>
+          <div className="h-5 bg-gray-200 rounded-lg w-96"></div>
+        </div>
+
+        {/* Profile Card Skeleton */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+          {/* Profile Photo Section */}
+          <div className="flex items-center gap-6 mb-6 pb-6 border-b">
+            <div className="w-24 h-24 bg-gray-200 rounded-full"></div>
+            <div className="flex-1">
+              <div className="h-6 bg-gray-200 rounded w-48 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-64"></div>
+            </div>
+          </div>
+
+          {/* Form Fields Skeleton */}
+          <div className="space-y-6">
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+
+            {/* Bio Field */}
+            <div>
+              <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+              <div className="h-24 bg-gray-200 rounded"></div>
+            </div>
+
+            {/* License and Experience */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-36 mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+
+            {/* Specializations */}
+            <div>
+              <div className="h-4 bg-gray-200 rounded w-32 mb-3"></div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-10 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Office Details */}
+            <div className="space-y-4">
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="h-4 bg-gray-200 rounded w-28 mb-2"></div>
+                  <div className="h-10 bg-gray-200 rounded"></div>
+                </div>
+                <div>
+                  <div className="h-4 bg-gray-200 rounded w-28 mb-2"></div>
+                  <div className="h-10 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <div className="h-11 bg-gray-200 rounded-lg flex-1"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-full overflow-x-hidden">
+    <div className="max-w-full overflow-x-hidden animate-fadeIn">
       {/* Header */}
       <div className="mb-4 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Profile Settings</h1>
@@ -228,20 +323,103 @@ const LawyerProfile: React.FC = () => {
         </div>
       )}
 
-      {/* Profile Photo Section */}
-      <div className="mb-4 sm:mb-6 bg-white rounded-lg shadow p-4 sm:p-5 md:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Profile Photo</h2>
-        <div className="flex justify-center">
-          <ProfilePictureUpload
-            currentPicture={currentProfilePhoto}
-            onUpload={handleProfilePhotoUpload}
-            onDelete={handleProfilePhotoDelete}
-            isUploading={uploadingPhoto}
-          />
+      {/* Profile Photo and Verification Status Section */}
+      <div className="mb-4 sm:mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Profile Photo */}
+        <div className="bg-white rounded-lg shadow p-4 sm:p-5 md:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Profile Photo</h2>
+          <div className="flex justify-center">
+            <ProfilePictureUpload
+              currentPicture={currentProfilePhoto}
+              onUpload={handleProfilePhotoUpload}
+              onDelete={handleProfilePhotoDelete}
+              isUploading={uploadingPhoto}
+            />
+          </div>
         </div>
+
+        {/* Verification Status */}
+        {verificationStatus && (
+          <div className="bg-white rounded-lg shadow p-4 sm:p-5 md:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Verification Status</h2>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Status:</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  verificationStatus === 'verified' ? 'bg-green-100 text-green-700' :
+                  verificationStatus === 'rejected' ? 'bg-red-100 text-red-700' :
+                  'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {verificationStatus === 'verified' ? 'Verified' :
+                   verificationStatus === 'rejected' ? 'Rejected' :
+                   'Pending Verification'}
+                </span>
+              </div>
+
+              {verificationStatus === 'pending' && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-yellow-800">Verification In Progress</h3>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        Your credentials and documents are currently being reviewed by our admin team.
+                        You will be notified once the verification process is complete.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {verificationStatus === 'verified' && verifiedAt && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-green-800">Verified Lawyer</h3>
+                      <p className="text-xs text-green-700 mt-1">
+                        Your credentials have been verified on {new Date(verifiedAt).toLocaleDateString()}
+                      </p>
+                      {verificationNotes && (
+                        <p className="text-xs text-green-700 mt-2 italic">
+                          Note: {verificationNotes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {verificationStatus === 'rejected' && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-red-800">Verification Rejected</h3>
+                      <p className="text-xs text-red-700 mt-1">
+                        Unfortunately, your verification was not approved. Please contact support for more information.
+                      </p>
+                      {verificationNotes && (
+                        <div className="mt-2 p-2 bg-red-100 rounded">
+                          <p className="text-xs text-red-800 font-medium">Reason:</p>
+                          <p className="text-xs text-red-700 mt-1">{verificationNotes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-    
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
      
@@ -362,20 +540,6 @@ const LawyerProfile: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   />
                 </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Office Hours
-                  </label>
-                  <input
-                    type="text"
-                    name="office_hours"
-                    value={formData.office_hours}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Mon-Fri 9:00 AM - 5:00 PM"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  />
-                </div>
               </div>
             </div>
 
@@ -476,6 +640,53 @@ const LawyerProfile: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Success Icon */}
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 text-center">
+                Success!
+              </h3>
+
+              {/* Message */}
+              <p className="text-sm sm:text-base text-gray-600 text-center mb-6">
+                {successMessage}
+              </p>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,7 +1,29 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(nul)",
+      "Bash(php -l:*)",
+      "Bash(php cleanup_calendar.php:*)",
+      "Bash(php -r:*)",
+      "Bash(php:*)",
+      "Bash(if not exist \"storage\\app\\private\" mkdir storageappprivate)",
+      "Bash(dir:*)",
+      "Bash(del LawyerLayout.tsx)",
+      "Bash(frontend/src/pages/Login.tsx)",
+      "Bash(frontend/src/pages/lawyer/LawyerDashboard.tsx)",
+      "Bash(npx tsc:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run:*)",
+      "Bash(find:*)",
+      "Bash(npm start)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(mysql:*)",
+      "Bash(curl:*)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

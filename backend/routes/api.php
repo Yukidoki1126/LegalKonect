@@ -13,6 +13,7 @@ use App\Http\Controllers\CaseController;
 use App\Http\Controllers\LawyerCaseController;
 use App\Http\Controllers\LawyerScheduleController;
 use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\AdminVerificationController;
 
 // Public routes - No authentication required
 Route::prefix('auth')->group(function () {
@@ -23,6 +24,11 @@ Route::prefix('auth')->group(function () {
     // Google OAuth for login/register
     Route::get('/google/url', [AuthController::class, 'googleAuthUrl']);
     Route::post('/google/login', [AuthController::class, 'googleLogin']);
+});
+
+// Authenticated cleanup route (for orphaned accounts)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::delete('/auth/cleanup', [AuthController::class, 'cleanupOrphanedAccount']);
 });
 
 // Google OAuth callback for login/register (must be outside auth prefix for OAuth flow)
@@ -157,6 +163,7 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
     // Calendar & Availability Routes
     Route::get('/calendar/availability', [LawyerDashboardController::class, 'getCalendarAvailability']);
     Route::post('/calendar/availability', [LawyerDashboardController::class, 'setDateAvailability']);
+    Route::get('/calendar/appointments', [LawyerDashboardController::class, 'getCalendarAppointments']);
 
     // Case Management Routes
     Route::get('/cases', [LawyerCaseController::class, 'index']);
@@ -166,8 +173,10 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
     Route::put('/cases/{id}', [LawyerCaseController::class, 'update']);
     Route::delete('/cases/{id}', [LawyerCaseController::class, 'destroy']);
 
-    // Case Todos - Lawyer can create and delete
+    // Case Todos - Lawyer can create, read, toggle, and delete
+    Route::get('/cases/{caseId}/todos', [App\Http\Controllers\CaseTodoController::class, 'index']);
     Route::post('/cases/{caseId}/todos', [App\Http\Controllers\CaseTodoController::class, 'store']);
+    Route::post('/cases/{caseId}/todos/{todoId}/toggle', [App\Http\Controllers\CaseTodoController::class, 'toggle']);
     Route::delete('/cases/{caseId}/todos/{todoId}', [App\Http\Controllers\CaseTodoController::class, 'destroy']);
 
     // Google Calendar Integration
@@ -179,6 +188,12 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
         Route::post('/sync-appointments', [GoogleCalendarController::class, 'syncAppointments']);
         Route::get('/events', [GoogleCalendarController::class, 'getEvents']);
     });
+
+    // Earnings and Payout Routes
+    Route::get('/earnings', [App\Http\Controllers\PayoutController::class, 'getEarnings']);
+    Route::put('/payout-info', [App\Http\Controllers\PayoutController::class, 'updatePayoutInfo']);
+    Route::post('/payouts/request', [App\Http\Controllers\PayoutController::class, 'requestPayout']);
+    Route::get('/payouts', [App\Http\Controllers\PayoutController::class, 'getPayouts']);
 });
 
 // Google Calendar OAuth callback (must be outside auth middleware for OAuth flow)
@@ -213,6 +228,22 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::patch('/users/{id}/activate', [App\Http\Controllers\Admin\AdminDashboardController::class, 'activateUser']);
     Route::delete('/users/{id}', [App\Http\Controllers\Admin\AdminDashboardController::class, 'deleteUser']);
 
+    // Admin Management (Super Admin Only)
+    Route::middleware('superadmin')->group(function () {
+        Route::get('/admins', [App\Http\Controllers\Admin\AdminManagementController::class, 'index']);
+        Route::get('/admins/stats', [App\Http\Controllers\Admin\AdminManagementController::class, 'stats']);
+        Route::post('/admins', [App\Http\Controllers\Admin\AdminManagementController::class, 'store']);
+        Route::put('/admins/{id}', [App\Http\Controllers\Admin\AdminManagementController::class, 'update']);
+        Route::delete('/admins/{id}', [App\Http\Controllers\Admin\AdminManagementController::class, 'destroy']);
+    });
+
+    // Payout Management
+    Route::get('/payouts/pending', [App\Http\Controllers\PayoutController::class, 'getPendingPayouts']);
+    Route::get('/payouts', [App\Http\Controllers\PayoutController::class, 'getAllPayouts']);
+    Route::post('/payouts/{id}/approve', [App\Http\Controllers\PayoutController::class, 'approvePayout']);
+    Route::post('/payouts/{id}/mark-paid', [App\Http\Controllers\PayoutController::class, 'markAsPaid']);
+    Route::post('/payouts/{id}/reject', [App\Http\Controllers\PayoutController::class, 'rejectPayout']);
+
     // FAQ Management
     Route::get('/faqs', [FaqController::class, 'index']);
     Route::post('/faqs', [FaqController::class, 'store']);
@@ -225,4 +256,12 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::post('/faq-categories', [FaqController::class, 'storeCategory']);
     Route::put('/faq-categories/{id}', [FaqController::class, 'updateCategory']);
     Route::delete('/faq-categories/{id}', [FaqController::class, 'destroyCategory']);
+
+    // Lawyer Verification Management
+    Route::get('/verifications/pending', [AdminVerificationController::class, 'getPendingVerifications']);
+    Route::get('/verifications/lawyers', [AdminVerificationController::class, 'getAllLawyers']);
+    Route::get('/verifications/lawyers/{id}', [AdminVerificationController::class, 'getLawyerDetails']);
+    Route::post('/verifications/lawyers/{id}/approve', [AdminVerificationController::class, 'approveLawyer']);
+    Route::post('/verifications/lawyers/{id}/reject', [AdminVerificationController::class, 'rejectLawyer']);
+    Route::get('/verifications/lawyers/{id}/documents/{documentType}', [AdminVerificationController::class, 'downloadDocument']);
 });

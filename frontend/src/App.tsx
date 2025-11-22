@@ -14,6 +14,7 @@ import LawyerSearch from './pages/LawyerSearch';
 import LawyerDetail from './pages/LawyerDetail';
 import Appointments from './pages/Appointments';
 import PaymentPage from './pages/PaymentPage';
+import PaymentRedirect from './pages/PaymentRedirect';
 import Cases from './pages/Cases';
 import ClientOnlyRoute from './components/ClientOnlyRoute';
 import FAQChatbot from './components/FAQChatbot';
@@ -26,7 +27,6 @@ import LawyerDashboard from './pages/lawyer/LawyerDashboard';
 import LawyerAppointments from './pages/lawyer/LawyerAppointments';
 import LawyerEarnings from './pages/lawyer/LawyerEarnings';
 import LawyerProfile from './pages/lawyer/LawyerProfile';
-import LawyerCalendar from './pages/lawyer/LawyerCalendar';
 import LawyerSchedule from './pages/lawyer/LawyerSchedule';
 import LawyerGoogleCalendar from './pages/lawyer/LawyerGoogleCalendar';
 import LawyerCases from './pages/LawyerCases';
@@ -38,8 +38,11 @@ import AdminLawyers from './pages/admin/AdminLawyers';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPayments from './pages/admin/AdminPayments';
+import AdminPayouts from './pages/admin/AdminPayouts';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminFaqs from './pages/admin/AdminFaqs';
+import AdminVerifications from './pages/admin/AdminVerifications';
+import AdminManagement from './pages/admin/AdminManagement';
 
 function AppContent() {
   const location = useLocation();
@@ -115,6 +118,14 @@ function AppContent() {
           }
         />
         <Route
+          path="/appointments/:appointmentId/success"
+          element={
+            <ProtectedRoute>
+              <PaymentRedirect />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/cases"
           element={
             <ProtectedRoute>
@@ -136,6 +147,7 @@ function AppContent() {
           <Route path="appointments" element={<LawyerAppointments />} />
           <Route path="cases" element={<LawyerCases />} />
           <Route path="calendar" element={<LawyerGoogleCalendar />} />
+          <Route path="schedule" element={<LawyerSchedule />} />
           <Route path="earnings" element={<LawyerEarnings />} />
           <Route path="profile" element={<LawyerProfile />} />
         </Route>
@@ -145,11 +157,14 @@ function AppContent() {
           <Route index element={<AdminOverview />} />
           <Route path="dashboard" element={<AdminOverview />} />
           <Route path="lawyers" element={<AdminLawyers />} />
+          <Route path="verifications" element={<AdminVerifications />} />
           <Route path="appointments" element={<AdminAppointments />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="payments" element={<AdminPayments />} />
+          <Route path="payouts" element={<AdminPayouts />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="faqs" element={<AdminFaqs />} />
+          <Route path="admins" element={<AdminManagement />} />
         </Route>
       </Routes>
 

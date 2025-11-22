@@ -13,6 +13,7 @@ interface Appointment {
   payment_status: string;
   meeting_type: string;
   client_notes: string;
+  lawyer_notes: string;
   review?: {
     id: number;
     rating: number;
@@ -41,6 +42,9 @@ const Appointments: React.FC = () => {
   const [viewReviewModalOpen, setViewReviewModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showCancelSuccessModal, setShowCancelSuccessModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   const searchParams = new URLSearchParams(location.search);
   const paymentStatus = searchParams.get('payment');
@@ -117,22 +121,69 @@ const Appointments: React.FC = () => {
     }
   }, [toast.show]);
 
-  const handleCancelAppointment = async (appointmentId: number) => {
-    if (!window.confirm('Are you sure you want to cancel this appointment?')) {
+  // Prevent background scroll when cancel modal is open
+  useEffect(() => {
+    if (showCancelModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showCancelModal]);
+
+  const handleCancelClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const handleCancelAppointment = async () => {
+    if (!cancelReason.trim()) {
+      alert('Please provide a reason for cancellation');
       return;
     }
 
-    const reason = prompt('Please provide a reason for cancellation:');
-    if (!reason) return;
+    if (!selectedAppointment) return;
 
-    setCancellingId(appointmentId);
+    setCancellingId(selectedAppointment.id);
     try {
-      await api.post(`/appointments/${appointmentId}/cancel`, {
-        cancellation_reason: reason
+      console.log('Cancelling appointment:', selectedAppointment.id);
+      const response = await api.post(`/appointments/${selectedAppointment.id}/cancel`, {
+        cancellation_reason: cancelReason
       });
+      console.log('Cancel response:', response);
+
+      setShowCancelModal(false);
+      setCancelReason('');
+      setShowCancelSuccessModal(true);
       fetchAppointments();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to cancel appointment');
+      console.error('Cancel appointment error:', err);
+      console.error('Error response:', err.response);
+      console.error('Error status:', err.response?.status);
+      console.error('Error data:', err.response?.data);
+
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to cancel appointment';
+
+      // Check if it's an authentication error
+      if (err.response?.status === 401) {
+        alert('Your session has expired. Please log in again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return;
+      }
+
+      // Check if it's a forbidden error
+      if (err.response?.status === 403) {
+        alert('You do not have permission to cancel this appointment.');
+        return;
+      }
+
+      alert(errorMessage);
     } finally {
       setCancellingId(null);
     }
@@ -151,7 +202,7 @@ const Appointments: React.FC = () => {
   const handleReviewSuccess = () => {
     setToast({
       show: true,
-      message: 'Review submitted successfully! It will be visible after admin approval.',
+      message: 'Review submitted successfully! Thank you for your feedback.',
       type: 'success'
     });
     setReviewModalOpen(false);
@@ -197,7 +248,7 @@ const Appointments: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-5xl mx-auto px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Appointments</h1>
@@ -322,12 +373,18 @@ const Appointments: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.status)}`}>
-                          {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(appointment.payment_status)}`}>
-                          {appointment.payment_status.charAt(0).toUpperCase() + appointment.payment_status.slice(1)}
-                        </span>
+                        {/* Only show status badge if not confirmed (since all appointments are auto-confirmed) */}
+                        {appointment.status !== 'confirmed' && (
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.status)}`}>
+                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                          </span>
+                        )}
+                        {/* Only show payment status if paid or refunded (unpaid is handled during booking flow) */}
+                        {appointment.payment_status !== 'unpaid' && (
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(appointment.payment_status)}`}>
+                            {appointment.payment_status.charAt(0).toUpperCase() + appointment.payment_status.slice(1)}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -361,7 +418,15 @@ const Appointments: React.FC = () => {
                     {appointment.client_notes && (
                       <div className="mb-4 p-3 bg-gray-50 rounded">
                         <p className="text-sm text-gray-600">
-                          <strong>Notes:</strong> {appointment.client_notes}
+                          <strong>Your Notes:</strong> {appointment.client_notes}
+                        </p>
+                      </div>
+                    )}
+
+                    {appointment.lawyer_notes && (
+                      <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+                        <p className="text-sm text-blue-900">
+                          <strong className="text-blue-700">Lawyer's Notes:</strong> {appointment.lawyer_notes}
                         </p>
                       </div>
                     )}
@@ -373,19 +438,10 @@ const Appointments: React.FC = () => {
                       >
                         View Lawyer
                       </button>
-                      
-                      {appointment.payment_status === 'unpaid' && (
-                        <button
-                          onClick={() => navigate(`/appointments/${appointment.id}/payment`)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
-                        >
-                          Pay Now
-                        </button>
-                      )}
-                      
+
                       {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
                         <button
-                          onClick={() => handleCancelAppointment(appointment.id)}
+                          onClick={() => handleCancelClick(appointment)}
                           disabled={cancellingId === appointment.id}
                           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition"
                         >
@@ -481,11 +537,9 @@ const Appointments: React.FC = () => {
               </div>
             </div>
 
-            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                {selectedAppointment.review!.is_approved 
-                  ? '✓ Your review is published and visible to others'
-                  : 'ℹ️ Your review is pending admin approval'}
+            <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">
+                ✓ Your review is published and visible to others
               </p>
             </div>
 
@@ -498,6 +552,179 @@ const Appointments: React.FC = () => {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Appointment Modal */}
+      {showCancelModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="relative bg-gradient-to-br from-red-600 to-rose-700 p-8 rounded-t-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setSelectedAppointment(null);
+                  setCancelReason('');
+                }}
+                className="absolute top-4 right-4 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Cancel Appointment</h3>
+                  <p className="text-red-100 text-sm mt-1">This action cannot be undone</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-8">
+              <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <p className="text-sm font-semibold text-gray-900 mb-2">Appointment Details:</p>
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">Lawyer:</span> {selectedAppointment.lawyer.first_name} {selectedAppointment.lawyer.last_name}
+                </p>
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">Date:</span> {formatDate(selectedAppointment.appointment_date)}
+                </p>
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">Time:</span> {formatTime(selectedAppointment.appointment_time)}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-3">
+                  <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  </svg>
+                  Reason for Cancellation <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Please provide a reason for canceling this appointment..."
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all resize-none text-sm"
+                  autoFocus
+                />
+                <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  This reason will be sent to the lawyer
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setSelectedAppointment(null);
+                    setCancelReason('');
+                  }}
+                  className="flex-1 px-5 py-3.5 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all"
+                >
+                  Keep Appointment
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelAppointment}
+                  disabled={cancellingId !== null || !cancelReason.trim()}
+                  className="flex-1 px-5 py-3.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 disabled:from-gray-400 disabled:to-gray-400 transition-all hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {cancellingId !== null ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel Appointment
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Success Modal */}
+      {showCancelSuccessModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-fadeIn">
+            {/* Modal Header */}
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                Appointment Cancelled Successfully
+              </h3>
+
+              <p className="text-gray-600 mb-6">
+                Your appointment with <span className="font-semibold">{selectedAppointment.lawyer.first_name} {selectedAppointment.lawyer.last_name}</span> has been cancelled.
+              </p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-3 text-left">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-blue-900 mb-1">What happens next?</p>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      {selectedAppointment.payment_status === 'paid' ? (
+                        <>
+                          <li>• The lawyer has been notified</li>
+                          <li>• Your payment will be refunded within 5-7 business days</li>
+                          <li>• You can book a new appointment anytime</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>• The lawyer has been notified</li>
+                          <li>• No payment was processed</li>
+                          <li>• You can book a new appointment anytime</li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowCancelSuccessModal(false);
+                  setSelectedAppointment(null);
+                }}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

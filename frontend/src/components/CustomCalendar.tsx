@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import api from '../services/api';
 
 interface CustomCalendarProps {
@@ -20,6 +20,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
   const [unavailableDates, setUnavailableDates] = useState<Set<string>>(new Set());
   const [loadingDates, setLoadingDates] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (selectedDate) {
@@ -32,6 +33,13 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     if (lawyerId) {
       fetchUnavailableDates();
     }
+
+    // Cleanup: cancel any pending requests when component unmounts or month changes
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [currentMonth, lawyerId]);
 
   // Auto-refresh unavailable dates every 10 seconds
@@ -42,11 +50,26 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       fetchUnavailableDates();
     }, 10000); // 10 seconds
 
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+      // Cancel any pending requests when interval is cleaned up
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [currentMonth, lawyerId]);
 
   const fetchUnavailableDates = async () => {
     if (!lawyerId) return;
+
+    // Cancel any previous pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
       setLoadingDates(true);
@@ -54,23 +77,38 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       const month = currentMonth.getMonth() + 1;
 
       const response = await api.get(`/lawyers/${lawyerId}/unavailable-dates`, {
-        params: { year, month }
+        params: { year, month },
+        signal: abortController.signal
       });
 
-      const unavailable = new Set<string>(
-        response.data.map((item: { date: string }) => {
-          // Ensure date is in YYYY-MM-DD format without time/timezone issues
-          const dateStr = item.date.includes('T') ? item.date.split('T')[0] : item.date;
-          return dateStr;
-        })
-      );
+      // Only update state if request wasn't aborted
+      if (!abortController.signal.aborted) {
+        const unavailable = new Set<string>(
+          response.data.map((item: { date: string }) => {
+            // Ensure date is in YYYY-MM-DD format without time/timezone issues
+            const dateStr = item.date.includes('T') ? item.date.split('T')[0] : item.date;
+            return dateStr;
+          })
+        );
 
-      setUnavailableDates(unavailable);
-      setInitialLoadComplete(true);
-    } catch (err) {
-      console.error('Error fetching unavailable dates:', err);
+        setUnavailableDates(unavailable);
+        setInitialLoadComplete(true);
+      }
+    } catch (err: any) {
+      // Ignore abort errors (expected when component unmounts or requests are canceled)
+      if (err.name === 'CanceledError' || err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
+        return;
+      }
+
+      // Silently handle network errors - component might be unmounting or modal closing
+      if (!abortController.signal.aborted && err?.code !== 'ERR_NETWORK') {
+        console.error('Error fetching unavailable dates:', err);
+      }
     } finally {
-      setLoadingDates(false);
+      // Only clear loading state if request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setLoadingDates(false);
+      }
     }
   };
 

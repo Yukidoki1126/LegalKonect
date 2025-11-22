@@ -32,7 +32,7 @@ class Appointment extends Model
 
     protected $casts = [
         'appointment_date' => 'date',
-        'appointment_time' => 'datetime:H:i',
+        'appointment_time' => 'string',
         'cancelled_at' => 'datetime',
     ];
 
@@ -111,5 +111,57 @@ class Appointment extends Model
     public function canBeReviewed()
     {
         return $this->status === 'completed' && !$this->review;
+    }
+
+    /**
+     * Get the formatted appointment time (HH:MM format)
+     */
+    public function getAppointmentTimeAttribute($value)
+    {
+        // If value is null, return it as-is
+        if (!$value) {
+            return $value;
+        }
+
+        // Extract just HH:MM from time format like "12:00:00.0000000"
+        return substr($value, 0, 5);
+    }
+
+    /**
+     * Boot method to handle model events
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // When an appointment is being deleted, also delete the Google Calendar event
+        static::deleting(function ($appointment) {
+            // Check if the appointment has a Google Calendar event ID
+            if ($appointment->google_event_id && $appointment->lawyer) {
+                try {
+                    $googleCalendarService = app(\App\Services\GoogleCalendarService::class);
+
+                    // Only delete if lawyer still has Google Calendar connected
+                    if ($appointment->lawyer->google_calendar_connected) {
+                        $googleCalendarService->deleteAppointmentEvent(
+                            $appointment->lawyer,
+                            $appointment->google_event_id
+                        );
+
+                        \Log::info('Google Calendar event deleted via model event', [
+                            'appointment_id' => $appointment->id,
+                            'event_id' => $appointment->google_event_id
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Log error but don't prevent deletion
+                    \Log::error('Failed to delete Google Calendar event during appointment deletion', [
+                        'appointment_id' => $appointment->id,
+                        'event_id' => $appointment->google_event_id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        });
     }
 }

@@ -90,4 +90,92 @@ export const adminAuthService = {
   },
 };
 
+// Admin Management Service (Super Admin Only)
+export const adminManagementService = {
+  // Get all admins
+  getAdmins: async () => {
+    const response = await adminApi.get('/admins');
+    return response.data;
+  },
+
+  // Get admin statistics
+  getStats: async () => {
+    const response = await adminApi.get('/admins/stats');
+    return response.data;
+  },
+
+  // Create new admin
+  createAdmin: async (adminData: {
+    name: string;
+    email: string;
+    password: string;
+    role: 'admin' | 'super_admin';
+  }) => {
+    const response = await adminApi.post('/admins', adminData);
+    clearAdminCache(); // Clear cache after creating
+    return response.data;
+  },
+
+  // Update admin
+  updateAdmin: async (id: number, adminData: {
+    name?: string;
+    email?: string;
+    password?: string;
+    role?: 'admin' | 'super_admin';
+    status?: 'active' | 'suspended';
+  }) => {
+    const response = await adminApi.put(`/admins/${id}`, adminData);
+    clearAdminCache(); // Clear cache after updating
+    return response.data;
+  },
+
+  // Delete admin
+  deleteAdmin: async (id: number) => {
+    const response = await adminApi.delete(`/admins/${id}`);
+    clearAdminCache(); // Clear cache after deleting
+    return response.data;
+  },
+};
+
+// Admin Payout Management Service
+export const adminPayoutService = {
+  // Get all payouts with optional filtering
+  getPayouts: async (status?: string, page: number = 1, perPage: number = 20) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    params.append('page', page.toString());
+    params.append('per_page', perPage.toString());
+
+    const response = await adminApi.get(`/payouts?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get pending payouts
+  getPendingPayouts: async () => {
+    const response = await adminApi.get('/payouts/pending');
+    return response.data;
+  },
+
+  // Approve payout
+  approvePayout: async (id: number) => {
+    const response = await adminApi.post(`/payouts/${id}/approve`);
+    clearAdminCache(); // Clear cache after approval
+    return response.data;
+  },
+
+  // Mark payout as paid
+  markAsPaid: async (id: number, data: { transaction_reference: string; admin_notes?: string }) => {
+    const response = await adminApi.post(`/payouts/${id}/mark-paid`, data);
+    clearAdminCache(); // Clear cache after marking as paid
+    return response.data;
+  },
+
+  // Reject payout
+  rejectPayout: async (id: number, data: { rejection_reason: string }) => {
+    const response = await adminApi.post(`/payouts/${id}/reject`, data);
+    clearAdminCache(); // Clear cache after rejection
+    return response.data;
+  },
+};
+
 export default adminApi;

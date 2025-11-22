@@ -41,6 +41,12 @@ const LawyerDetail: React.FC = () => {
   const [error, setError] = useState('');
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
+  // Handle back navigation
+  const handleBack = () => {
+    // Go back to previous page in history
+    navigate(-1);
+  };
+
   useEffect(() => {
     const fetchLawyer = async () => {
       if (!id) return;
@@ -135,13 +141,13 @@ const LawyerDetail: React.FC = () => {
 
   if (error || !lawyer) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <p className="text-red-800">{error || 'Lawyer not found'}</p>
-            <Link to="/lawyers" className="text-blue-600 hover:underline mt-2 inline-block">
-              ← Back to search
-            </Link>
+            <button onClick={handleBack} className="text-blue-600 hover:underline mt-2 inline-block">
+              ← Back
+            </button>
           </div>
         </div>
       </div>
@@ -151,12 +157,12 @@ const LawyerDetail: React.FC = () => {
   const fullName = getFullName();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
-        <Link
-          to="/lawyers"
-          className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6"
+        <button
+          onClick={handleBack}
+          className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6 transition-colors"
         >
           <svg
             className="w-5 h-5 mr-1"
@@ -171,8 +177,8 @@ const LawyerDetail: React.FC = () => {
               d="M15 19l-7-7 7-7"
             />
           </svg>
-          Back to search
-        </Link>
+          Back
+        </button>
 
         {/* Main Profile Card */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">

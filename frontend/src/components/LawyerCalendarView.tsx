@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef } from 'react';
+import { lawyerApi } from '../services/lawyerApi';
 
 interface CalendarEvent {
   id: string;
@@ -21,43 +21,65 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<'week' | 'day'>('week');
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   useEffect(() => {
-    fetchEvents();
+    // Debounce API calls to prevent excessive requests
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchEvents();
+    }, 300);
+
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+    };
   }, [currentDate, view, refreshTrigger]);
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-
       const { startDate, endDate } = getDateRange();
 
-      const response = await axios.get('http://localhost:8000/api/lawyer/google/events', {
-        params: {
-          start_date: startDate,
-          end_date: endDate,
-        },
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // Fetch both database appointments and Google Calendar events in parallel
+      const [dbResponse, googleResponse] = await Promise.allSettled([
+        lawyerApi.getCalendarAppointments(startDate, endDate),
+        lawyerApi.getGoogleCalendarEvents(startDate, endDate),
+      ]);
 
-      console.log('📅 Calendar Events Fetched:', response.data.events);
-      console.log('📅 Total Events:', response.data.events.length);
+      let allEvents: CalendarEvent[] = [];
 
-      // Log consultation appointments separately
-      const consultationEvents = response.data.events.filter((e: CalendarEvent) =>
-        e.summary.startsWith('Consultation -')
-      );
-      console.log('👤 Consultation Appointments:', consultationEvents);
+      // Process database appointments
+      if (dbResponse.status === 'fulfilled') {
+        allEvents = [...dbResponse.value.events];
+      } else {
+        console.error('Failed to fetch database appointments:', dbResponse.reason);
+      }
 
-      setEvents(response.data.events);
+      // Process Google Calendar events - DISABLED for now to show only database events
+      // if (googleResponse.status === 'fulfilled') {
+      //   // Filter out consultation events from Google Calendar since we have them from database
+      //   const googleEvents = googleResponse.value.events.filter((e: CalendarEvent) => {
+      //     const summary = e.summary?.toLowerCase() || '';
+      //     return !summary.includes('consultation');
+      //   });
+      //   allEvents = [...allEvents, ...googleEvents];
+      // }
+
+      setEvents(allEvents);
     } catch (err: any) {
       console.error('Failed to fetch events:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load calendar events';
+
       if (onError) {
-        onError('Failed to load calendar events');
+        onError(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -111,23 +133,7 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
       const eventDate = event.start.split('T')[0];
       const eventHour = eventStart.getHours();
 
-      const matches = eventDate === dateStr && eventHour === hour;
-
-      // Debug log for ALL events to catch timezone issues
-      if (event.summary.startsWith('Consultation -')) {
-        console.log(`🔍 Consultation Event Debug:`, {
-          summary: event.summary,
-          rawStart: event.start,
-          parsedDate: eventStart,
-          extractedDate: eventDate,
-          extractedHour: eventHour,
-          slotDate: dateStr,
-          slotHour: hour,
-          matches: matches
-        });
-      }
-
-      return matches;
+      return eventDate === dateStr && eventHour === hour;
     });
 
     return filteredEvents;
@@ -171,7 +177,7 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
       '5': 'bg-yellow-100 border-yellow-400 text-yellow-800',
       '6': 'bg-orange-100 border-orange-400 text-orange-800',
       '7': 'bg-cyan-100 border-cyan-400 text-cyan-800',
-      '8': 'bg-gray-100 border-gray-400 text-gray-800',
+      '8': 'bg-teal-100 border-teal-400 text-teal-800',
       '9': 'bg-indigo-100 border-indigo-400 text-indigo-800',
       '10': 'bg-emerald-100 border-emerald-400 text-emerald-800',
       '11': 'bg-rose-100 border-rose-400 text-rose-800',
@@ -184,16 +190,16 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
   const hours = Array.from({ length: 13 }, (_, i) => i + 8);
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden">
-      <div className="p-6 border-b border-gray-200 bg-gray-50">
+    <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
+      <div className="p-6 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-slate-800">
               {months[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h2>
             <button
               onClick={goToToday}
-              className="px-4 py-2 text-sm font-semibold text-blue-600 bg-white border-2 border-blue-600 rounded-xl hover:bg-blue-50 transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-blue-600 bg-white border-2 border-blue-600 rounded-xl hover:bg-blue-50 transition-colors shadow-sm"
             >
               Today
             </button>
@@ -202,7 +208,7 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
           <div className="flex items-center gap-3">
             <button
               onClick={navigatePrevious}
-              className="p-3 text-gray-700 bg-white hover:bg-gray-100 rounded-xl transition-colors border border-gray-200"
+              className="p-3 text-slate-700 bg-white hover:bg-blue-50 rounded-xl transition-colors border border-blue-200 shadow-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -210,7 +216,7 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
             </button>
             <button
               onClick={navigateNext}
-              className="p-3 text-gray-700 bg-white hover:bg-gray-100 rounded-xl transition-colors border border-gray-200"
+              className="p-3 text-slate-700 bg-white hover:bg-blue-50 rounded-xl transition-colors border border-blue-200 shadow-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -225,7 +231,7 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
             className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all ${
               view === 'week'
                 ? 'bg-blue-600 text-white shadow-md'
-                : 'text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50'
+                : 'text-slate-700 bg-white border-2 border-slate-300 hover:border-blue-300 hover:bg-blue-50'
             }`}
           >
             Week View
@@ -235,7 +241,7 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
             className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all ${
               view === 'day'
                 ? 'bg-blue-600 text-white shadow-md'
-                : 'text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50'
+                : 'text-slate-700 bg-white border-2 border-slate-300 hover:border-blue-300 hover:bg-blue-50'
             }`}
           >
             Day View
@@ -250,18 +256,18 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
       ) : view === 'week' ? (
         <div className="overflow-x-auto">
           <div className="min-w-[800px]">
-            <div className="grid grid-cols-8 border-b border-gray-200">
-              <div className="p-2 text-xs font-medium text-gray-500 border-r border-gray-200">Time</div>
+            <div className="grid grid-cols-8 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+              <div className="p-2 text-xs font-medium text-slate-600 border-r border-slate-200">Time</div>
               {weekDays.map((date, index) => (
                 <div
                   key={index}
-                  className={`p-2 text-center border-r border-gray-200 ${
-                    formatDate(date) === formatDate(new Date()) ? 'bg-blue-50' : ''
+                  className={`p-2 text-center border-r border-slate-200 ${
+                    formatDate(date) === formatDate(new Date()) ? 'bg-blue-100' : ''
                   }`}
                 >
-                  <div className="text-xs font-medium text-gray-500">{days[date.getDay()]}</div>
+                  <div className="text-xs font-medium text-slate-600">{days[date.getDay()]}</div>
                   <div className={`text-lg font-bold ${
-                    formatDate(date) === formatDate(new Date()) ? 'text-blue-600' : 'text-gray-900'
+                    formatDate(date) === formatDate(new Date()) ? 'text-blue-600' : 'text-slate-800'
                   }`}>
                     {date.getDate()}
                   </div>
@@ -269,10 +275,10 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
               ))}
             </div>
 
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-slate-200">
               {hours.map(hour => (
-                <div key={hour} className="grid grid-cols-8">
-                  <div className="p-2 text-xs text-gray-500 border-r border-gray-200">
+                <div key={hour} className="grid grid-cols-8 hover:bg-slate-50/50 transition-colors">
+                  <div className="p-2 text-xs text-slate-600 font-medium border-r border-slate-200 bg-slate-50/50">
                     {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
                   </div>
                   {weekDays.map((date, dayIndex) => {
@@ -280,8 +286,8 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
                     return (
                       <div
                         key={dayIndex}
-                        className={`p-1 min-h-[60px] border-r border-gray-200 ${
-                          formatDate(date) === formatDate(new Date()) ? 'bg-blue-50/30' : ''
+                        className={`p-1 min-h-[60px] border-r border-slate-200 ${
+                          formatDate(date) === formatDate(new Date()) ? 'bg-blue-50/40' : ''
                         }`}
                       >
                         {dayEvents.map(event => (
@@ -306,8 +312,8 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
         </div>
       ) : (
         <div className="p-4">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">
+          <div className="text-center mb-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg">
+            <h3 className="text-lg font-bold text-slate-800">
               {days[currentDate.getDay()]}, {months[currentDate.getMonth()]} {currentDate.getDate()}, {currentDate.getFullYear()}
             </h3>
           </div>
@@ -315,22 +321,22 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
             {hours.map(hour => {
               const hourEvents = getEventsForTimeSlot(currentDate, hour);
               return (
-                <div key={hour} className="flex gap-4 border-b border-gray-200 pb-2">
-                  <div className="w-20 text-sm text-gray-500 pt-1">
+                <div key={hour} className="flex gap-4 border-b border-slate-200 pb-2 hover:bg-slate-50/50 transition-colors">
+                  <div className="w-20 text-sm text-slate-600 font-medium pt-1">
                     {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
                   </div>
                   <div className="flex-1 min-h-[40px]">
                     {hourEvents.map(event => (
                       <div
                         key={event.id}
-                        className={`p-2 mb-2 rounded border-l-4 ${getEventColor(event)}`}
+                        className={`p-2 mb-2 rounded-lg border-l-4 ${getEventColor(event)} shadow-sm`}
                       >
                         <div className="font-medium">{event.summary}</div>
                         <div className="text-xs mt-1">
                           {formatTime(event.start)} - {formatTime(event.end)}
                         </div>
                         {event.description && (
-                          <div className="text-xs mt-1 text-gray-600">{event.description}</div>
+                          <div className="text-xs mt-1 text-slate-600">{event.description}</div>
                         )}
                       </div>
                     ))}
@@ -343,17 +349,17 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
       )}
 
       {events.some(e => e.is_all_day) && (
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="text-sm font-medium text-gray-700 mb-2">All-day events</div>
+        <div className="p-4 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+          <div className="text-sm font-medium text-slate-700 mb-2">All-day events</div>
           <div className="space-y-1">
             {events.filter(e => e.is_all_day).map(event => (
               <div
                 key={event.id}
-                className={`p-2 rounded border-l-4 ${getEventColor(event)}`}
+                className={`p-2 rounded-lg border-l-4 ${getEventColor(event)} shadow-sm`}
               >
                 <div className="font-medium text-sm">{event.summary}</div>
                 {event.description && (
-                  <div className="text-xs mt-1 text-gray-600">{event.description}</div>
+                  <div className="text-xs mt-1 text-slate-600">{event.description}</div>
                 )}
               </div>
             ))}

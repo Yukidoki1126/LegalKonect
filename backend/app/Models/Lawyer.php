@@ -32,6 +32,21 @@ class Lawyer extends Model
         'google_token_expires_at',
         'google_calendar_id',
         'google_calendar_connected',
+        'verification_status',
+        'ibp_number',
+        'roll_of_attorneys_number',
+        'prc_license_number',
+        'verification_documents',
+        'verification_notes',
+        'verified_at',
+        'verified_by',
+        // Payout fields
+        'gcash_number',
+        'gcash_account_name',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_name',
+        'preferred_payout_method',
     ];
 
     protected $casts = [
@@ -43,6 +58,12 @@ class Lawyer extends Model
         'is_available' => 'boolean',
         'google_calendar_connected' => 'boolean',
         'google_token_expires_at' => 'datetime',
+        'verification_documents' => 'array',
+        'verified_at' => 'datetime',
+        // Encrypted sensitive verification fields
+        'ibp_number' => 'encrypted',
+        'roll_of_attorneys_number' => 'encrypted',
+        'prc_license_number' => 'encrypted',
     ];
 
     // Relationship with User
@@ -73,6 +94,42 @@ class Lawyer extends Model
     public function scopeAvailable($query)
     {
         return $query->where('is_available', true);
+    }
+
+    // Scope for verified lawyers only
+    public function scopeVerified($query)
+    {
+        return $query->where('verification_status', 'verified');
+    }
+
+    // Scope for pending verification
+    public function scopePendingVerification($query)
+    {
+        return $query->where('verification_status', 'pending');
+    }
+
+    // Relationship: Admin who verified this lawyer
+    public function verifiedBy()
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    // Helper: Check if lawyer is verified
+    public function isVerified()
+    {
+        return $this->verification_status === 'verified';
+    }
+
+    // Helper: Check if verification is pending
+    public function isPendingVerification()
+    {
+        return $this->verification_status === 'pending';
+    }
+
+    // Helper: Check if verification was rejected
+    public function isRejected()
+    {
+        return $this->verification_status === 'rejected';
     }
 
     
@@ -124,5 +181,55 @@ public function totalEarnings()
 public function reviews()
 {
     return $this->hasMany(Review::class);
+}
+
+// Earnings relationships
+public function earnings()
+{
+    return $this->hasMany(Earning::class);
+}
+
+// Payouts relationships
+public function payouts()
+{
+    return $this->hasMany(Payout::class);
+}
+
+// Helper: Get available balance (completed earnings - paid payouts)
+public function getAvailableBalanceAttribute()
+{
+    $totalEarnings = $this->earnings()
+        ->where('status', 'completed')
+        ->sum('net_amount');
+
+    $totalPayouts = $this->payouts()
+        ->whereIn('status', ['approved', 'processing', 'paid'])
+        ->sum('amount');
+
+    return max(0, $totalEarnings - $totalPayouts);
+}
+
+// Helper: Get total platform fees
+public function getTotalPlatformFeesAttribute()
+{
+    return $this->earnings()
+        ->where('status', 'completed')
+        ->sum('platform_fee');
+}
+
+// Helper: Get total earnings (net amount)
+public function getTotalNetEarningsAttribute()
+{
+    return $this->earnings()
+        ->where('status', 'completed')
+        ->sum('net_amount');
+}
+
+// Helper: Get pending payout requests
+public function getPendingPayoutsAttribute()
+{
+    return $this->payouts()
+        ->where('status', 'pending')
+        ->sum('amount');
 }
 }

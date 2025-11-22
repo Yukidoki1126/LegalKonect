@@ -7,6 +7,8 @@ use App\Models\Specialization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Services\LawyerVerificationService;
+use App\Services\EncryptionService;
 
 class LawyerController extends Controller
 {
@@ -35,6 +37,8 @@ class LawyerController extends Controller
                 'consultation_fee' => $lawyer->hourly_rate,
                 'years_experience' => $lawyer->years_experience,
                 'office_address' => $lawyer->office_address,
+                'office_latitude' => $lawyer->office_latitude,
+                'office_longitude' => $lawyer->office_longitude,
                 'created_at' => $lawyer->created_at,
             ];
         });
@@ -52,8 +56,32 @@ class LawyerController extends Controller
             ->approved()
             ->findOrFail($id);
 
+        // Ensure all fields including coordinates are returned
+        $transformedLawyer = [
+            'id' => $lawyer->id,
+            'user_id' => $lawyer->user_id,
+            'first_name' => $lawyer->first_name,
+            'last_name' => $lawyer->last_name,
+            'bio' => $lawyer->bio,
+            'profile_photo' => $lawyer->profile_photo,
+            'license_number' => $lawyer->license_number,
+            'years_experience' => $lawyer->years_experience,
+            'hourly_rate' => $lawyer->hourly_rate,
+            'office_address' => $lawyer->office_address,
+            'office_phone' => $lawyer->office_phone,
+            'office_latitude' => $lawyer->office_latitude,
+            'office_longitude' => $lawyer->office_longitude,
+            'is_approved' => $lawyer->status === 'approved',
+            'status' => $lawyer->status,
+            'is_available' => $lawyer->is_available,
+            'rating' => $lawyer->rating ?? 0,
+            'total_reviews' => $lawyer->total_reviews ?? 0,
+            'user' => $lawyer->user,
+            'specializations' => $lawyer->specializations,
+        ];
+
         return response()->json([
-            'lawyer' => $lawyer
+            'lawyer' => $transformedLawyer
         ]);
     }
 
@@ -71,20 +99,48 @@ class LawyerController extends Controller
 
 public function createProfile(Request $request)
 {
-    $validated = $request->validate([
-        'first_name' => 'required|string|max:255',
-        'last_name' => 'required|string|max:255',
-        'bio' => 'required|string|min:50',
-        'license_number' => 'required|string|unique:lawyers',
-        'years_experience' => 'required|integer|min:0',
-        'hourly_rate' => 'required|numeric|min:0',
-        'office_address' => 'required|string',
-        'office_phone' => 'required|string',
-        'office_latitude' => 'nullable|numeric',
-        'office_longitude' => 'nullable|numeric',
-        'specialization_ids' => 'required|array|min:1',
-        'specialization_ids.*' => 'exists:specializations,id'
-    ]);
+    try {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'bio' => 'required|string|min:50',
+            'license_number' => 'required|string|unique:lawyers',
+            'years_experience' => 'required|integer|min:0',
+            'hourly_rate' => 'required|numeric|min:0',
+            'office_address' => 'required|string',
+            'office_phone' => 'nullable|string',
+            'office_latitude' => 'nullable|numeric',
+            'office_longitude' => 'nullable|numeric',
+            'specialization_ids' => 'required|array|min:1',
+            'specialization_ids.*' => 'exists:specializations,id',
+            // Verification credentials
+            'ibp_number' => 'required|string|max:50',
+            'roll_of_attorneys_number' => 'nullable|string|max:50',
+            'prc_license_number' => 'nullable|string|max:50',
+            // Document uploads (20MB limit)
+            'ibp_card' => 'required|file|mimes:jpg,jpeg,png,pdf|max:20480',
+            'prc_license' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:20480',
+            'government_id' => 'required|file|mimes:jpg,jpeg,png,pdf|max:20480',
+            'good_standing_cert' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:20480',
+        ], [
+            'government_id.max' => 'The government ID file size exceeds 20MB. Please compress or resize your image.',
+            'ibp_card.max' => 'The IBP card file size exceeds 20MB. Please compress or resize your image.',
+            'prc_license.max' => 'The PRC license file size exceeds 20MB. Please compress or resize your image.',
+            'good_standing_cert.max' => 'The certificate file size exceeds 20MB. Please compress or resize your image.',
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        \Log::error('Lawyer registration validation failed', [
+            'errors' => $e->errors(),
+            'request_data' => $request->except(['ibp_card', 'prc_license', 'government_id', 'good_standing_cert']),
+            'files' => [
+                'ibp_card' => $request->hasFile('ibp_card') ? 'present' : 'missing',
+                'prc_license' => $request->hasFile('prc_license') ? 'present' : 'missing',
+                'government_id' => $request->hasFile('government_id') ? 'present' : 'missing',
+                'good_standing_cert' => $request->hasFile('good_standing_cert') ? 'present' : 'missing',
+            ]
+        ]);
+        throw $e;
+    }
 
     // Check if user already has a lawyer profile
     if ($request->user()->lawyer) {
@@ -93,25 +149,61 @@ public function createProfile(Request $request)
         ], 422);
     }
 
+    // Create lawyer profile first
     $lawyer = Lawyer::create([
-    'user_id' => $request->user()->id,
-    'first_name' => $validated['first_name'],
-    'last_name' => $validated['last_name'],
-    'bio' => $validated['bio'],
-    'license_number' => $validated['license_number'],
-    'years_experience' => $validated['years_experience'],
-    'hourly_rate' => $validated['hourly_rate'],
-    'office_address' => $validated['office_address'],
-    'office_phone' => $validated['office_phone'],
-    'office_latitude' => $validated['office_latitude'] ?? null,
-    'office_longitude' => $validated['office_longitude'] ?? null,
-    'status' => 'pending'
-]);
+        'user_id' => $request->user()->id,
+        'first_name' => $validated['first_name'],
+        'last_name' => $validated['last_name'],
+        'bio' => $validated['bio'],
+        'license_number' => $validated['license_number'],
+        'years_experience' => $validated['years_experience'],
+        'hourly_rate' => $validated['hourly_rate'],
+        'office_address' => $validated['office_address'],
+        'office_phone' => $validated['office_phone'] ?? null,
+        'office_latitude' => $validated['office_latitude'] ?? 0,
+        'office_longitude' => $validated['office_longitude'] ?? 0,
+        'status' => 'pending',
+        'verification_status' => 'pending',
+        'ibp_number' => $validated['ibp_number'],
+        'roll_of_attorneys_number' => $validated['roll_of_attorneys_number'] ?? null,
+        'prc_license_number' => $validated['prc_license_number'] ?? null,
+    ]);
 
+    // Attach specializations
     $lawyer->specializations()->sync($validated['specialization_ids']);
 
+    // Upload verification documents
+    $encryptionService = app(EncryptionService::class);
+    $verificationService = new LawyerVerificationService($encryptionService);
+    $documents = [];
+
+    if ($request->hasFile('ibp_card')) {
+        $documents['ibp_card'] = $request->file('ibp_card');
+    }
+    if ($request->hasFile('prc_license')) {
+        $documents['prc_license'] = $request->file('prc_license');
+    }
+    if ($request->hasFile('government_id')) {
+        $documents['government_id'] = $request->file('government_id');
+    }
+    if ($request->hasFile('good_standing_cert')) {
+        $documents['good_standing_cert'] = $request->file('good_standing_cert');
+    }
+
+    try {
+        $uploadedPaths = $verificationService->uploadVerificationDocuments($documents, $lawyer->id);
+        $lawyer->update(['verification_documents' => $uploadedPaths]);
+    } catch (\Exception $e) {
+        // If document upload fails, delete the lawyer profile and return error
+        $lawyer->delete();
+        return response()->json([
+            'message' => 'Failed to upload verification documents',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+
     return response()->json([
-        'message' => 'Lawyer profile created successfully',
+        'message' => 'Lawyer profile created successfully. Your application is pending admin verification.',
         'lawyer' => $lawyer->load('specializations')
     ], 201);
 }

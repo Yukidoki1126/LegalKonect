@@ -155,17 +155,10 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
-
-          {/* Info Message */}
-          <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              ℹ️ Your review will be visible after admin approval
-            </p>
-          </div>
 
           {/* Actions */}
           <div className="flex gap-3">

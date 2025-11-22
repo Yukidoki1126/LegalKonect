@@ -47,6 +47,7 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
   const [address, setAddress] = useState(initialAddress || '');
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isMapLocked, setIsMapLocked] = useState(true); // Lock map by default to prevent accidental clicks
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
@@ -91,6 +92,11 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
 
   const onMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
+      // Only allow clicks if map is unlocked
+      if (isMapLocked) {
+        return;
+      }
+
       if (e.latLng) {
         const lat = Number(e.latLng.lat());
         const lng = Number(e.latLng.lng());
@@ -109,7 +115,7 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
         });
       }
     },
-    [onLocationChange]
+    [onLocationChange, isMapLocked]
   );
 
   const getCurrentLocation = () => {
@@ -221,44 +227,46 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Search Box */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Search Location or Click on Map <span className="text-red-500">*</span>
-        </label>
-        <div className="flex gap-2">
-          {isLoaded && (
-            <Autocomplete
-              onLoad={onAutocompleteLoad}
-              onPlaceChanged={onPlaceChanged}
-              className="flex-1"
-            >
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Search for your office location..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </Autocomplete>
-          )}
-          <button
-            type="button"
-            onClick={getCurrentLocation}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="hidden md:inline">Use Current Location</span>
-            <span className="md:hidden">Current</span>
-          </button>
-        </div>
+      {/* Map Controls */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setIsMapLocked(!isMapLocked)}
+          className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+            isMapLocked
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-yellow-600 text-white hover:bg-yellow-700'
+          }`}
+        >
+          {isMapLocked ? 'Edit Map' : 'Done Editing'}
+        </button>
+        <button
+          type="button"
+          onClick={getCurrentLocation}
+          className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>Use Current Location</span>
+        </button>
       </div>
 
       {/* Map */}
-      <div className="border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+      <div className={`border border-gray-300 rounded-lg overflow-hidden shadow-sm relative ${isMapLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+        {isMapLocked && (
+          <div className="absolute inset-0 bg-gray-900 bg-opacity-5 z-10 flex items-center justify-center pointer-events-none">
+            <div className="bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-300">
+              <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+                Click "Edit Map" to change location
+              </p>
+            </div>
+          </div>
+        )}
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
           center={center}
@@ -270,6 +278,7 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
             streetViewControl: false,
             mapTypeControl: false,
             fullscreenControl: true,
+            gestureHandling: isMapLocked ? 'none' : 'greedy',
           }}
         >
           {markerPosition && (
@@ -318,10 +327,9 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
           <div className="flex-1">
             <p className="text-xs text-gray-700 font-medium mb-1">How to pin your office location:</p>
             <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-              <li>Search for your office address in the search box</li>
-              <li>Click "Use Current Location" if you're at your office (may show approximate address)</li>
-              <li>Or click anywhere on the map to manually pin your exact location</li>
-              <li>The pin location is what matters - you can edit the address text if needed</li>
+              <li>Click "Use Current Location" if you're at your office to get your coordinates</li>
+              <li>Or unlock the map and click anywhere to manually pin your exact location</li>
+              <li>Make sure the pin is placed at your actual office address</li>
             </ul>
           </div>
         </div>

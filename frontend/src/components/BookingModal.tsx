@@ -28,8 +28,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
   const [meetingType, setMeetingType] = useState('in-person');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [showRedirectScreen, setShowRedirectScreen] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
   // Ref to track the current AbortController for request cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -126,9 +127,24 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
+  // Handle countdown and redirect
+  useEffect(() => {
+    if (showRedirectScreen && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (showRedirectScreen && countdown === 0) {
+      // Redirect to payment page
+      const appointmentId = (window as any).pendingAppointmentId;
+      onClose();
+      window.location.href = `/appointments/${appointmentId}/payment`;
+    }
+  }, [showRedirectScreen, countdown, onClose]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedDate || !selectedTime) {
       setError('Please select both date and time');
       return;
@@ -146,11 +162,20 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
         meeting_type: meetingType,
       });
 
-      setSuccess(true);
-      setTimeout(() => {
-        onClose();
-        window.location.href = '/appointments';
-      }, 2000);
+      const appointmentId = response.data.id || response.data.appointment?.id;
+
+      // Cancel any pending calendar requests to prevent errors during redirect
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Show redirect screen with countdown
+      setLoading(false);
+      setShowRedirectScreen(true);
+      setCountdown(3);
+
+      // Store appointmentId for redirect
+      (window as any).pendingAppointmentId = appointmentId;
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Failed to book appointment';
       setError(errorMessage);
@@ -171,7 +196,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
     setClientNotes('');
     setMeetingType('in-person');
     setError('');
-    setSuccess(false);
     setAvailableSlots([]);
   };
 
@@ -214,22 +238,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
 
         {/* Body */}
         <div className="p-6">
-          {success ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Appointment Booked Successfully!
-              </h3>
-              <p className="text-gray-600">
-                Redirecting to your appointments...
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* LEFT COLUMN */}
                 <div className="space-y-5">
@@ -301,24 +310,31 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Meeting Type
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {[
-                        { value: 'in-person', icon: '🏢', label: 'In-Person' },
-                        { value: 'video', icon: '💻', label: 'Video Call' },
-                        { value: 'phone', icon: '📞', label: 'Phone' }
+                        { value: 'in-person', icon: '🏢', label: 'In-Person', disabled: false },
+                        { value: 'video', icon: '💻', label: 'Video Call', badge: 'Coming Soon', disabled: true }
                       ].map((type) => (
                         <button
                           key={type.value}
                           type="button"
-                          onClick={() => setMeetingType(type.value)}
-                          className={`px-3 py-2 rounded-lg border-2 text-xs font-semibold transition-all flex flex-col items-center gap-1 ${
-                            meetingType === type.value
+                          onClick={() => !type.disabled && setMeetingType(type.value)}
+                          disabled={type.disabled}
+                          className={`px-3 py-2 rounded-lg border-2 text-xs font-semibold transition-all flex flex-col items-center gap-1 relative ${
+                            meetingType === type.value && !type.disabled
                               ? 'border-blue-600 bg-blue-600 text-white shadow-md'
+                              : type.disabled
+                              ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
                               : 'border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50 text-gray-700'
                           }`}
                         >
                           <span className="text-xl">{type.icon}</span>
                           <span>{type.label}</span>
+                          {type.badge && (
+                            <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                              {type.badge}
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -387,9 +403,50 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                 </div>
               </div>
             </form>
-          )}
         </div>
       </div>
+
+      {/* Redirect Screen with Countdown */}
+      {showRedirectScreen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 text-center shadow-2xl">
+            {/* Success Icon */}
+            <div className="mb-6">
+              <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Success Message */}
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Booking Successful!
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Your appointment has been booked successfully.
+            </p>
+
+            {/* Countdown */}
+            <div className="mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-3">
+                <span className="text-3xl font-bold text-blue-600">{countdown}</span>
+              </div>
+              <p className="text-sm text-gray-600">
+                Redirecting to payment page...
+              </p>
+            </div>
+
+            {/* Loading Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-blue-600 h-full rounded-full transition-all duration-1000"
+                style={{ width: `${((3 - countdown) / 3) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

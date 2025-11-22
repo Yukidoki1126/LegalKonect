@@ -136,6 +136,40 @@ class CaseTodoController extends Controller
     }
 
     /**
+     * Toggle todo completion status
+     */
+    public function toggle($caseId, $todoId)
+    {
+        $case = CaseModel::findOrFail($caseId);
+        $todo = CaseTodo::where('case_id', $caseId)->findOrFail($todoId);
+
+        $user = Auth::user();
+
+        // Check if user has permission to toggle
+        $isLawyer = $user->lawyer && $case->lawyer_id == $user->lawyer->id;
+        $isClient = $case->user_id == $user->id;
+
+        if (!$isLawyer && !$isClient) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Toggle the completion status
+        if ($todo->is_completed) {
+            $todo->markAsIncomplete();
+        } else {
+            $todo->markAsCompleted();
+        }
+
+        // Touch the case to update its updated_at timestamp
+        $case->touch();
+
+        return response()->json([
+            'message' => 'Todo status toggled successfully',
+            'todo' => $todo->fresh()
+        ]);
+    }
+
+    /**
      * Delete a todo (Lawyer only)
      */
     public function destroy($caseId, $todoId)

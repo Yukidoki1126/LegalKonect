@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\Earning;
 use App\Services\PaymongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Mail\AppointmentBooked;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PaymentReceipt;
-use Illuminate\Support\Facades\Cache;  // Add this import
+use Illuminate\Support\Facades\Cache;
 
 
 class PaymentController extends Controller
@@ -226,6 +227,9 @@ class PaymentController extends Controller
                     'status' => 'confirmed'
                 ]);
 
+                // Create earning record for lawyer
+                $this->createEarningRecord($appointment);
+
                 // Clear admin caches
                 $this->clearPaymentCaches();
 
@@ -301,6 +305,9 @@ class PaymentController extends Controller
                         'payment_status' => 'paid',
                         'status' => 'confirmed'
                     ]);
+
+                    // Create earning record for lawyer
+                    $this->createEarningRecord($appointment);
 
                     // Clear admin caches
                     $this->clearPaymentCaches();
@@ -427,6 +434,9 @@ class PaymentController extends Controller
                     'status' => 'confirmed'
                 ]);
 
+                // Create earning record for lawyer
+                $this->createEarningRecord($appointment);
+
                 // Clear admin caches
                 $this->clearPaymentCaches();
 
@@ -460,10 +470,61 @@ class PaymentController extends Controller
     private function clearPaymentCaches()
     {
         Cache::forget('admin_dashboard_stats');
-        
+
         // Clear payment cache pages
         for ($i = 1; $i <= 10; $i++) {
             Cache::forget("admin_payments_page_{$i}");
+        }
+    }
+
+    /**
+     * Create earning record for completed payment
+     * Automatically splits payment: 80% to lawyer, 20% to platform
+     */
+    private function createEarningRecord(Appointment $appointment)
+    {
+        try {
+            // Check if earning already exists for this appointment
+            $existingEarning = Earning::where('appointment_id', $appointment->id)->first();
+            if ($existingEarning) {
+                Log::info('Earning record already exists', ['appointment_id' => $appointment->id]);
+                return $existingEarning;
+            }
+
+            $grossAmount = $appointment->consultation_fee;
+            $platformFeePercentage = config('app.platform_fee_percentage', 20.00); // 20% default
+            $platformFee = $grossAmount * ($platformFeePercentage / 100);
+            $netAmount = $grossAmount - $platformFee;
+
+            $earning = Earning::create([
+                'lawyer_id' => $appointment->lawyer_id,
+                'appointment_id' => $appointment->id,
+                'gross_amount' => $grossAmount,
+                'platform_fee' => $platformFee,
+                'net_amount' => $netAmount,
+                'platform_fee_percentage' => $platformFeePercentage,
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+
+            Log::info('Earning record created', [
+                'earning_id' => $earning->id,
+                'lawyer_id' => $appointment->lawyer_id,
+                'gross_amount' => $grossAmount,
+                'platform_fee' => $platformFee,
+                'net_amount' => $netAmount,
+            ]);
+
+            return $earning;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create earning record', [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Don't throw - payment already succeeded, just log the error
+            return null;
         }
     }
 }

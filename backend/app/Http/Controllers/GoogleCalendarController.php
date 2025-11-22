@@ -184,6 +184,8 @@ class GoogleCalendarController extends Controller
 
     /**
      * Sync weekly schedules to Google Calendar
+     * DISABLED: Availability is no longer synced to Google Calendar
+     * Only actual consultations are synced
      */
     public function syncSchedules()
     {
@@ -204,36 +206,21 @@ class GoogleCalendarController extends Controller
                 ], 400);
             }
 
-            // Get all active schedules for this lawyer
-            $schedules = \DB::table('lawyer_schedules')
-                ->where('lawyer_id', $lawyer->id)
-                ->where('is_active', true)
-                ->get()
-                ->toArray();
-
-            // Convert to array format
-            $schedulesArray = array_map(function($schedule) {
-                return (array) $schedule;
-            }, $schedules);
-
-            // Sync to Google Calendar
-            $success = $this->googleCalendarService->syncWeeklySchedule($lawyer, $schedulesArray);
-
-            if ($success) {
-                return response()->json([
-                    'message' => 'Schedules synced to Google Calendar successfully'
-                ]);
-            } else {
-                return response()->json([
-                    'message' => 'Failed to sync schedules to Google Calendar'
-                ], 500);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Failed to sync schedules', ['error' => $e->getMessage()]);
+            // No longer syncing availability blocks to Google Calendar
+            // Only actual booked consultations will appear on the calendar
+            Log::info('syncSchedules endpoint called but disabled', [
+                'lawyer_id' => $lawyer->id
+            ]);
 
             return response()->json([
-                'message' => 'Failed to sync schedules'
+                'message' => 'Availability schedules are managed in the database only. Only confirmed consultations will appear on your Google Calendar.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to process sync schedules request', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'message' => 'Failed to process request'
             ], 500);
         }
     }

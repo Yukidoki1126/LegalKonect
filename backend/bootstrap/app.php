@@ -6,6 +6,9 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\AuthenticationException;
 use App\Http\Middleware\EnsureLawyer;
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\IsSuperAdmin;
+use App\Http\Middleware\IsAdmin;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'lawyer' => EnsureLawyer::class,
             'admin' => EnsureAdmin::class,
+            'role' => CheckRole::class,
+            'superadmin' => IsSuperAdmin::class,
+            'isadmin' => IsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

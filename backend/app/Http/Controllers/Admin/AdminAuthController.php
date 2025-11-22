@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Admin;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +20,10 @@ class AdminAuthController extends Controller
             'password' => 'required',
         ]);
 
-        $admin = Admin::where('email', $request->email)->first();
+        // Find user with admin or super_admin role
+        $admin = User::where('email', $request->email)
+            ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])
+            ->first();
 
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             throw ValidationException::withMessages([
@@ -28,9 +31,10 @@ class AdminAuthController extends Controller
             ]);
         }
 
-        if (!$admin->is_active) {
+        // Check if account is suspended
+        if ($admin->status === 'suspended') {
             throw ValidationException::withMessages([
-                'email' => ['Your admin account has been deactivated.'],
+                'email' => ['Your admin account has been suspended.'],
             ]);
         }
 
@@ -41,7 +45,14 @@ class AdminAuthController extends Controller
         $token = $admin->createToken('admin-token')->plainTextToken;
 
         return response()->json([
-            'admin' => $admin,
+            'admin' => [
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role' => $admin->role,
+                'status' => $admin->status,
+                'last_login_at' => $admin->last_login_at,
+            ],
             'token' => $token,
             'message' => 'Login successful'
         ]);
@@ -52,8 +63,17 @@ class AdminAuthController extends Controller
      */
     public function me(Request $request)
     {
+        $admin = $request->user();
+
         return response()->json([
-            'admin' => $request->user()
+            'admin' => [
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role' => $admin->role,
+                'status' => $admin->status,
+                'last_login_at' => $admin->last_login_at,
+            ]
         ]);
     }
 

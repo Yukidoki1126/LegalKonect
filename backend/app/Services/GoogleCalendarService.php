@@ -124,9 +124,18 @@ class GoogleCalendarService
 
             // Parse the appointment date and time correctly
             // appointment_date contains the date (e.g., "2025-11-06")
-            // appointment_time contains a datetime, but we only need the time part (e.g., "12:00:00")
+            // appointment_time should be a time string (e.g., "12:00:00")
             $appointmentDate = Carbon::parse($appointment->appointment_date)->format('Y-m-d');
-            $appointmentTime = Carbon::parse($appointment->appointment_time)->format('H:i:s');
+
+            // Extract just the time portion, handling both time strings and datetime strings
+            $timeString = $appointment->appointment_time;
+            if (strlen($timeString) > 8) {
+                // If it's a full datetime string, extract just the time part
+                $appointmentTime = Carbon::parse($timeString)->format('H:i:s');
+            } else {
+                // It's already a time string
+                $appointmentTime = $timeString;
+            }
 
             // Combine date and time
             $startDateTime = Carbon::parse($appointmentDate . ' ' . $appointmentTime, 'Asia/Manila');
@@ -262,210 +271,48 @@ class GoogleCalendarService
 
     /**
      * Get available time slots from Google Calendar
-     * Reads "Available" events from calendar to determine bookable slots
+     * DISABLED: No longer syncing availability to Google Calendar
+     * Use database schedules instead
      */
     public function getAvailableSlotsFromCalendar(Lawyer $lawyer, string $date): array
     {
-        try {
-            if (!$this->refreshTokenIfNeeded($lawyer)) {
-                return [];
-            }
-
-            $service = new Google_Service_Calendar($this->client);
-            $calendarId = $lawyer->google_calendar_id ?? 'primary';
-
-            // Get events for the specific date
-            $timeMin = Carbon::parse($date)->startOfDay()->toRfc3339String();
-            $timeMax = Carbon::parse($date)->endOfDay()->toRfc3339String();
-
-            $events = $service->events->listEvents($calendarId, [
-                'timeMin' => $timeMin,
-                'timeMax' => $timeMax,
-                'singleEvents' => true,
-                'orderBy' => 'startTime',
-            ]);
-
-            $availableSlots = [];
-
-            foreach ($events->getItems() as $event) {
-                // Look for events with "Available" or "Consultation Hours" in the summary
-                $summary = strtolower($event->getSummary() ?? '');
-
-                if (str_contains($summary, 'available') || str_contains($summary, 'consultation')) {
-                    $start = Carbon::parse($event->getStart()->getDateTime());
-                    $end = Carbon::parse($event->getEnd()->getDateTime());
-
-                    // Generate hourly slots
-                    $current = $start->copy();
-                    while ($current->lt($end)) {
-                        $availableSlots[] = [
-                            'time' => $current->format('H:i'),
-                            'formatted_time' => $current->format('g:i A') . ' - ' . $current->copy()->addHour()->format('g:i A'),
-                            'available' => true
-                        ];
-                        $current->addHour();
-                    }
-                }
-            }
-
-            return $availableSlots;
-
-        } catch (\Exception $e) {
-            Log::error('Failed to get available slots from Google Calendar', [
-                'lawyer_id' => $lawyer->id,
-                'date' => $date,
-                'error' => $e->getMessage()
-            ]);
-            return [];
-        }
+        // No longer reading availability from Google Calendar
+        // Return empty array to force fallback to database schedules
+        Log::info('getAvailableSlotsFromCalendar called but disabled - using database schedules instead', [
+            'lawyer_id' => $lawyer->id,
+            'date' => $date
+        ]);
+        return [];
     }
 
     /**
      * Sync lawyer's weekly schedule to Google Calendar as recurring availability blocks
+     * DISABLED: No longer syncing availability to Google Calendar
+     * Only actual consultations are synced now
      */
     public function syncWeeklySchedule(Lawyer $lawyer, array $schedules): bool
     {
-        try {
-            // Increase execution time for sync operation
-            set_time_limit(120); // 2 minutes
+        // No longer syncing availability blocks to Google Calendar
+        // Only actual booked consultations will appear on the calendar
+        Log::info('syncWeeklySchedule called but disabled - availability no longer synced to Google Calendar', [
+            'lawyer_id' => $lawyer->id,
+            'schedule_count' => count($schedules)
+        ]);
 
-            if (!$this->refreshTokenIfNeeded($lawyer)) {
-                Log::error('Cannot sync schedule: token refresh failed', ['lawyer_id' => $lawyer->id]);
-                return false;
-            }
-
-            $service = new Google_Service_Calendar($this->client);
-            $calendarId = $lawyer->google_calendar_id ?? 'primary';
-
-            // Get the next 4 weeks to create availability blocks
-            $startDate = Carbon::now()->startOfWeek();
-            $endDate = Carbon::now()->addWeeks(4)->endOfWeek();
-
-            // Delete all existing "Available for Consultations" events to prevent duplicates
-            Log::info('Deleting old availability blocks before sync', ['lawyer_id' => $lawyer->id]);
-            $this->deleteAvailabilityBlocks($lawyer, $startDate, $endDate);
-
-            $eventsCreated = 0;
-            foreach ($schedules as $schedule) {
-                if (!$schedule['is_active']) {
-                    continue;
-                }
-
-                // Map day of week to Carbon constant
-                $dayOfWeek = $this->getDayOfWeekNumber($schedule['day_of_week']);
-
-                // Create events for each occurrence of this day in the next 4 weeks
-                $currentDate = $startDate->copy();
-                while ($currentDate->lte($endDate)) {
-                    if ($currentDate->dayOfWeek === $dayOfWeek) {
-                        $eventStart = Carbon::parse($currentDate->toDateString() . ' ' . $schedule['start_time'], 'Asia/Manila');
-                        $eventEnd = Carbon::parse($currentDate->toDateString() . ' ' . $schedule['end_time'], 'Asia/Manila');
-
-                        // Skip if in the past
-                        if ($eventStart->isPast()) {
-                            $currentDate->addDay();
-                            continue;
-                        }
-
-                        // Create availability block event
-                        $event = new Google_Service_Calendar_Event([
-                            'summary' => 'Available for Consultations',
-                            'description' => 'LegalKonect availability window',
-                            'start' => new Google_Service_Calendar_EventDateTime([
-                                'dateTime' => $eventStart->toRfc3339String(),
-                                'timeZone' => 'Asia/Manila',
-                            ]),
-                            'end' => new Google_Service_Calendar_EventDateTime([
-                                'dateTime' => $eventEnd->toRfc3339String(),
-                                'timeZone' => 'Asia/Manila',
-                            ]),
-                            'transparency' => 'transparent', // Won't block time on calendar
-                            'colorId' => '2', // Sage green color for availability
-                        ]);
-
-                        try {
-                            $service->events->insert($calendarId, $event);
-                            $eventsCreated++;
-                        } catch (\Exception $e) {
-                            Log::warning('Failed to create availability event', [
-                                'lawyer_id' => $lawyer->id,
-                                'date' => $eventStart->toDateString(),
-                                'error' => $e->getMessage()
-                            ]);
-                        }
-                    }
-                    $currentDate->addDay();
-                }
-            }
-
-            Log::info('Weekly schedule synced to Google Calendar', [
-                'lawyer_id' => $lawyer->id,
-                'events_created' => $eventsCreated
-            ]);
-            return true;
-
-        } catch (\Exception $e) {
-            Log::error('Failed to sync weekly schedule', [
-                'lawyer_id' => $lawyer->id,
-                'error' => $e->getMessage()
-            ]);
-            return false;
-        }
+        // Return true to indicate successful "sync" (even though we're not doing anything)
+        return true;
     }
 
     /**
      * Delete all "Available for Consultations" blocks in the date range
-     * Used to prevent duplicates when re-syncing schedules
+     * DISABLED: No longer needed since we don't sync availability
      */
     private function deleteAvailabilityBlocks(Lawyer $lawyer, Carbon $startDate, Carbon $endDate): void
     {
-        try {
-            $service = new Google_Service_Calendar($this->client);
-            $calendarId = $lawyer->google_calendar_id ?? 'primary';
-
-            // Get all events in the date range
-            $timeMin = $startDate->toRfc3339String();
-            $timeMax = $endDate->toRfc3339String();
-
-            $events = $service->events->listEvents($calendarId, [
-                'timeMin' => $timeMin,
-                'timeMax' => $timeMax,
-                'singleEvents' => true,
-                'orderBy' => 'startTime',
-            ]);
-
-            $deletedCount = 0;
-            foreach ($events->getItems() as $event) {
-                $summary = $event->getSummary();
-                $description = $event->getDescription() ?? '';
-
-                // Delete only LegalKonect availability blocks
-                if ($summary === 'Available for Consultations' &&
-                    str_contains($description, 'LegalKonect availability window')) {
-                    try {
-                        $service->events->delete($calendarId, $event->getId());
-                        $deletedCount++;
-                    } catch (\Exception $e) {
-                        Log::warning('Failed to delete availability event', [
-                            'lawyer_id' => $lawyer->id,
-                            'event_id' => $event->getId(),
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-                }
-            }
-
-            Log::info('Deleted old availability blocks', [
-                'lawyer_id' => $lawyer->id,
-                'count' => $deletedCount
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Failed to delete availability blocks', [
-                'lawyer_id' => $lawyer->id,
-                'error' => $e->getMessage()
-            ]);
-        }
+        // No longer deleting availability blocks since we don't create them anymore
+        Log::info('deleteAvailabilityBlocks called but disabled', [
+            'lawyer_id' => $lawyer->id
+        ]);
     }
 
     /**

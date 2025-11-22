@@ -18,6 +18,17 @@ const AdminLawyers: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
+  const [notificationLawyerName, setNotificationLawyerName] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'suspend' | 'activate';
+    lawyerId: number;
+    lawyerName: string;
+    currentStatus: string;
+  } | null>(null);
 
   useEffect(() => {
     loadLawyers();
@@ -35,30 +46,69 @@ const AdminLawyers: React.FC = () => {
     }
   };
 
- const toggleAvailability = async (lawyerId: number, currentStatus: boolean) => {
+ const toggleAvailability = async (lawyerId: number, currentStatus: boolean, lawyerName: string) => {
   try {
     await adminApi.patch(`/lawyers/${lawyerId}/availability`, {
       is_available: !currentStatus
     });
     clearAdminCache(); // Clear frontend cache
+    setNotificationLawyerName(lawyerName);
+    setNotificationMessage(`Lawyer availability updated to ${!currentStatus ? 'Online' : 'Offline'}`);
+    setNotificationType('success');
+    setShowNotificationModal(true);
     loadLawyers(); // Reload the list
   } catch (error) {
     console.error('Error toggling availability:', error);
-    alert('Failed to update lawyer availability');
+    setNotificationMessage('Failed to update lawyer availability');
+    setNotificationType('error');
+    setShowNotificationModal(true);
   }
 };
 
-const toggleStatus = async (lawyerId: number, currentStatus: string) => {
-  const newStatus = currentStatus === 'approved' ? 'suspended' : 'approved';
+const showConfirmationModal = (lawyerId: number, currentStatus: string, lawyerName: string) => {
+  // Only allow suspending/activating lawyers (approval is done in Verifications page)
+  if (currentStatus !== 'approved' && currentStatus !== 'suspended') {
+    setNotificationMessage('Please use the Verifications page to approve pending lawyers');
+    setNotificationType('error');
+    setShowNotificationModal(true);
+    return;
+  }
+
+  const actionType = currentStatus === 'approved' ? 'suspend' : 'activate';
+  setConfirmAction({
+    type: actionType,
+    lawyerId,
+    lawyerName,
+    currentStatus
+  });
+  setShowConfirmModal(true);
+};
+
+const confirmToggleStatus = async () => {
+  if (!confirmAction) return;
+
+  const newStatus = confirmAction.currentStatus === 'approved' ? 'suspended' : 'approved';
+  const action = confirmAction.currentStatus === 'approved' ? 'suspended' : 'activated';
+
   try {
-    await adminApi.patch(`/lawyers/${lawyerId}/status`, {
+    await adminApi.patch(`/lawyers/${confirmAction.lawyerId}/status`, {
       status: newStatus
     });
     clearAdminCache(); // Clear frontend cache
+    setNotificationLawyerName(confirmAction.lawyerName);
+    setNotificationMessage(`Lawyer ${action} successfully`);
+    setNotificationType('success');
+    setShowConfirmModal(false);
+    setShowNotificationModal(true);
+    setConfirmAction(null);
     loadLawyers(); // Reload the list
   } catch (error) {
-    console.error('Error updating status:', error);
-    alert('Failed to update lawyer status');
+    console.error(`Error ${action}ing lawyer:`, error);
+    setNotificationMessage(`Failed to ${action === 'suspended' ? 'suspend' : 'activate'} lawyer`);
+    setNotificationType('error');
+    setShowConfirmModal(false);
+    setShowNotificationModal(true);
+    setConfirmAction(null);
   }
 };
 
@@ -258,7 +308,7 @@ const toggleStatus = async (lawyerId: number, currentStatus: string) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
-                        onClick={() => toggleAvailability(lawyer.id, lawyer.is_available)}
+                        onClick={() => toggleAvailability(lawyer.id, lawyer.is_available, lawyer.name)}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition ${
                           lawyer.is_available
                             ? 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -269,16 +319,25 @@ const toggleStatus = async (lawyerId: number, currentStatus: string) => {
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => toggleStatus(lawyer.id, lawyer.status)}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${
-                          lawyer.status === 'approved'
-                            ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                            : 'bg-green-50 text-green-600 hover:bg-green-100'
-                        }`}
-                      >
-                        {lawyer.status === 'approved' ? 'Suspend' : 'Approve'}
-                      </button>
+                      {lawyer.status === 'approved' ? (
+                        <button
+                          onClick={() => showConfirmationModal(lawyer.id, lawyer.status, lawyer.name)}
+                          className="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition"
+                        >
+                          Suspend
+                        </button>
+                      ) : lawyer.status === 'suspended' ? (
+                        <button
+                          onClick={() => showConfirmationModal(lawyer.id, lawyer.status, lawyer.name)}
+                          className="px-4 py-2 bg-green-50 text-green-600 rounded-lg font-medium hover:bg-green-100 transition"
+                        >
+                          Activate
+                        </button>
+                      ) : (
+                        <span className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm">
+                          Pending Verification
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -292,6 +351,130 @@ const toggleStatus = async (lawyerId: number, currentStatus: string) => {
       <div className="text-center text-gray-600 text-sm">
         Showing {filteredLawyers.length} of {(lawyers || []).length} lawyers
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && confirmAction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-xl">
+            <div className="p-6">
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-4">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                  confirmAction.type === 'suspend' ? 'bg-red-100' : 'bg-green-100'
+                }`}>
+                  <svg className={`w-8 h-8 ${
+                    confirmAction.type === 'suspend' ? 'text-red-600' : 'text-green-600'
+                  }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className={`text-xl font-bold text-center mb-2 ${
+                confirmAction.type === 'suspend' ? 'text-red-900' : 'text-green-900'
+              }`}>
+                Confirm {confirmAction.type === 'suspend' ? 'Suspension' : 'Activation'}
+              </h3>
+
+              {/* Message */}
+              <p className="text-gray-700 text-center mb-2">
+                Are you sure you want to {confirmAction.type} this lawyer?
+              </p>
+
+              {/* Lawyer Name */}
+              <p className="text-gray-900 font-semibold text-center mb-6">
+                {confirmAction.lawyerName}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setConfirmAction(null);
+                  }}
+                  className="flex-1 px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmToggleStatus}
+                  className={`flex-1 px-6 py-2 rounded-lg font-medium transition ${
+                    confirmAction.type === 'suspend'
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
+                >
+                  {confirmAction.type === 'suspend' ? 'Suspend' : 'Activate'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Modal */}
+      {showNotificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-xl">
+            <div className="p-6">
+              {/* Icon */}
+              <div className="flex justify-center mb-4">
+                {notificationType === 'success' ? (
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              {/* Title */}
+              <h3 className={`text-xl font-bold text-center mb-2 ${
+                notificationType === 'success' ? 'text-green-900' : 'text-red-900'
+              }`}>
+                {notificationType === 'success' ? 'Success!' : 'Error'}
+              </h3>
+
+              {/* Message */}
+              <p className="text-gray-700 text-center mb-2">
+                {notificationMessage}
+              </p>
+
+              {/* Lawyer Name */}
+              {notificationLawyerName && (
+                <p className="text-gray-900 font-semibold text-center mb-4">
+                  {notificationLawyerName}
+                </p>
+              )}
+
+              {/* Close Button */}
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={() => {
+                    setShowNotificationModal(false);
+                    setNotificationLawyerName('');
+                  }}
+                  className={`px-6 py-2 rounded-lg font-medium transition ${
+                    notificationType === 'success'
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                  }`}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </PageTransition>
   );

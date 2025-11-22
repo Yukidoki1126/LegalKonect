@@ -62,7 +62,7 @@ const LawyerSearch: React.FC = () => {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialization, setSelectedSpecialization] = useState('');
-  const [sortBy, setSortBy] = useState('distance');
+  const [sortBy, setSortBy] = useState('rating');
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = (
@@ -84,6 +84,73 @@ const LawyerSearch: React.FC = () => {
     return R * c;
   };
 
+  // Calculate weighted score for a lawyer based on multiple factors
+  const calculateWeightedScore = (lawyer: Lawyer): number => {
+    // Define maximum values for normalization
+    const MAX_DISTANCE = 50; // km
+    const MAX_EXPERIENCE = 30; // years
+    const MAX_REVIEWS = 100; // review count
+    const MAX_PRICE = 5000; // pesos per hour
+
+    // Check if user has location - if yes, prioritize distance more
+    const hasUserLocation = user?.latitude && user?.longitude;
+
+    // 1. Distance Score (0-100)
+    // Closer lawyers score higher
+    const distanceScore = lawyer.distance !== undefined
+      ? Math.max(0, ((MAX_DISTANCE - lawyer.distance) / MAX_DISTANCE) * 100)
+      : 50; // Neutral score if no distance available
+
+    // 2. Rating Score (0-100)
+    // Higher rating scores higher
+    const rating = lawyer.rating || 0;
+    const ratingScore = (rating / 5.0) * 100;
+
+    // 3. Experience Score (0-100)
+    // More experience scores higher
+    const experience = lawyer.years_experience || 0;
+    const experienceScore = Math.min(100, (experience / MAX_EXPERIENCE) * 100);
+
+    // 4. Review Count Score (0-100)
+    // More reviews = more credibility
+    const reviewCount = lawyer.total_reviews || 0;
+    const reviewScore = Math.min(100, (reviewCount / MAX_REVIEWS) * 100);
+
+    // 5. Availability Score (0-100)
+    // Available lawyers get a boost
+    const availabilityScore = lawyer.is_available ? 100 : 0;
+
+    // 6. Price Score (0-100)
+    // Lower price scores higher
+    const price = lawyer.consultation_fee || lawyer.hourly_rate || 0;
+    const priceScore = Math.max(0, ((MAX_PRICE - price) / MAX_PRICE) * 100);
+
+    // Adaptive weights based on user location availability
+    let totalScore;
+
+    if (hasUserLocation && lawyer.distance !== undefined) {
+      // User has location: Prioritize distance heavily (40%), then quality (30%), experience (15%)
+      totalScore =
+        (distanceScore * 0.40) +    // 40% - Distance is very important
+        (ratingScore * 0.30) +       // 30% - Quality matters
+        (experienceScore * 0.15) +   // 15% - Experience
+        (reviewScore * 0.08) +       // 8%  - Review count
+        (availabilityScore * 0.05) + // 5%  - Availability
+        (priceScore * 0.02);         // 2%  - Price (least important)
+    } else {
+      // No user location: Focus on quality (40%), experience (25%), reviews (15%)
+      totalScore =
+        (ratingScore * 0.40) +       // 40% - Rating most important
+        (experienceScore * 0.25) +   // 25% - Experience
+        (reviewScore * 0.15) +       // 15% - Review count
+        (distanceScore * 0.10) +     // 10% - Distance (if available)
+        (availabilityScore * 0.05) + // 5%  - Availability
+        (priceScore * 0.05);         // 5%  - Price
+    }
+
+    return totalScore;
+  };
+
   // Fetch lawyers and specializations with caching
   useEffect(() => {
     const fetchData = async () => {
@@ -103,6 +170,7 @@ const LawyerSearch: React.FC = () => {
                 parseFloat(lawyer.office_latitude),
                 parseFloat(lawyer.office_longitude)
               );
+              console.log(`📍 ${lawyer.first_name} ${lawyer.last_name}: ${distance.toFixed(2)} km from user`);
               return { ...lawyer, distance };
             }
             return lawyer;
@@ -132,6 +200,7 @@ const LawyerSearch: React.FC = () => {
 
         // Calculate distance if user has location
         if (user?.latitude && user?.longitude) {
+          console.log(`👤 User location: ${user.latitude}, ${user.longitude}`);
           lawyersData = lawyersData.map((lawyer: Lawyer) => {
             if (lawyer.office_latitude && lawyer.office_longitude) {
               const distance = calculateDistance(
@@ -140,8 +209,10 @@ const LawyerSearch: React.FC = () => {
                 parseFloat(lawyer.office_latitude),
                 parseFloat(lawyer.office_longitude)
               );
+              console.log(`📍 ${lawyer.first_name} ${lawyer.last_name} (${lawyer.office_latitude}, ${lawyer.office_longitude}): ${distance.toFixed(2)} km from user`);
               return { ...lawyer, distance };
             }
+            console.log(`⚠️ ${lawyer.first_name} ${lawyer.last_name}: No coordinates`);
             return lawyer;
           });
         }
@@ -189,24 +260,37 @@ const LawyerSearch: React.FC = () => {
       return matchesSearch && matchesSpecialization;
     })
     .sort((a, b) => {
+      // Distance: Nearest first
       if (sortBy === 'distance' && a.distance !== undefined && b.distance !== undefined) {
         return a.distance - b.distance;
       }
+
+      // Price: Lowest first
       if (sortBy === 'price') {
         const priceA = a.consultation_fee || a.hourly_rate || 0;
         const priceB = b.consultation_fee || b.hourly_rate || 0;
         return priceA - priceB;
       }
+
+      // Experience: Most experienced first
       if (sortBy === 'experience') {
         const expA = a.years_experience || a.experience_years || 0;
         const expB = b.years_experience || b.experience_years || 0;
         return expB - expA;
       }
+
+      // Rating: Highest rated first
+      if (sortBy === 'rating') {
+        const ratingA = a.rating || 0;
+        const ratingB = b.rating || 0;
+        return ratingB - ratingA;
+      }
+
       return 0;
     });
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
@@ -316,6 +400,7 @@ const LawyerSearch: React.FC = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
+                <option value="rating">Rating (highest first)</option>
                 <option value="distance">Distance (nearest first)</option>
                 <option value="price">Price (lowest first)</option>
                 <option value="experience">Experience (most first)</option>
