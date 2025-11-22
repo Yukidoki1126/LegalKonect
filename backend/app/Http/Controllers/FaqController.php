@@ -45,25 +45,123 @@ public function search(Request $request)
         return response()->json([]);
     }
 
+    // Clean and normalize the query
+    $cleanQuery = trim(strtolower($query));
+
+    // Extract important keywords (longer than 2 chars, excluding common words)
+    $stopWords = ['how', 'what', 'when', 'where', 'who', 'why', 'the', 'and', 'can', 'could', 'should', 'would', 'will', 'does'];
+    $keywords = explode(' ', $cleanQuery);
+    $keywords = array_values(array_filter($keywords, function($word) use ($stopWords) {
+        return strlen($word) > 2 && !in_array($word, $stopWords);
+    }));
+
     $faqs = Faq::active()
         ->with('category')
-        ->where(function($q) use ($query) {
-            $q->where('question', 'like', "%{$query}%")
-              ->orWhere('answer', 'like', "%{$query}%");
+        ->where(function($q) use ($cleanQuery, $keywords) {
+            // Priority 1: Exact phrase match in question
+            $q->where('question', 'like', "%{$cleanQuery}%");
+
+            // Priority 2: Exact phrase match in answer
+            $q->orWhere('answer', 'like', "%{$cleanQuery}%");
+
+            // Priority 3: Match at least 2 important keywords in question
+            if (count($keywords) >= 2) {
+                $q->orWhere(function($subQ) use ($keywords) {
+                    foreach ($keywords as $index => $keyword) {
+                        if ($index === 0) {
+                            $subQ->where('question', 'like', "%{$keyword}%");
+                        } else {
+                            $subQ->where('question', 'like', "%{$keyword}%");
+                        }
+                    }
+                });
+            }
         })
-        ->limit(10)
+        ->orderByRaw("
+            CASE
+                WHEN LOWER(question) LIKE ? THEN 1
+                WHEN LOWER(question) LIKE ? THEN 2
+                WHEN LOWER(answer) LIKE ? THEN 3
+                WHEN LOWER(question) LIKE ? THEN 4
+                ELSE 5
+            END
+        ", [
+            strtolower($cleanQuery),
+            strtolower($cleanQuery) . '%',
+            '%' . strtolower($cleanQuery) . '%',
+            '%' . (count($keywords) > 0 ? $keywords[0] : '') . '%'
+        ])
+        ->limit(5) // Reduce to top 5 most relevant results
         ->get();
+
+    // Filter results by relevance score
+    $scoredResults = $faqs->map(function($faq) use ($cleanQuery, $keywords) {
+        $score = 0;
+        $question = strtolower($faq->question);
+        $answer = strtolower($faq->answer);
+
+        // Exact phrase match in question (highest score)
+        if (strpos($question, $cleanQuery) !== false) {
+            $score += 100;
+            // Bonus if it starts with the query
+            if (strpos($question, $cleanQuery) === 0) {
+                $score += 50;
+            }
+        }
+
+        // Exact phrase match in answer
+        if (strpos($answer, $cleanQuery) !== false) {
+            $score += 30;
+        }
+
+        // Count matching keywords
+        $matchingKeywords = 0;
+        foreach ($keywords as $keyword) {
+            if (strpos($question, $keyword) !== false) {
+                $matchingKeywords++;
+                $score += 10;
+            } elseif (strpos($answer, $keyword) !== false) {
+                $matchingKeywords++;
+                $score += 5;
+            }
+        }
+
+        // Require at least 50% keyword match for multi-word queries
+        $requiredMatches = count($keywords) >= 2 ? ceil(count($keywords) * 0.5) : 1;
+        if ($matchingKeywords < $requiredMatches) {
+            $score = 0; // Discard if not enough keywords match
+        }
+
+        return [
+            'faq' => $faq,
+            'score' => $score
+        ];
+    })
+    ->filter(function($item) {
+        return $item['score'] > 0; // Only keep scored results
+    })
+    ->sortByDesc('score')
+    ->take(3) // Return only top 3 results
+    ->pluck('faq');
 
     // Track the search
     \DB::table('faq_searches')->insert([
         'query' => $query,
-        'results_count' => $faqs->count(),
-        'user_id' => auth('sanctum')->id(), // null if not logged in
+        'results_count' => $scoredResults->count(),
+        'user_id' => auth('sanctum')->id(),
         'created_at' => now(),
         'updated_at' => now()
     ]);
 
-    return response()->json($faqs);
+    \Log::info('FAQ Search', [
+        'query' => $query,
+        'clean_query' => $cleanQuery,
+        'keywords' => $keywords,
+        'results_count' => $scoredResults->count(),
+        'results' => $scoredResults->map(fn($f) => $f->question)->toArray()
+    ]);
+
+    return response()->json($scoredResults->values());
 }
 
     // Public: Get single FAQ and increment views
