@@ -57,7 +57,7 @@ Google Sign-In has been successfully added to your LegalKonect application!
 
 **File: `frontend/.env`**
 ```env
-REACT_APP_GOOGLE_MAPS_API_KEY=AIzaSyDCRP5vajejry781DEYX6WD55Km-HksMLI
+REACT_APP_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 REACT_APP_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID_HERE
 ```
 
