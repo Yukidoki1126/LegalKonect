@@ -15,7 +15,8 @@ class DatabaseSeeder extends Seeder
 $this->call([
             SpecializationsTableSeeder::class,
             LawyersTableSeeder::class,
-             LawyerAvailabilitySeeder::class,
+            LawyerAvailabilitySeeder::class,
+            FaqSeeder::class,
         ]);
         User::factory()->create([
             'name' => 'Test User',

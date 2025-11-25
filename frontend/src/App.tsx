@@ -1,6 +1,7 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { LawyersProvider } from './context/LawyersContext';
 import Navigation from './components/Navigation';
@@ -8,7 +9,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import LawyerSearch from './pages/LawyerSearch';
 import LawyerDetail from './pages/LawyerDetail';
@@ -65,18 +65,6 @@ function AppContent() {
         <Route path="/register" element={<Register />} />
         <Route path="/lawyer/register" element={<LawyerRegister />} />
         <Route path="/pending-approval" element={<PendingApproval />} />
-        
-        {/* Protected Client Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <ClientOnlyRoute>
-                <Dashboard />
-              </ClientOnlyRoute>
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/profile"
           element={
@@ -176,14 +164,18 @@ function AppContent() {
 }
 
 function App() {
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+
   return (
-    <AuthProvider>
-      <LawyersProvider>  
-        <Router>
-          <AppContent />
-        </Router>
-      </LawyersProvider>
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthProvider>
+        <LawyersProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </LawyersProvider>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
 

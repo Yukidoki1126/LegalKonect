@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import GoogleSignInButton from '../components/GoogleSignInButton';
+import axios from 'axios';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -65,12 +67,42 @@ const Register: React.FC = () => {
 
     try {
       await register(formData);
-      navigate('/dashboard');
+      navigate('/lawyers');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (token: string, userData: any) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // Send Google token and user data to your backend
+      const response = await axios.post('http://localhost:8000/api/auth/google', {
+        access_token: token,
+        email: userData.email,
+        name: userData.name,
+        picture: userData.picture,
+      });
+
+      // Store token and redirect
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        navigate('/lawyers');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Google Sign-In failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = (error: string) => {
+    setError(error);
   };
 
   return (
@@ -344,6 +376,22 @@ const Register: React.FC = () => {
                 )}
               </button>
             </div>
+
+            {/* Divider */}
+            <div className="relative pt-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Sign-In Button */}
+            <GoogleSignInButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+            />
 
             {/* Terms */}
             <div className="text-xs text-gray-500 text-center pt-1">

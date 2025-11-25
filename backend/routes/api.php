@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\LawyerController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\PaymentController;
@@ -24,6 +25,9 @@ Route::prefix('auth')->group(function () {
     // Google OAuth for login/register
     Route::get('/google/url', [AuthController::class, 'googleAuthUrl']);
     Route::post('/google/login', [AuthController::class, 'googleLogin']);
+
+    // New Google Sign-In endpoint
+    Route::post('/google', [GoogleAuthController::class, 'handleGoogleAuth']);
 });
 
 // Authenticated cleanup route (for orphaned accounts)
@@ -67,6 +71,9 @@ Route::get('/test', function () {
         'version' => '1.0.0'
     ]);
 });
+
+// Local-only debug endpoint (public) to quickly inspect request-target DB when running locally.
+// (debug route removed)
 
 // Protected routes - Require authentication
 Route::middleware('auth:sanctum')->group(function () {
@@ -217,6 +224,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/payments', [App\Http\Controllers\Admin\AdminDashboardController::class, 'payments']);
     Route::get('/analytics', [App\Http\Controllers\Admin\AdminDashboardController::class, 'analytics']);
         Route::get('/descriptive-analytics', [App\Http\Controllers\Admin\AdminDashboardController::class, 'descriptiveAnalytics']); 
+
+            // (debug route removed)
     
     // Lawyer Management
     Route::patch('/lawyers/{id}/availability', [App\Http\Controllers\Admin\AdminDashboardController::class, 'toggleAvailability']);

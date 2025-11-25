@@ -187,7 +187,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
-        return '/dashboard'; // Regular client
+        return '/lawyers'; // Regular client - Find Lawyers page
       } catch (profileError) {
         // If profile fetch fails, use the user data from login response
         console.warn('Failed to fetch complete profile, using login data:', profileError);
@@ -203,7 +203,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
-        return '/dashboard'; // Regular client
+        return '/lawyers'; // Regular client - Find Lawyers page
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {

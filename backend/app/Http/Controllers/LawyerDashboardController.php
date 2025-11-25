@@ -386,12 +386,12 @@ class LawyerDashboardController extends Controller
             'office_address' => 'required|string',
             'office_latitude' => 'nullable|numeric|between:-90,90',
             'office_longitude' => 'nullable|numeric|between:-180,180',
-            'office_phone' => 'required|string',
+            'office_phone' => 'nullable|string',
             'office_hours' => 'nullable|string',
             'is_available' => 'boolean',
             'specialization_ids' => 'required|array|min:1',
             'specialization_ids.*' => 'exists:specializations,id',
-            'profile_photo' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048', // 2MB max
+            'profile_photo' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:10240', // 10MB max
         ]);
 
         // Handle profile photo upload
@@ -421,6 +421,20 @@ class LawyerDashboardController extends Controller
             'office_hours' => $validated['office_hours'] ?? null,
             'is_available' => $validated['is_available'] ?? true,
         ]);
+
+        // Also sync the name on the linked user record so admin / users list shows the updated name
+        try {
+            if ($lawyer->user) {
+                $fullName = trim(($validated['first_name'] ?? $lawyer->first_name) . ' ' . ($validated['last_name'] ?? $lawyer->last_name));
+                if ($lawyer->user->name !== $fullName) {
+                    $lawyer->user->name = $fullName;
+                    $lawyer->user->save();
+                }
+            }
+        } catch (\Exception $e) {
+            // Do not fail the profile update if user sync fails — log and continue
+            \Log::warning('Failed to sync user.name with lawyer profile', ['lawyer_id' => $lawyer->id, 'error' => $e->getMessage()]);
+        }
 
         // Sync specializations
         $lawyer->specializations()->sync($validated['specialization_ids']);
@@ -456,9 +470,9 @@ class LawyerDashboardController extends Controller
             ], 422);
         }
 
-        // Validate (max 2MB due to PHP upload_max_filesize setting)
+        // Validate (max 10MB)
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'profile_photo' => 'required|image|mimes:jpeg,jpg,png,gif|max:2048', // 2MB max
+            'profile_photo' => 'required|image|mimes:jpeg,jpg,png,gif|max:10240', // 10MB max
         ]);
 
         if ($validator->fails()) {

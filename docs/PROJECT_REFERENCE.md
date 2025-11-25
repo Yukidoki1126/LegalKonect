@@ -2008,13 +2008,10 @@ DB_CONNECTION=sqlite
 # DB_USERNAME=root
 # DB_PASSWORD=
 
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.mailtrap.io
-MAIL_PORT=2525
-MAIL_USERNAME=your_username
-MAIL_PASSWORD=your_password
-MAIL_FROM_ADDRESS=noreply@legalkonect.com
-MAIL_FROM_NAME=LegalKonect
+MAIL_MAILER=resend
+RESEND_KEY=your_resend_api_key
+MAIL_FROM_ADDRESS="onboarding@resend.dev"
+MAIL_FROM_NAME="LegalKonect"
 
 SANCTUM_STATEFUL_DOMAINS=localhost:3000
 
@@ -2426,7 +2423,7 @@ REACT_APP_GOOGLE_MAPS_KEY=your_production_google_maps_key
 **Solution:** Use ngrok for local testing, configure webhook URL in PayMongo dashboard
 
 **Issue:** Email not sending
-**Solution:** Check MAIL_* environment variables, use Mailtrap for testing
+**Solution:** Check MAIL_* environment variables (RESEND_KEY), verify API key is valid at resend.com
 
 **Issue:** Google Maps not loading
 **Solution:** Verify API key, enable Maps JavaScript API and Places API

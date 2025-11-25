@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { lawyerApi } from '../../services/lawyerApi';
 import {
-  DollarSign,
   TrendingUp,
   Clock,
   Download,
@@ -264,8 +263,8 @@ export default function LawyerEarnings() {
                 ₱{earnings.availableBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-green-100 rounded-full">
+              <span className="w-6 h-6 text-green-600 flex items-center justify-center text-base">₱</span>
             </div>
           </div>
           <button
@@ -551,7 +550,7 @@ export default function LawyerEarnings() {
             <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-t-2xl">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-white" />
+                  <span className="w-6 h-6 text-white flex items-center justify-center text-base">₱</span>
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">Payout Settings</h3>

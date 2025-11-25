@@ -1,9 +1,33 @@
-// src/pages/LawyerDetail.tsx
+// src/pages/LawyerDetail.tsx - REDESIGNED
+// Professional, minimal design - no gradients, consistent spacing, clean layout
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { MapPin, Phone, Mail, ChevronLeft, Calendar, Shield } from 'lucide-react';
 import api from '../services/api';
 import BookingModal from '../components/BookingModal';
+
+interface Review {
+  id: number;
+  rating: number;
+  comment: string;
+  created_at: string;
+  user: {
+    name: string;
+  };
+}
+
+interface ReviewStats {
+  total_reviews: number;
+  average_rating: number;
+  rating_distribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}
 
 interface Lawyer {
   id: number;
@@ -37,23 +61,22 @@ const LawyerDetail: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [lawyer, setLawyer] = useState<Lawyer | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
-  // Handle back navigation
   const handleBack = () => {
-    // Go back to previous page in history
     navigate(-1);
   };
 
   useEffect(() => {
     const fetchLawyer = async () => {
       if (!id) return;
-
       setLoading(true);
       setError('');
-
       try {
         const response = await api.get(`/lawyers/${id}`);
         const lawyerData = response.data.lawyer || response.data;
@@ -65,11 +88,25 @@ const LawyerDetail: React.FC = () => {
       }
     };
 
+    const fetchReviews = async () => {
+      if (!id) return;
+      setReviewsLoading(true);
+      try {
+        const response = await api.get(`/lawyers/${id}/reviews`);
+        setReviews(response.data.reviews || []);
+        setReviewStats(response.data.stats || null);
+      } catch (err: any) {
+        console.error('Failed to load reviews:', err);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
     fetchLawyer();
+    fetchReviews();
   }, [id]);
 
   const handleGetDirections = () => {
-    // Build the destination part of the URL
     let destinationParam = '';
     if (lawyer?.office_latitude && lawyer?.office_longitude) {
       destinationParam = `${lawyer.office_latitude},${lawyer.office_longitude}`;
@@ -79,23 +116,18 @@ const LawyerDetail: React.FC = () => {
 
     if (!destinationParam) return;
 
-    // Check if user has saved location to use as starting point
     if (user?.latitude && user?.longitude) {
-      // User has a saved location - use it as origin
       const url = `https://www.google.com/maps/dir/?api=1&origin=${user.latitude},${user.longitude}&destination=${destinationParam}`;
       window.open(url, '_blank');
     } else {
-      // No saved location - try to get current location in real-time
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            // Got current position - use it as origin
             const { latitude, longitude } = position.coords;
             const url = `https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${destinationParam}`;
             window.open(url, '_blank');
           },
           (error) => {
-            // Failed to get location - open without origin (Google Maps will handle it)
             console.warn('Could not get current location:', error);
             const url = `https://www.google.com/maps/dir/?api=1&destination=${destinationParam}`;
             window.open(url, '_blank');
@@ -103,11 +135,10 @@ const LawyerDetail: React.FC = () => {
           {
             enableHighAccuracy: true,
             timeout: 5000,
-            maximumAge: 60000, // Accept location from last 60 seconds
+            maximumAge: 60000,
           }
         );
       } else {
-        // Geolocation not supported - open without origin
         const url = `https://www.google.com/maps/dir/?api=1&destination=${destinationParam}`;
         window.open(url, '_blank');
       }
@@ -115,273 +146,234 @@ const LawyerDetail: React.FC = () => {
   };
 
   const handleBookAppointment = () => {
-    if (!user) {
-      // Redirect to login if not authenticated
-      navigate('/login', { state: { from: `/lawyers/${id}` } });
-      return;
-    }
     setIsBookingModalOpen(true);
-  };
-
-  const getFullName = () => {
-    if (!lawyer) return '';
-    return `${lawyer.first_name} ${lawyer.last_name}`;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading lawyer details...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   if (error || !lawyer) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <p className="text-red-800">{error || 'Lawyer not found'}</p>
-            <button onClick={handleBack} className="text-blue-600 hover:underline mt-2 inline-block">
-              ← Back
-            </button>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">{error || 'Lawyer not found'}</p>
+          <button
+            onClick={handleBack}
+            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     );
   }
 
-  const fullName = getFullName();
+  const fullName = `${lawyer.first_name} ${lawyer.last_name}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back Button */}
-        <button
-          onClick={handleBack}
-          className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6 transition-colors"
-        >
-          <svg
-            className="w-5 h-5 mr-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+    <div className="min-h-screen bg-blue-50/30 pt-16">
+      {/* Clean Top Bar - Transparent to blend with background */}
+      <div className="border-b border-gray-200/50">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Back
-        </button>
+            <ChevronLeft className="w-5 h-5 mr-1" />
+            Back to Search
+          </button>
+        </div>
+      </div>
 
-        {/* Main Profile Card */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8">
-            <div className="flex items-start space-x-6">
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {lawyer.profile_photo ? (
-                  <img
-                    src={
-                      lawyer.profile_photo.startsWith('http')
-                        ? lawyer.profile_photo
-                        : `http://localhost:8000/storage/${lawyer.profile_photo}`
-                    }
-                    alt={fullName}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback to initial if image fails to load
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = `<span class="text-4xl font-bold text-blue-600">${lawyer.first_name.charAt(0).toUpperCase()}</span>`;
-                    }}
-                  />
-                ) : (
-                  <span className="text-4xl font-bold text-blue-600">
-                    {lawyer.first_name.charAt(0).toUpperCase()}
-                  </span>
-                )}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content - 2 columns */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Lawyer Header - Clean & Professional */}
+            <div className="bg-white border border-gray-200 rounded-lg p-8">
+              <div className="flex items-start gap-6">
+                {/* Profile Photo */}
+                <div className="flex-shrink-0">
+                  <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                    {lawyer.profile_photo ? (
+                      <img
+                        src={
+                          lawyer.profile_photo.startsWith('http')
+                            ? lawyer.profile_photo
+                            : `http://localhost:8000/storage/${lawyer.profile_photo}`
+                        }
+                        alt={fullName}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-blue-50"><span class="text-3xl font-bold text-blue-600">${lawyer.first_name.charAt(0).toUpperCase()}</span></div>`;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-blue-50">
+                        <span className="text-3xl font-bold text-blue-600">
+                          {lawyer.first_name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Lawyer Info */}
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{fullName}</h1>
+
+                  {/* Specializations - Simple Pills */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {lawyer.specializations.map((spec) => (
+                      <span
+                        key={spec.id}
+                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm font-medium"
+                      >
+                        {spec.name}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Key Stats - Minimal */}
+                  <div className="flex items-center gap-6 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      <span>License: {lawyer.license_number}</span>
+                    </div>
+                    <div>{lawyer.years_experience} years experience</div>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 text-white">
-                <h1 className="text-3xl font-bold mb-2">{fullName}</h1>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {lawyer.specializations.map((spec) => (
-                    <span
-                      key={spec.id}
-                      className="px-3 py-1 bg-blue-500 bg-opacity-50 rounded-full text-sm"
-                    >
-                      {spec.name}
+            </div>
+
+            {/* About Section */}
+            <div className="bg-white border border-gray-200 rounded-lg p-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">About</h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{lawyer.bio}</p>
+            </div>
+
+            {/* Reviews - Cleaner Design */}
+            {reviewStats && reviewStats.total_reviews > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Client Reviews</h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {reviewStats.average_rating.toFixed(1)}
                     </span>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg
+                          key={star}
+                          className={`w-5 h-5 ${
+                            star <= Math.round(reviewStats.average_rating)
+                              ? 'text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500">({reviewStats.total_reviews} reviews)</span>
+                  </div>
+                </div>
+
+                {/* Individual Reviews */}
+                <div className="space-y-4">
+                  {reviews.slice(0, 3).map((review) => (
+                    <div
+                      key={review.id}
+                      className="border-t border-gray-100 pt-4 first:border-t-0 first:pt-0"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-semibold text-gray-900">{review.user.name}</p>
+                          <div className="flex mt-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <svg
+                                key={star}
+                                className={`w-4 h-4 ${
+                                  star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
+                                }`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-gray-700">{review.comment}</p>
+                    </div>
                   ))}
                 </div>
-                <div className="flex items-center space-x-4 text-sm">
-                  <span>📋 License: {lawyer.license_number}</span>
-                  <span>💼 {lawyer.years_experience} years experience</span>
-                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Content Section */}
-          <div className="p-6">
-            {/* About Section */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">About</h2>
-              <p className="text-gray-700 leading-relaxed">{lawyer.bio}</p>
+          {/* Sidebar - Clean & Functional */}
+          <div className="space-y-6">
+            {/* Pricing Card - Simple */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <p className="text-sm text-gray-600 mb-2">Consultation Fee</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">
+                ₱{parseFloat(lawyer.hourly_rate.toString()).toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-600">per hour</p>
             </div>
 
-            {/* Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {/* Consultation Fee */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-xl">💰</span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Hourly Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      ₱{parseFloat(lawyer.hourly_rate.toString()).toLocaleString()}
-                    </p>
-                  </div>
+            {/* Contact Info - Clean List */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Contact Information</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">{lawyer.office_address}</span>
                 </div>
-              </div>
-
-              {/* Experience */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-xl">⭐</span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Years of Experience</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {lawyer.years_experience} years
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Office Information */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Office Information</h2>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <svg
-                    className="w-5 h-5 text-gray-400 mt-0.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-gray-900">Address</p>
-                    <p className="text-gray-600">{lawyer.office_address}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <svg
-                    className="w-5 h-5 text-gray-400 mt-0.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-gray-900">Phone</p>
-                    <p className="text-gray-600">{lawyer.office_phone}</p>
-                  </div>
-                </div>
-
-                {lawyer.user.email && (
-                  <div className="flex items-start space-x-3">
-                    <svg
-                      className="w-5 h-5 text-gray-400 mt-0.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <div>
-                      <p className="font-medium text-gray-900">Email</p>
-                      <p className="text-gray-600">{lawyer.user.email}</p>
-                    </div>
+                {lawyer.office_phone && (
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-700">{lawyer.office_phone}</span>
                   </div>
                 )}
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <span className="text-gray-700">{lawyer.user.email}</span>
+                </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            {/* Action Buttons - Professional */}
+            <div className="space-y-3">
+              <button
+                onClick={handleBookAppointment}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <Calendar className="w-5 h-5" />
+                Book Appointment
+              </button>
               <button
                 onClick={handleGetDirections}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center justify-center space-x-2"
+                className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium flex items-center justify-center gap-2"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                  />
-                </svg>
-                <span>Get Directions</span>
-              </button>
-
-              <button 
-                onClick={handleBookAppointment}
-                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium flex items-center justify-center space-x-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <span>Book Appointment</span>
+                <MapPin className="w-5 h-5" />
+                Get Directions
               </button>
             </div>
           </div>

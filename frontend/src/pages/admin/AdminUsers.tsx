@@ -11,6 +11,13 @@ interface User {
   phone: string;
   user_type: string;
   is_lawyer: boolean;
+  // optional fields returned from some endpoints
+  first_name?: string;
+  last_name?: string;
+  lawyer?: {
+    first_name?: string;
+    last_name?: string;
+  };
   total_appointments: number;
   created_at: string;
   status?: string;
@@ -73,7 +80,38 @@ const AdminUsers: React.FC = () => {
     try {
       setLoading(true);
       const response = await adminApi.get(`/users?page=${pagination.currentPage}`);
-      setUsers(response.data.data || response.data || []);
+      let usersData: User[] = response.data.data || response.data || [];
+
+      // Try to fetch lawyers and merge names where user.name is empty or stale.
+      try {
+        const lawyersResp = await adminApi.get('/lawyers');
+        const lawyersList = lawyersResp.data.lawyers || lawyersResp.data || [];
+        // build map by email for a best-effort merge
+        const lawyerByEmail = new Map<string, any>();
+        lawyersList.forEach((l: any) => {
+          if (l.email) lawyerByEmail.set(l.email.toLowerCase(), l);
+        });
+
+        usersData = usersData.map(u => {
+          if ((!u.name || u.name.trim() === '') && u.email) {
+            const match = lawyerByEmail.get(u.email.toLowerCase());
+            if (match) {
+              return { ...u, lawyer: { first_name: match.first_name || (match.name ? match.name.split(' ')[0] : ''), last_name: match.last_name || (match.name ? match.name.split(' ').slice(1).join(' ') : '') } };
+            }
+          }
+          // still include matched lawyer details even when user.name exists to keep display consistent
+          const matched = lawyerByEmail.get(u.email?.toLowerCase?.() || '');
+          if (matched) {
+            return { ...u, lawyer: { first_name: matched.first_name || (matched.name ? matched.name.split(' ')[0] : ''), last_name: matched.last_name || (matched.name ? matched.name.split(' ').slice(1).join(' ') : '') } };
+          }
+          return u;
+        });
+      } catch (e) {
+        // ignore lawyer fetch errors — users will still render normally
+        console.warn('Could not fetch lawyers for user name merge', e);
+      }
+
+      setUsers(usersData);
       setPagination({
         currentPage: response.data.current_page || 1,
         lastPage: response.data.last_page || 1,
@@ -172,14 +210,24 @@ const AdminUsers: React.FC = () => {
   };
 
   // Filter users
+  const getDisplayName = (user: User) => {
+    // Prefer explicit user.name, then fallbacks to first/last or nested lawyer fields
+    if (user.name && user.name.trim()) return user.name;
+    const first = user.first_name || user.lawyer?.first_name || '';
+    const last = user.last_name || user.lawyer?.last_name || '';
+    const combined = `${first} ${last}`.trim();
+    return combined || 'Unknown';
+  };
+
   const filteredUsers = (users || []).filter(user => {
     const matchesType =
       filterType === 'all' ||
       (filterType === 'clients' && !user.is_lawyer) ||
       (filterType === 'lawyers' && user.is_lawyer);
 
+    const displayName = getDisplayName(user).toLowerCase();
     const matchesSearch =
-      (user.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      displayName.includes(searchQuery.toLowerCase()) ||
       (user.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (user.phone || '').toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -327,12 +375,12 @@ const AdminUsers: React.FC = () => {
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                           <span className="text-white font-bold text-sm">
-                            {user.name?.charAt(0) || 'U'}
+                            {getDisplayName(user).charAt(0) || 'U'}
                           </span>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.name || 'Unknown'}
+                            {getDisplayName(user)}
                           </div>
                           <div className="text-sm text-gray-600">
                             {user.email || 'N/A'}
@@ -379,21 +427,21 @@ const AdminUsers: React.FC = () => {
                       <div className="flex gap-2">
                         {user.status === 'suspended' ? (
                           <button
-                            onClick={() => activateUser(user.id, user.name)}
+                            onClick={() => activateUser(user.id, getDisplayName(user))}
                             className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg font-medium transition text-xs"
                           >
                             Activate
                           </button>
                         ) : (
                           <button
-                            onClick={() => suspendUser(user.id, user.name)}
+                            onClick={() => suspendUser(user.id, getDisplayName(user))}
                             className="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-medium transition text-xs"
                           >
                             Suspend
                           </button>
                         )}
                         <button
-                          onClick={() => deleteUser(user.id, user.name)}
+                          onClick={() => deleteUser(user.id, getDisplayName(user))}
                           className="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-medium transition text-xs"
                           title="Permanently Delete"
                         >

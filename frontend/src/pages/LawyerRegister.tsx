@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Briefcase, Scale, MapPin, Phone, Mail, Lock, User, FileText, Clock, DollarSign, Award, Upload, CheckCircle, XCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Briefcase, Scale, MapPin, Phone, Mail, Lock, User, FileText, Clock, Award, Upload, CheckCircle, XCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 interface Specialization {
   id: number;
@@ -702,7 +702,7 @@ const LawyerRegister = () => {
                     Hourly Rate (₱)
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                    <span className="absolute left-3 top-3 w-5 h-5 text-gray-400 flex items-center justify-center">₱</span>
                     <input
                       type="number"
                       name="hourly_rate"

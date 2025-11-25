@@ -12,14 +12,18 @@ use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
 {
-    public function stats()
+    public function stats(Request $request)
     {
+        $days = (int) $request->input('days', 30);
+        $startDate = now()->subDays($days);
+
         $totalLawyers = Lawyer::count();
         $totalUsers = User::count();
-        $totalAppointments = Appointment::count();
-        $pendingAppointments = Appointment::where('status', 'pending')->count();
+        // Scope appointment stats/revenue to the chosen period to match analytics expectations
+        $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
+        $pendingAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'pending')->count();
 
-        $totalRevenue = Appointment::where('payment_status', 'paid')->sum('consultation_fee');
+        $totalRevenue = Appointment::where('payment_status', 'paid')->where('created_at', '>=', $startDate)->sum('consultation_fee');
         $monthlyRevenue = Appointment::where('payment_status', 'paid')
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
@@ -42,6 +46,8 @@ class AdminDashboardController extends Controller
                 ];
             });
 
+        // debug log removed
+
         return response()->json([
             'total_users' => $totalUsers,
             'total_lawyers' => $totalLawyers,
@@ -49,6 +55,7 @@ class AdminDashboardController extends Controller
             'pending_appointments' => $pendingAppointments,
             'total_revenue' => $totalRevenue,
             'monthly_revenue' => $monthlyRevenue,
+            'period_days' => $days,
             'recent_appointments' => $recentAppointments,
         ]);
     }
@@ -104,9 +111,10 @@ class AdminDashboardController extends Controller
         return response()->json($appointments);
     }
 
-    public function users()
+    public function users(Request $request)
     {
         $users = User::with('lawyer')
+            ->where('id', '!=', $request->user()->id) // Exclude currently logged-in admin
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($user) {
@@ -162,6 +170,8 @@ class AdminDashboardController extends Controller
             ];
         });
 
+        // debug log removed
+
         return response()->json([
             'payments' => [
                 'data' => $paymentsData,
@@ -179,20 +189,23 @@ class AdminDashboardController extends Controller
         ]);
     }
 
-    public function analytics()
+     public function analytics(Request $request)
     {
-       $revenueData = Appointment::where('payment_status', 'paid')
-    ->where('created_at', '>=', now()->subDays(30))
+         $days = (int) $request->input('days', 30);
+         $startDate = now()->subDays($days);
+
+         $revenueData = Appointment::where('payment_status', 'paid')
+     ->where('created_at', '>=', $startDate)
     ->selectRaw('CAST(created_at AS DATE) as date, SUM(consultation_fee) as amount')
     ->groupBy(DB::raw('CAST(created_at AS DATE)'))
     ->orderBy('date')
     ->get();
-        // Appointment statistics
-        $totalAppointments = Appointment::count();
-        $confirmedAppointments = Appointment::where('status', 'confirmed')->count();
-        $completedAppointments = Appointment::where('status', 'completed')->count();
-        $cancelledAppointments = Appointment::where('status', 'cancelled')->count();
-        $pendingAppointments = Appointment::where('status', 'pending')->count();
+        // Appointment statistics - scoped to the analytics period
+        $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
+        $confirmedAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'confirmed')->count();
+        $completedAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'completed')->count();
+        $cancelledAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'cancelled')->count();
+        $pendingAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'pending')->count();
 
         // Lawyer statistics
         $totalLawyers = Lawyer::count();
@@ -204,8 +217,8 @@ class AdminDashboardController extends Controller
         $totalUsers = User::count();
         $newUsersThisMonth = User::whereMonth('created_at', now()->month)->count();
 
-        // Total revenue
-        $totalRevenue = Appointment::where('payment_status', 'paid')->sum('consultation_fee');
+        // Total revenue (period)
+        $totalRevenue = Appointment::where('payment_status', 'paid')->where('created_at', '>=', $startDate)->sum('consultation_fee');
 
         return response()->json([
             'revenue' => [
@@ -228,7 +241,8 @@ class AdminDashboardController extends Controller
             'users' => [
                 'total' => $totalUsers,
                 'new_this_month' => $newUsersThisMonth
-            ]
+            ],
+            'period_days' => $days
         ]);
     }
 
@@ -314,7 +328,7 @@ class AdminDashboardController extends Controller
             ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
             ->join('lawyer_specializations', 'lawyers.id', '=', 'lawyer_specializations.lawyer_id')
             ->join('specializations', 'lawyer_specializations.specialization_id', '=', 'specializations.id')
-            ->select('specializations.id', 'specializations.name', DB::raw('COUNT(*) as appointment_count'))
+            ->select('specializations.id', 'specializations.name', DB::raw('COUNT(DISTINCT appointments.id) as appointment_count'))
             ->where('appointments.created_at', '>=', $startDate)
             ->groupBy('specializations.id', 'specializations.name')
             ->orderBy('appointment_count', 'desc')
@@ -379,7 +393,7 @@ class AdminDashboardController extends Controller
             ->select(
                 'specializations.id',
                 'specializations.name',
-                DB::raw('AVG(appointments.consultation_fee) as avg_fee'),
+                DB::raw('COALESCE(SUM(appointments.consultation_fee) / NULLIF(COUNT(DISTINCT appointments.id),0),0) as avg_fee'),
                 DB::raw('MIN(appointments.consultation_fee) as min_fee'),
                 DB::raw('MAX(appointments.consultation_fee) as max_fee')
             )
@@ -436,4 +450,6 @@ class AdminDashboardController extends Controller
             'period_days' => $days
         ]);
     }
+
+    // debug endpoint removed
 }

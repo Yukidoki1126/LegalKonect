@@ -529,14 +529,13 @@ const LawyerProfile: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Office Phone <span className="text-red-500">*</span>
+                    Office Phone <span className="text-gray-400">(Optional)</span>
                   </label>
                   <input
                     type="tel"
                     name="office_phone"
                     value={formData.office_phone}
                     onChange={handleInputChange}
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   />
                 </div>

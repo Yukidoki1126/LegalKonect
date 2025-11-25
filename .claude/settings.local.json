@@ -23,7 +23,17 @@
       "Bash(mysql:*)",
       "Bash(curl:*)",
       "Bash(timeout /t 3 /nobreak)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(del:*)",
+      "Bash(if exist check_db.php del check_db.php)",
+      "Bash(if exist check_admin.php del check_admin.php)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(npm install:*)",
+      "Bash(composer require laravel/socialite)",
+      "Bash(if exist backendcheck_admin.php del backendcheck_admin.php)",
+      "Bash(if exist backendcheck_db.php del backendcheck_db.php)",
+      "Bash(rm:*)",
+      "Bash(rmdir:*)"
     ],
     "deny": [],
     "ask": []

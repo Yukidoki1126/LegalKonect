@@ -326,7 +326,7 @@ const Appointments: React.FC = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Past
+                Completed
               </button>
             </div>
           </div>

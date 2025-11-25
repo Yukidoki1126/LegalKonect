@@ -197,15 +197,11 @@ const FAQChatbot: React.FC = () => {
 
     if (matchingFAQs.length > 0) {
       setTimeout(() => {
-        addBotMessage(
-          `I found ${matchingFAQs.length} answer${matchingFAQs.length > 1 ? 's' : ''} that might help:`
-        );
-
         matchingFAQs.slice(0, 3).forEach((faq: FAQ, index: number) => {
           setTimeout(() => {
             const formattedAnswer = `**${faq.question}**\n\n${faq.answer}`;
             addBotMessage(formattedAnswer, faq.id, undefined, true);
-          }, (index + 1) * 600);
+          }, index * 600);
         });
 
         // Generate related questions
@@ -220,7 +216,7 @@ const FAQChatbot: React.FC = () => {
               undefined,
               relatedQuestions
             );
-          }, (Math.min(matchingFAQs.length, 3) + 1) * 600);
+          }, Math.min(matchingFAQs.length, 3) * 600);
         }
       }, 300);
     } else {

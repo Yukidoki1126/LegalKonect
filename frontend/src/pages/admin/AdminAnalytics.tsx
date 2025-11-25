@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Users, Clock, DollarSign, Star, Calendar, BarChart3, PieChart, AlertCircle } from 'lucide-react';
+import { TrendingUp, Users, Clock, Star, Calendar, BarChart3, PieChart, AlertCircle } from 'lucide-react';
 import adminApi from '../../services/adminApi';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import PageTransition from '../../components/PageTransition';
@@ -177,7 +177,7 @@ const loadDescriptiveAnalytics = async () => {
                   <p className="text-green-100 text-sm font-medium mb-1">Total Revenue</p>
                   <p className="text-3xl font-bold text-white">₱{analytics.revenue.total.toLocaleString()}</p>
                 </div>
-                <DollarSign className="w-12 h-12 text-white/80" />
+                <span className="w-12 h-12 text-white/80 flex items-center justify-center text-2xl">₱</span>
               </div>
             </div>
 
@@ -468,7 +468,7 @@ const loadDescriptiveAnalytics = async () => {
               {/* Fee Table */}
               <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                 <div className="flex items-center space-x-3 mb-6">
-                  <DollarSign className="w-6 h-6 text-yellow-600" />
+                  <span className="w-6 h-6 text-yellow-600 flex items-center justify-center text-base">₱</span>
                   <h3 className="text-xl font-bold text-gray-900">Average Consultation Fee by Specialization</h3>
                 </div>
                 <div className="overflow-x-auto">

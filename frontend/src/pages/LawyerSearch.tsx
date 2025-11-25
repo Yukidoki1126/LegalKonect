@@ -1,43 +1,38 @@
-// src/pages/LawyerSearch.tsx
+// src/pages/LawyerSearch.tsx - REDESIGNED
+// Professional, minimal design - clean layout, no gradients, consistent spacing
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLawyers } from '../context/LawyersContext';
 import LawyerCard from '../components/LawyerCard';
 import api from '../services/api';
 import { Lawyer, Specialization } from '../types/lawyer';
+import { Search, AlertCircle } from 'lucide-react';
 
-// Skeleton Loading Component
+// Skeleton Loading Component - Redesigned
 const LawyerCardSkeleton: React.FC = () => (
-  <div className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
-    <div className="p-6">
-      <div className="flex items-center gap-4 mb-4">
-        <div className="w-16 h-16 bg-gray-300 rounded-full"></div>
-        <div className="flex-1">
-          <div className="h-5 bg-gray-300 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+  <div className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse">
+    <div className="flex items-start gap-4 mb-4">
+      <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+      <div className="flex-1">
+        <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
+        <div className="flex gap-2">
+          <div className="h-5 bg-gray-100 rounded w-20"></div>
+          <div className="h-5 bg-gray-100 rounded w-24"></div>
         </div>
       </div>
-      <div className="space-y-2 mb-4">
-        <div className="h-3 bg-gray-200 rounded"></div>
-        <div className="h-3 bg-gray-200 rounded"></div>
-        <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-      </div>
-      <div className="flex gap-2 mb-4">
-        <div className="h-6 bg-gray-200 rounded-full w-20"></div>
-        <div className="h-6 bg-gray-200 rounded-full w-24"></div>
-      </div>
-      <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-200">
-        <div>
-          <div className="h-3 bg-gray-200 rounded w-16 mb-1"></div>
-          <div className="h-4 bg-gray-300 rounded w-12"></div>
-        </div>
-        <div>
-          <div className="h-3 bg-gray-200 rounded w-16 mb-1"></div>
-          <div className="h-4 bg-gray-300 rounded w-20"></div>
-        </div>
-      </div>
-      <div className="h-10 bg-gray-300 rounded-lg"></div>
     </div>
+    <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-200">
+      <div>
+        <div className="h-3 bg-gray-100 rounded w-16 mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-12"></div>
+      </div>
+      <div>
+        <div className="h-3 bg-gray-100 rounded w-16 mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-20"></div>
+      </div>
+    </div>
+    <div className="h-4 bg-gray-100 rounded w-full mb-4"></div>
+    <div className="h-10 bg-gray-200 rounded"></div>
   </div>
 );
 
@@ -290,38 +285,26 @@ const LawyerSearch: React.FC = () => {
     });
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6 lg:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Find a Lawyer</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">
-            Connect with experienced legal professionals near you
+    <div className="min-h-screen bg-blue-50/30 pt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header - Clean and Professional */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Find a Lawyer</h1>
+          <p className="text-sm text-gray-600">
+            Connect with experienced legal professionals
           </p>
         </div>
 
-        {/* Location Warning */}
+        {/* Location Warning - Clean Design */}
         {!user?.latitude && (
-          <div className="mb-4 sm:mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-start">
-              <svg
-                className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 mt-0.5 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-yellow-800">
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-yellow-900 mb-1">
                   Set your location to see distances
                 </p>
-                <p className="text-xs sm:text-sm text-yellow-700 mt-1">
+                <p className="text-sm text-yellow-800">
                   Go to{' '}
                   <a href="/profile" className="underline font-semibold hover:text-yellow-900">
                     Profile Settings
@@ -333,52 +316,37 @@ const LawyerSearch: React.FC = () => {
           </div>
         )}
 
-        {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+        {/* Search and Filters - Professional Card */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div>
-              <label htmlFor="search" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
                 Search by name
               </label>
               <div className="relative">
+                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
                 <input
                   id="search"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search lawyers..."
-                  className="w-full px-3 py-2 pl-9 sm:pl-10 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 />
-                <svg
-                  className="absolute left-2.5 sm:left-3 top-2.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
               </div>
             </div>
 
             {/* Specialization Filter */}
             <div>
-              <label
-                htmlFor="specialization"
-                className="block text-xs sm:text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-2">
                 Specialization
               </label>
               <select
                 id="specialization"
                 value={selectedSpecialization}
                 onChange={(e) => setSelectedSpecialization(e.target.value)}
-                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
                 <option value="">All Specializations</option>
                 {specializations.map((spec) => (
@@ -391,14 +359,14 @@ const LawyerSearch: React.FC = () => {
 
             {/* Sort By */}
             <div>
-              <label htmlFor="sortBy" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
                 Sort by
               </label>
               <select
                 id="sortBy"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
                 <option value="rating">Rating (highest first)</option>
                 <option value="distance">Distance (nearest first)</option>
@@ -410,10 +378,10 @@ const LawyerSearch: React.FC = () => {
 
           {/* Active Filters Display */}
           {(searchQuery || selectedSpecialization) && (
-            <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
-              <span className="text-xs sm:text-sm text-gray-600">Active filters:</span>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-gray-600">Active filters:</span>
               {searchQuery && (
-                <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-blue-100 text-blue-800 text-xs sm:text-sm rounded-full">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-md border border-blue-200">
                   Search: "{searchQuery}"
                   <button
                     onClick={() => setSearchQuery('')}
@@ -424,7 +392,7 @@ const LawyerSearch: React.FC = () => {
                 </span>
               )}
               {selectedSpecialization && (
-                <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-blue-100 text-blue-800 text-xs sm:text-sm rounded-full">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-md border border-blue-200">
                   {specializations.find(s => s.id === parseInt(selectedSpecialization))?.name}
                   <button
                     onClick={() => setSelectedSpecialization('')}
@@ -439,7 +407,7 @@ const LawyerSearch: React.FC = () => {
                   setSearchQuery('');
                   setSelectedSpecialization('');
                 }}
-                className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
               >
                 Clear all
               </button>
@@ -450,37 +418,25 @@ const LawyerSearch: React.FC = () => {
         {/* Results */}
         {loading ? (
           <div>
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <div className="h-4 sm:h-5 bg-gray-300 rounded w-24 sm:w-32 animate-pulse"></div>
+            <div className="flex items-center justify-between mb-6">
+              <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((skeleton) => (
                 <LawyerCardSkeleton key={skeleton} />
               ))}
             </div>
           </div>
         ) : error ? (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-4 sm:p-6">
-            <div className="flex items-start">
-              <svg
-                className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <div className="ml-3">
-                <h3 className="text-xs sm:text-sm font-medium text-red-800">Error loading lawyers</h3>
-                <p className="mt-1 text-xs sm:text-sm text-red-700">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-medium text-red-900 mb-1">Error loading lawyers</h3>
+                <p className="text-sm text-red-700 mb-3">{error}</p>
                 <button
                   onClick={() => window.location.reload()}
-                  className="mt-3 text-xs sm:text-sm font-medium text-red-800 hover:text-red-900 underline"
+                  className="text-sm font-medium text-red-800 hover:text-red-900 underline"
                 >
                   Try again
                 </button>
@@ -488,22 +444,10 @@ const LawyerSearch: React.FC = () => {
             </div>
           </div>
         ) : filteredLawyers.length === 0 ? (
-          <div className="text-center py-12 sm:py-16 bg-white rounded-lg shadow">
-            <svg
-              className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-medium text-gray-900">No lawyers found</h3>
-            <p className="mt-2 text-xs sm:text-sm text-gray-500 px-4">
+          <div className="text-center py-16 bg-white border border-gray-200 rounded-lg">
+            <Search className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No lawyers found</h3>
+            <p className="text-gray-600 mb-4 max-w-md mx-auto">
               {searchQuery || selectedSpecialization
                 ? 'Try adjusting your search or filters.'
                 : 'No lawyers are currently available.'}
@@ -514,7 +458,7 @@ const LawyerSearch: React.FC = () => {
                   setSearchQuery('');
                   setSelectedSpecialization('');
                 }}
-                className="mt-4 px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
               >
                 Clear filters
               </button>
@@ -522,15 +466,15 @@ const LawyerSearch: React.FC = () => {
           </div>
         ) : (
           <div>
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm text-gray-600 font-medium">
                 Showing{' '}
-                <span className="text-blue-600 font-bold">{filteredLawyers.length}</span>{' '}
+                <span className="text-blue-600 font-semibold">{filteredLawyers.length}</span>{' '}
                 {filteredLawyers.length === 1 ? 'lawyer' : 'lawyers'}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredLawyers.map((lawyer, index) => (
                 <div
                   key={lawyer.id}

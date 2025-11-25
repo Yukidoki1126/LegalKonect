@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { adminAuthService } from '../services/adminApi';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import axios from 'axios';
 
 const Login: React.FC = () => {
@@ -37,6 +38,36 @@ const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (token: string, userData: any) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // Send Google token and user data to your backend
+      const response = await axios.post('http://localhost:8000/api/auth/google', {
+        access_token: token,
+        email: userData.email,
+        name: userData.name,
+        picture: userData.picture,
+      });
+
+      // Store token and redirect
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        navigate('/lawyers');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Google Sign-In failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = (error: string) => {
+    setError(error);
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -216,6 +247,22 @@ const Login: React.FC = () => {
                 )}
               </button>
             </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Sign-In Button */}
+            <GoogleSignInButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+            />
           </form>
         </div>
       </div>

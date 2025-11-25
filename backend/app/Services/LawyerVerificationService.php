@@ -154,6 +154,9 @@ class LawyerVerificationService
     public function getPendingVerifications()
     {
         return Lawyer::with(['user', 'specializations'])
+            ->whereHas('user', function($query) {
+                $query->whereNotIn('role', ['admin', 'super_admin']);
+            })
             ->pendingVerification()
             ->orderBy('created_at', 'desc')
             ->get();
@@ -167,7 +170,10 @@ class LawyerVerificationService
      */
     public function getAllLawyers(?string $status = null)
     {
-        $query = Lawyer::with(['user', 'specializations', 'verifiedBy']);
+        $query = Lawyer::with(['user', 'specializations', 'verifiedBy'])
+            ->whereHas('user', function($query) {
+                $query->whereNotIn('role', ['admin', 'super_admin']);
+            });
 
         if ($status) {
             $query->where('verification_status', $status);

@@ -152,7 +152,7 @@ public function updateProfile(Request $request)
         'name' => 'sometimes|string|max:255',
         'email' => 'sometimes|email|unique:users,email,' . $request->user()->id,
         'phone' => 'nullable|string|max:20',
-        'profile_picture' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048', // 2MB max
+        'profile_picture' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:10240', // 10MB max
     ]);
 
     $user = $request->user();
@@ -191,7 +191,7 @@ public function updateProfile(Request $request)
     public function uploadProfilePicture(Request $request)
     {
         $request->validate([
-            'profile_picture' => 'required|image|mimes:jpeg,jpg,png,gif|max:2048', // 2MB max
+            'profile_picture' => 'required|image|mimes:jpeg,jpg,png,gif|max:10240', // 10MB max
         ]);
 
         $user = $request->user();
