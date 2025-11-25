@@ -281,6 +281,19 @@ export const lawyerApi = {
     );
   },
 
+  // Google Calendar - Sync appointments
+  syncAppointmentsToGoogleCalendar: async () => {
+    const response = await axios.post(
+      `${API_URL}/lawyer/google/sync-appointments`,
+      {},
+      { headers: getAuthHeader() }
+    );
+    // Invalidate calendar cache after sync
+    cacheService.invalidatePattern('/lawyer/calendar');
+    cacheService.invalidatePattern('/lawyer/google/events');
+    return response.data;
+  },
+
   // Weekly Schedule - Get schedules - cached for 30 seconds
   getSchedules: async () => {
     return cachedGet(`${API_URL}/lawyer/schedules`, 30000);

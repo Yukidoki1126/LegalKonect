@@ -9,6 +9,8 @@ interface CalendarEvent {
   end: string;
   color: string | null;
   is_all_day: boolean;
+  status?: string;
+  payment_status?: string;
 }
 
 interface LawyerCalendarViewProps {
@@ -183,7 +185,19 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
       '11': 'bg-rose-100 border-rose-400 text-rose-800',
     };
 
-    return event.color ? (colors[event.color] || 'bg-blue-100 border-blue-400 text-blue-800') : 'bg-blue-100 border-blue-400 text-blue-800';
+    const baseColor = event.color ? (colors[event.color] || 'bg-blue-100 border-blue-400 text-blue-800') : 'bg-blue-100 border-blue-400 text-blue-800';
+
+    // Add opacity and styling for completed appointments
+    if (event.status === 'completed') {
+      return baseColor + ' opacity-60';
+    }
+
+    return baseColor;
+  };
+
+  const getEventTextStyle = (event: CalendarEvent): string => {
+    // Add strikethrough for completed appointments
+    return event.status === 'completed' ? 'line-through' : '';
   };
 
   const weekDays = getWeekDays();
@@ -296,10 +310,13 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
                             className={`text-xs p-1 mb-1 rounded border-l-2 ${getEventColor(event)}`}
                             title={event.description || ''}
                           >
-                            <div className="font-medium truncate">{event.summary}</div>
-                            <div className="text-xs opacity-75">
+                            <div className={`font-medium truncate ${getEventTextStyle(event)}`}>{event.summary}</div>
+                            <div className={`text-xs opacity-75 ${getEventTextStyle(event)}`}>
                               {formatTime(event.start)} - {formatTime(event.end)}
                             </div>
+                            {event.status === 'completed' && (
+                              <div className="text-[10px] mt-0.5 font-semibold text-teal-700">✓ Completed</div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -331,10 +348,13 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
                         key={event.id}
                         className={`p-2 mb-2 rounded-lg border-l-4 ${getEventColor(event)} shadow-sm`}
                       >
-                        <div className="font-medium">{event.summary}</div>
-                        <div className="text-xs mt-1">
+                        <div className={`font-medium ${getEventTextStyle(event)}`}>{event.summary}</div>
+                        <div className={`text-xs mt-1 ${getEventTextStyle(event)}`}>
                           {formatTime(event.start)} - {formatTime(event.end)}
                         </div>
+                        {event.status === 'completed' && (
+                          <div className="text-xs mt-1 font-semibold text-teal-700">✓ Completed</div>
+                        )}
                         {event.description && (
                           <div className="text-xs mt-1 text-slate-600">{event.description}</div>
                         )}
@@ -357,7 +377,10 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
                 key={event.id}
                 className={`p-2 rounded-lg border-l-4 ${getEventColor(event)} shadow-sm`}
               >
-                <div className="font-medium text-sm">{event.summary}</div>
+                <div className={`font-medium text-sm ${getEventTextStyle(event)}`}>{event.summary}</div>
+                {event.status === 'completed' && (
+                  <div className="text-xs mt-1 font-semibold text-teal-700">✓ Completed</div>
+                )}
                 {event.description && (
                   <div className="text-xs mt-1 text-slate-600">{event.description}</div>
                 )}
