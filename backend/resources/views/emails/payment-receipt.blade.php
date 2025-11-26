@@ -127,9 +127,26 @@
             <div class="total-row">
                 <div class="receipt-row" style="border: none;">
                     <span class="label" style="font-size: 18px;">Amount Paid:</span>
-                    <span class="total-amount">₱{{ number_format($appointment->consultation_fee ?? 0, 2) }}</span>
+                    <span class="total-amount">₱{{ number_format($appointment->lawyer->reservation_fee ?? 100, 2) }}</span>
                 </div>
             </div>
+
+            @if($appointment->consultation_fee > ($appointment->lawyer->reservation_fee ?? 100))
+            <div style="background-color: #eff6ff; padding: 12px; margin-top: 10px; border-radius: 4px; border-left: 3px solid #3b82f6;">
+                <div class="receipt-row" style="border: none; padding: 4px 0;">
+                    <span class="label" style="color: #1e40af; font-size: 14px;">Total Consultation Fee:</span>
+                    <span style="color: #1e40af; font-weight: bold;">₱{{ number_format($appointment->consultation_fee, 2) }}</span>
+                </div>
+                <div class="receipt-row" style="border: none; padding: 4px 0;">
+                    <span class="label" style="color: #1e40af; font-size: 14px;">Reservation Fee Paid:</span>
+                    <span style="color: #059669; font-weight: bold;">-₱{{ number_format($appointment->lawyer->reservation_fee ?? 100, 2) }}</span>
+                </div>
+                <div class="receipt-row" style="border: none; padding: 8px 0; border-top: 2px solid #3b82f6;">
+                    <span class="label" style="color: #1e40af; font-size: 15px;">Balance Due at Office:</span>
+                    <span style="color: #dc2626; font-weight: bold; font-size: 16px;">₱{{ number_format($appointment->consultation_fee - ($appointment->lawyer->reservation_fee ?? 100), 2) }}</span>
+                </div>
+            </div>
+            @endif
         </div>
 
         <div class="appointment-details">
