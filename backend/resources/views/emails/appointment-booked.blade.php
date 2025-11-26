@@ -99,10 +99,20 @@
             </div>
             
             <div class="info-row">
-                <span class="label">Consultation Fee:</span>
+                <span class="label">Total Consultation Fee:</span>
                 <span class="value">₱{{ number_format($appointment->consultation_fee ?? 0, 2) }}</span>
             </div>
-            
+
+            <div class="info-row">
+                <span class="label">Reservation Fee Paid:</span>
+                <span class="value" style="color: #059669; font-weight: bold;">₱{{ number_format($appointment->lawyer->reservation_fee ?? 100, 2) }}</span>
+            </div>
+
+            <div class="info-row">
+                <span class="label">Balance Due at Office:</span>
+                <span class="value" style="color: #dc2626; font-weight: bold;">₱{{ number_format($appointment->consultation_fee - ($appointment->lawyer->reservation_fee ?? 100), 2) }}</span>
+            </div>
+
             <div class="info-row">
                 <span class="label">Payment Status:</span>
                 @if($appointment->payment_status === 'paid')
@@ -122,8 +132,9 @@
         
         @if($appointment->payment_status !== 'paid')
         <div style="background-color: #fef3c7; padding: 15px; border-radius: 4px; margin: 20px 0;">
-            <strong>⚠️ Payment Required</strong>
-            <p style="margin: 10px 0 0 0;">Please complete your payment to confirm your appointment. You can pay through your LegalKonect dashboard.</p>
+            <strong>⚠️ Reservation Fee Payment Required</strong>
+            <p style="margin: 10px 0 0 0;">Please complete your reservation fee payment of ₱{{ number_format($appointment->lawyer->reservation_fee ?? 100, 2) }} to confirm your appointment. You can pay through your LegalKonect dashboard.</p>
+            <p style="margin: 10px 0 0 0; font-size: 14px; color: #92400e;">The remaining balance of ₱{{ number_format($appointment->consultation_fee - ($appointment->lawyer->reservation_fee ?? 100), 2) }} will be paid at the law office.</p>
         </div>
         @endif
         

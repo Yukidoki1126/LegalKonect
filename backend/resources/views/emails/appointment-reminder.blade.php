@@ -173,7 +173,7 @@
                 <ul style="margin: 0; padding-left: 20px;">
                     <li>Please arrive 10 minutes early for your appointment</li>
                     <li>If you need to cancel or reschedule, please contact us as soon as possible</li>
-                    <li>Your appointment is already paid and confirmed</li>
+                    <li>Your reservation fee has been paid. Please bring ₱{{ number_format($appointment->consultation_fee - ($appointment->lawyer->reservation_fee ?? 100), 2) }} for the remaining balance</li>
                 </ul>
             </div>
             
