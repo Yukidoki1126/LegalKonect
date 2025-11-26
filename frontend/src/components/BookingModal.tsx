@@ -375,54 +375,41 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                 </div>
               </div>
 
-              {/* Price Summary - Full Width */}
-              <div className="mt-6 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl border-2 border-blue-200 p-6 shadow-sm">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Fee Summary
-                </h3>
+              {/* Fee Summary - Simplified */}
+              <div className="mt-6 bg-white border border-gray-200 rounded-lg p-5">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">Fee Summary</h3>
 
-                <div className="space-y-4">
-                  {/* Consultation Fee */}
-                  <div className="bg-white rounded-xl p-4 shadow-sm">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Total Consultation Fee</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Full session (1 hour)</p>
-                      </div>
-                      <span className="text-2xl font-bold text-blue-600">
-                        ₱{lawyer.hourly_rate.toLocaleString()}
-                      </span>
+                <div className="space-y-3">
+                  {/* Total Fee */}
+                  <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                    <div>
+                      <p className="text-sm text-gray-700">Total Consultation Fee</p>
+                      <p className="text-xs text-gray-500">Full session (1 hour)</p>
                     </div>
+                    <span className="text-lg font-semibold text-gray-900">
+                      ₱{lawyer.hourly_rate.toLocaleString()}
+                    </span>
                   </div>
 
-                  {/* Reservation Fee */}
-                  <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-green-200">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                          Reservation Fee
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">PAY NOW</span>
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">Balance due at office: ₱{(lawyer.hourly_rate - (lawyer.reservation_fee || 100)).toLocaleString()}</p>
-                      </div>
-                      <span className="text-2xl font-bold text-green-600">
-                        ₱{(lawyer.reservation_fee || 100).toLocaleString()}
-                      </span>
+                  {/* Reservation Fee - Pay Now */}
+                  <div className="flex justify-between items-center bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Reservation Fee <span className="text-xs text-green-700 font-semibold">(PAY NOW)</span>
+                      </p>
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        Balance due at office: ₱{(lawyer.hourly_rate - (lawyer.reservation_fee || 100)).toLocaleString()}
+                      </p>
                     </div>
+                    <span className="text-xl font-bold text-green-600">
+                      ₱{(lawyer.reservation_fee || 100).toLocaleString()}
+                    </span>
                   </div>
 
-                  {/* Info Banner */}
-                  <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                    <p className="text-xs text-blue-900 flex items-start gap-2">
-                      <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Reservation fee will be processed after the lawyer confirms your appointment. The remaining balance should be paid at the law office.</span>
-                    </p>
-                  </div>
+                  {/* Info */}
+                  <p className="text-xs text-gray-600 pt-2">
+                    Reservation fee will be processed after the lawyer confirms your appointment. The remaining balance should be paid at the law office.
+                  </p>
                 </div>
               </div>
 
