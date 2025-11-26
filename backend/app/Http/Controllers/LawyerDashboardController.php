@@ -99,6 +99,12 @@ class LawyerDashboardController extends Controller
 
         $appointments = $query->get();
 
+        // Add reservation_fee to each appointment
+        $appointments = $appointments->map(function ($appointment) use ($lawyer) {
+            $appointment->reservation_fee = $lawyer->reservation_fee ?? 100.00;
+            return $appointment;
+        });
+
         // Debug log to check Google Calendar sync status
         foreach ($appointments as $appointment) {
             Log::info('Appointment Google Calendar sync status', [

@@ -19,6 +19,7 @@ interface Appointment {
   duration_minutes: number;
   status: string;
   consultation_fee: number;
+  reservation_fee?: number;
   payment_status: string;
   payment_method: string;
   client_notes: string;
@@ -517,6 +518,12 @@ const LawyerAppointments: React.FC = () => {
                     <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
                       ₱{appointment.consultation_fee.toLocaleString()}
                     </p>
+                    {appointment.payment_status === 'paid' && appointment.reservation_fee && (
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        Received: ₱{appointment.reservation_fee.toLocaleString()} |
+                        Balance: ₱{(appointment.consultation_fee - appointment.reservation_fee).toLocaleString()}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-500">
                       {appointment.payment_method || 'N/A'}
                     </p>
