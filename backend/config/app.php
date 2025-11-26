@@ -130,11 +130,11 @@ return [
     |
     | This value determines the percentage of each payment that the platform
     | takes as commission. The remaining amount goes to the lawyer.
-    | Default: 20% (platform gets 20%, lawyer gets 80%)
+    | Default: 10% (platform gets 10%, lawyer gets 90%)
     |
     */
 
-    'platform_fee_percentage' => env('PLATFORM_FEE_PERCENTAGE', 20.00),
+    'platform_fee_percentage' => env('PLATFORM_FEE_PERCENTAGE', 10.00),
 
     /*
     |--------------------------------------------------------------------------
