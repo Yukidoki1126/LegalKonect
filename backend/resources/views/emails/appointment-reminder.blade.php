@@ -176,18 +176,7 @@
                     <li>Your reservation fee has been paid. Please bring ₱{{ number_format($appointment->consultation_fee - ($appointment->lawyer->reservation_fee ?? 100), 2) }} for the remaining balance</li>
                 </ul>
             </div>
-            
-            <div class="checklist">
-                <h3>📋 What to Bring</h3>
-                <ul>
-                    <li>Valid government-issued ID</li>
-                    <li>Any relevant documents related to your case</li>
-                    <li>List of questions you want to discuss</li>
-                    <li>Previous legal documents (if applicable)</li>
-                    <li>Notebook and pen for taking notes</li>
-                </ul>
-            </div>
-            
+
             <div class="button-container">
                 <a href="{{ env('FRONTEND_URL') }}/appointments" class="button">View Appointment Details</a>
             </div>

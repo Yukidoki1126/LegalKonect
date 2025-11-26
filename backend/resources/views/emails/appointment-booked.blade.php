@@ -137,14 +137,7 @@
             <p style="margin: 10px 0 0 0; font-size: 14px; color: #92400e;">The remaining balance of ₱{{ number_format($appointment->consultation_fee - ($appointment->lawyer->reservation_fee ?? 100), 2) }} will be paid at the law office.</p>
         </div>
         @endif
-        
-        <p><strong>What to bring:</strong></p>
-        <ul>
-            <li>Valid government ID</li>
-            <li>Relevant documents related to your legal concern</li>
-            <li>List of questions you want to discuss</li>
-        </ul>
-        
+
         <p>If you need to reschedule or cancel, please contact us at least 24 hours in advance.</p>
         
         <p>We look forward to serving you!</p>

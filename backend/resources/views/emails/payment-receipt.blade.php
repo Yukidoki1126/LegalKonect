@@ -172,7 +172,7 @@
         <div style="background-color: #fef3c7; padding: 15px; border-radius: 4px; margin: 20px 0;">
             <p style="margin: 0; color: #92400e;">
                 <strong>📌 Important Reminder:</strong><br>
-                Please arrive 10 minutes early and bring a valid ID along with any relevant documents.
+                Please arrive 10 minutes early for your appointment.
             </p>
         </div>
 
