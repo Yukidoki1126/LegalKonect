@@ -14,6 +14,12 @@ class LawyersTableSeeder extends Seeder
      */
     public function run(): void
     {
+        // Empty seeder - test with your own lawyer registrations
+        // The reservation_fee field will default to 100.00 for new lawyers
+
+        $this->command->info('Lawyer seeder disabled - register lawyers manually to test');
+        return;
+
         $lawyers = [
             [
                 'email' => 'juan.santos@lawfirm.ph',
@@ -24,6 +30,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-001234',
                 'years_experience' => 15,
                 'hourly_rate' => 3000.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Ayala Avenue, Makati City, Metro Manila',
                 'office_latitude' => 14.5547,
                 'office_longitude' => 121.0244,
@@ -45,6 +52,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-002345',
                 'years_experience' => 12,
                 'hourly_rate' => 4500.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Bonifacio Global City, Taguig, Metro Manila',
                 'office_latitude' => 14.5514,
                 'office_longitude' => 121.0496,
@@ -66,6 +74,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-003456',
                 'years_experience' => 20,
                 'hourly_rate' => 8000.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Salcedo Village, Makati City, Metro Manila',
                 'office_latitude' => 14.5588,
                 'office_longitude' => 121.0272,
@@ -87,6 +96,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-004567',
                 'years_experience' => 10,
                 'hourly_rate' => 2500.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Ortigas Center, Pasig City, Metro Manila',
                 'office_latitude' => 14.5865,
                 'office_longitude' => 121.0571,
@@ -108,6 +118,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-005678',
                 'years_experience' => 18,
                 'hourly_rate' => 5000.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Rockwell Center, Makati City, Metro Manila',
                 'office_latitude' => 14.5656,
                 'office_longitude' => 121.0369,
@@ -129,6 +140,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-006789',
                 'years_experience' => 8,
                 'hourly_rate' => 3500.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Eastwood City, Quezon City, Metro Manila',
                 'office_latitude' => 14.6091,
                 'office_longitude' => 121.0794,
@@ -150,6 +162,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-007890',
                 'years_experience' => 14,
                 'hourly_rate' => 3800.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Quezon Avenue, Quezon City, Metro Manila',
                 'office_latitude' => 14.6417,
                 'office_longitude' => 121.0359,
@@ -171,6 +184,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-008901',
                 'years_experience' => 7,
                 'hourly_rate' => 2800.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'SM Aura Premier, Taguig, Metro Manila',
                 'office_latitude' => 14.5466,
                 'office_longitude' => 121.0506,
@@ -192,6 +206,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-009012',
                 'years_experience' => 25,
                 'hourly_rate' => 7500.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Ayala Triangle, Makati City, Metro Manila',
                 'office_latitude' => 14.5538,
                 'office_longitude' => 121.0255,
@@ -213,6 +228,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-010123',
                 'years_experience' => 11,
                 'hourly_rate' => 4200.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'The Fort, Bonifacio Global City, Taguig',
                 'office_latitude' => 14.5488,
                 'office_longitude' => 121.0471,
@@ -234,6 +250,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-011234',
                 'years_experience' => 6,
                 'hourly_rate' => 1800.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'España Boulevard, Manila City, Metro Manila',
                 'office_latitude' => 14.6091,
                 'office_longitude' => 120.9897,
@@ -255,6 +272,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-012345',
                 'years_experience' => 13,
                 'hourly_rate' => 4000.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Greenhills, San Juan, Metro Manila',
                 'office_latitude' => 14.6026,
                 'office_longitude' => 121.0489,
@@ -276,6 +294,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-013456',
                 'years_experience' => 9,
                 'hourly_rate' => 3200.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Alabang Town Center, Muntinlupa, Metro Manila',
                 'office_latitude' => 14.4186,
                 'office_longitude' => 121.0396,
@@ -297,6 +316,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-014567',
                 'years_experience' => 16,
                 'hourly_rate' => 5500.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Libis, Quezon City, Metro Manila',
                 'office_latitude' => 14.6308,
                 'office_longitude' => 121.0695,
@@ -318,6 +338,7 @@ class LawyersTableSeeder extends Seeder
                 'ibp_number' => 'IBP-015678',
                 'years_experience' => 5,
                 'hourly_rate' => 2200.00,
+                'reservation_fee' => 100.00,
                 'office_address' => 'Mandaluyong City, Metro Manila',
                 'office_latitude' => 14.5794,
                 'office_longitude' => 121.0359,

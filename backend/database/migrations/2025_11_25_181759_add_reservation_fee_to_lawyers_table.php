@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'google_id')) {
-                $table->string('google_id')->nullable()->after('email');
-            }
+        Schema::table('lawyers', function (Blueprint $table) {
+            $table->decimal('reservation_fee', 10, 2)->default(100.00)->after('consultation_fee');
         });
     }
 
@@ -23,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('google_id');
+        Schema::table('lawyers', function (Blueprint $table) {
+            $table->dropColumn('reservation_fee');
         });
     }
 };

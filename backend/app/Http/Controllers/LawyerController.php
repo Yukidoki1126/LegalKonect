@@ -67,6 +67,7 @@ class LawyerController extends Controller
             'license_number' => $lawyer->license_number,
             'years_experience' => $lawyer->years_experience,
             'hourly_rate' => $lawyer->hourly_rate,
+            'reservation_fee' => $lawyer->reservation_fee ?? 100.00,
             'office_address' => $lawyer->office_address,
             'office_phone' => $lawyer->office_phone,
             'office_latitude' => $lawyer->office_latitude,

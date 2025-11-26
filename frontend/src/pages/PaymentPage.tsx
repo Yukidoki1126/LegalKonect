@@ -10,6 +10,7 @@ interface Appointment {
   lawyer: {
     first_name: string;
     last_name: string;
+    reservation_fee?: number;
   };
 }
 
@@ -90,9 +91,10 @@ const PaymentPage: React.FC = () => {
     const { payment_intent_id } = intentResponse.data;
 
     // Step 2: Create Source for GCash/PayMaya
+    const reservationFee = appointment!.lawyer.reservation_fee || 100;
     const sourceResponse = await api.post('/payment-sources', {
       type: paymentMethod,
-      amount: appointment!.consultation_fee,
+      amount: reservationFee,
       payment_intent_id: payment_intent_id,
       appointment_id: appointmentId
     });
@@ -161,10 +163,24 @@ const PaymentPage: React.FC = () => {
             <p className="text-gray-700">
               <strong>Time:</strong> {appointment.appointment_time}
             </p>
-            <div className="border-t pt-4 mt-4">
-              <p className="text-2xl font-bold text-blue-600">
-                Total: ₱{appointment.consultation_fee.toLocaleString()}
-              </p>
+            <div className="border-t pt-4 mt-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Total Consultation Fee:</span>
+                <span className="text-lg font-semibold text-gray-900">
+                  ₱{appointment.consultation_fee.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center bg-green-50 p-3 rounded-lg border border-green-200">
+                <div>
+                  <span className="text-gray-900 font-medium">Reservation Fee (Pay Now):</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Balance due at office: ₱{(appointment.consultation_fee - (appointment.lawyer.reservation_fee || 100)).toLocaleString()}
+                  </p>
+                </div>
+                <span className="text-2xl font-bold text-green-600">
+                  ₱{(appointment.lawyer.reservation_fee || 100).toLocaleString()}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -318,7 +334,7 @@ const PaymentPage: React.FC = () => {
                     Processing...
                   </span>
                 ) : (
-                  `Pay ₱${appointment.consultation_fee.toLocaleString()}`
+                  `Pay ₱${(appointment.lawyer.reservation_fee || 100).toLocaleString()}`
                 )}
               </button>
             </div>

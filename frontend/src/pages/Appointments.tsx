@@ -379,12 +379,10 @@ const Appointments: React.FC = () => {
                             {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                           </span>
                         )}
-                        {/* Only show payment status if paid or refunded (unpaid is handled during booking flow) */}
-                        {appointment.payment_status !== 'unpaid' && (
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(appointment.payment_status)}`}>
-                            {appointment.payment_status.charAt(0).toUpperCase() + appointment.payment_status.slice(1)}
-                          </span>
-                        )}
+                        {/* Always show payment status */}
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(appointment.payment_status)}`}>
+                          {appointment.payment_status.charAt(0).toUpperCase() + appointment.payment_status.slice(1)}
+                        </span>
                       </div>
                     </div>
 

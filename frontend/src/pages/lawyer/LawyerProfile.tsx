@@ -11,6 +11,7 @@ interface LawyerProfile {
   license_number: string;
   years_experience: number;
   hourly_rate: number;
+  reservation_fee: number;
   office_address: string;
   office_phone: string;
   office_hours: string;
@@ -48,6 +49,7 @@ const LawyerProfile: React.FC = () => {
     license_number: '',
     years_experience: 0,
     hourly_rate: 0,
+    reservation_fee: 100,
     office_address: '',
     office_latitude: null as number | null,
     office_longitude: null as number | null,
@@ -77,6 +79,7 @@ const LawyerProfile: React.FC = () => {
         license_number: data.license_number || '',
         years_experience: data.years_experience || 0,
         hourly_rate: data.hourly_rate || 0,
+        reservation_fee: data.reservation_fee || 100,
         office_address: data.office_address || '',
         office_latitude: data.office_latitude || null,
         office_longitude: data.office_longitude || null,
@@ -525,6 +528,25 @@ const LawyerProfile: React.FC = () => {
                     step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Reservation Fee (₱) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="reservation_fee"
+                    value={formData.reservation_fee}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Clients pay this amount to reserve an appointment. Default is ₱100.00
+                  </p>
                 </div>
 
                 <div>

@@ -72,8 +72,8 @@ class PaymentController extends Controller
                 ], 422);
             }
 
-            // Get the amount (don't convert to cents - PaymongoService does that)
-            $amount = $appointment->consultation_fee;
+            // Get the reservation fee amount (don't convert to cents - PaymongoService does that)
+            $amount = $appointment->lawyer->reservation_fee ?? 100.00;
 
             Log::info('Creating PayMongo payment intent', [
                 'amount' => $amount,
@@ -491,7 +491,8 @@ class PaymentController extends Controller
                 return $existingEarning;
             }
 
-            $grossAmount = $appointment->consultation_fee;
+            // Use reservation fee since that's what was actually paid
+            $grossAmount = $appointment->lawyer->reservation_fee ?? 100.00;
             $platformFeePercentage = config('app.platform_fee_percentage', 20.00); // 20% default
             $platformFee = $grossAmount * ($platformFeePercentage / 100);
             $netAmount = $grossAmount - $platformFee;
