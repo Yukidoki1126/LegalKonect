@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { User, Camera, Trash2, Upload, CheckCircle, X } from 'lucide-react';
+import React, { useState, useRef, memo } from 'react';
+import { User, Camera, Trash2, Upload, CheckCircle } from 'lucide-react';
 
 interface ProfilePictureUploadProps {
   currentPicture?: string | null;
@@ -275,4 +275,4 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   );
 };
 
-export default ProfilePictureUpload;
+export default memo(ProfilePictureUpload);

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 
 class PaymongoService
@@ -77,10 +78,10 @@ class PaymongoService
 
             return $result;
 
-        } catch (GuzzleException $e) {
+        } catch (RequestException $e) {
             $errorBody = null;
             $statusCode = null;
-            
+
             if ($e->hasResponse()) {
                 $statusCode = $e->getResponse()->getStatusCode();
                 $errorBody = $e->getResponse()->getBody()->getContents();
@@ -93,6 +94,12 @@ class PaymongoService
             ]);
 
             throw new \Exception('Failed to create payment intent: ' . ($errorBody ?? $e->getMessage()));
+        } catch (GuzzleException $e) {
+            Log::error('PayMongo Create Payment Intent Error', [
+                'message' => $e->getMessage()
+            ]);
+
+            throw new \Exception('Failed to create payment intent: ' . $e->getMessage());
         }
     }
 
@@ -140,9 +147,9 @@ class PaymongoService
 
             return json_decode($response->getBody()->getContents(), true);
 
-        } catch (GuzzleException $e) {
+        } catch (RequestException $e) {
             $errorBody = null;
-            
+
             if ($e->hasResponse()) {
                 $errorBody = $e->getResponse()->getBody()->getContents();
             }
@@ -153,6 +160,12 @@ class PaymongoService
             ]);
 
             throw new \Exception('Invalid payment details: ' . ($errorBody ?? $e->getMessage()));
+        } catch (GuzzleException $e) {
+            Log::error('PayMongo Create Payment Method Error', [
+                'message' => $e->getMessage()
+            ]);
+
+            throw new \Exception('Invalid payment details: ' . $e->getMessage());
         }
     }
 
@@ -180,9 +193,9 @@ class PaymongoService
 
             return json_decode($response->getBody()->getContents(), true);
 
-        } catch (GuzzleException $e) {
+        } catch (RequestException $e) {
             $errorBody = null;
-            
+
             if ($e->hasResponse()) {
                 $errorBody = $e->getResponse()->getBody()->getContents();
             }
@@ -193,6 +206,12 @@ class PaymongoService
             ]);
 
             throw new \Exception('Payment processing failed: ' . ($errorBody ?? $e->getMessage()));
+        } catch (GuzzleException $e) {
+            Log::error('PayMongo Attach Payment Error', [
+                'message' => $e->getMessage()
+            ]);
+
+            throw new \Exception('Payment processing failed: ' . $e->getMessage());
         }
     }
 
@@ -281,5 +300,177 @@ public function attachSourceToPaymentIntent($paymentIntentId, $sourceId)
         ]
     ]);
     return json_decode($response->getBody(), true);
+}
+
+/**
+ * Create a refund for a payment intent
+ *
+ * @param string $paymentIntentId The payment intent ID to refund
+ * @param float|null $amount Amount to refund in PHP (null for full refund)
+ * @param string $reason Reason for refund: 'duplicate', 'fraudulent', 'requested_by_customer'
+ * @param string|null $notes Additional notes about the refund
+ * @return array The refund response from PayMongo
+ */
+public function createRefund($paymentIntentId, $amount = null, $reason = 'requested_by_customer', $notes = null)
+{
+    try {
+        // Step 1: Retrieve the payment intent to get the payment ID
+        Log::info('Retrieving payment intent to get payment ID', [
+            'payment_intent_id' => $paymentIntentId
+        ]);
+
+        $paymentIntent = $this->retrievePaymentIntent($paymentIntentId);
+
+        // Get the payment ID from the payment intent
+        $payments = $paymentIntent['data']['attributes']['payments'] ?? [];
+
+        if (empty($payments)) {
+            throw new \Exception('No payment found for this payment intent');
+        }
+
+        // Get the first payment ID and payment source details
+        $payment = $payments[0];
+        $paymentId = $payment['id'] ?? null;
+
+        if (!$paymentId) {
+            throw new \Exception('Payment ID not found in payment intent');
+        }
+
+        // Extract payment source details for the refund confirmation
+        $paymentSource = $payment['attributes']['source'] ?? [];
+        $sourceType = $paymentSource['type'] ?? null;
+
+        $paymentDetails = [];
+        if ($sourceType === 'card') {
+            $paymentDetails = [
+                'type' => 'card',
+                'brand' => $paymentSource['brand'] ?? 'Unknown',
+                'last4' => $paymentSource['last4'] ?? '****',
+            ];
+        } elseif ($sourceType === 'gcash') {
+            $paymentDetails = [
+                'type' => 'gcash',
+            ];
+        } elseif ($sourceType === 'paymaya') {
+            $paymentDetails = [
+                'type' => 'paymaya',
+            ];
+        } elseif ($sourceType === 'grab_pay') {
+            $paymentDetails = [
+                'type' => 'grab_pay',
+            ];
+        }
+
+        Log::info('Found payment ID for refund', [
+            'payment_intent_id' => $paymentIntentId,
+            'payment_id' => $paymentId,
+            'payment_details' => $paymentDetails
+        ]);
+
+        // Step 2: Create the refund using the payment ID
+        $payload = [
+            'data' => [
+                'attributes' => [
+                    'payment_id' => $paymentId,  // Use payment_id instead of payment_intent
+                    'reason' => $reason,
+                ]
+            ]
+        ];
+
+        // If amount is specified, convert to centavos
+        if ($amount !== null) {
+            $payload['data']['attributes']['amount'] = (int)($amount * 100);
+        }
+
+        // Add notes if provided
+        if ($notes !== null) {
+            $payload['data']['attributes']['notes'] = $notes;
+        }
+
+        Log::info('Creating PayMongo refund', [
+            'payment_id' => $paymentId,
+            'amount' => $amount,
+            'reason' => $reason,
+            'payload' => $payload
+        ]);
+
+        $response = $this->client->post('refunds', [
+            'json' => $payload
+        ]);
+
+        $result = json_decode($response->getBody()->getContents(), true);
+
+        Log::info('PayMongo refund created successfully', [
+            'refund_id' => $result['data']['id'] ?? 'unknown',
+            'status' => $result['data']['attributes']['status'] ?? 'unknown',
+            'amount' => $result['data']['attributes']['amount'] ?? 0
+        ]);
+
+        // Add payment details to the result for use in emails
+        $result['payment_details'] = $paymentDetails;
+
+        return $result;
+
+    } catch (RequestException $e) {
+        $errorBody = null;
+        $statusCode = null;
+
+        if ($e->hasResponse()) {
+            $statusCode = $e->getResponse()->getStatusCode();
+            $errorBody = $e->getResponse()->getBody()->getContents();
+        }
+
+        Log::error('PayMongo Create Refund Error', [
+            'payment_intent_id' => $paymentIntentId,
+            'message' => $e->getMessage(),
+            'status_code' => $statusCode,
+            'error_response' => $errorBody
+        ]);
+
+        throw new \Exception('Failed to create refund: ' . ($errorBody ?? $e->getMessage()));
+    } catch (GuzzleException $e) {
+        Log::error('PayMongo Create Refund Error', [
+            'payment_intent_id' => $paymentIntentId,
+            'message' => $e->getMessage()
+        ]);
+
+        throw new \Exception('Failed to create refund: ' . $e->getMessage());
+    } catch (\Exception $e) {
+        Log::error('Refund processing error', [
+            'payment_intent_id' => $paymentIntentId,
+            'error' => $e->getMessage()
+        ]);
+        throw $e;
+    }
+}
+
+/**
+ * Retrieve refund details
+ *
+ * @param string $refundId The refund ID
+ * @return array The refund details
+ */
+public function retrieveRefund($refundId)
+{
+    try {
+        Log::info('Retrieving PayMongo refund', ['refund_id' => $refundId]);
+
+        $response = $this->client->get("refunds/{$refundId}");
+        $result = json_decode($response->getBody()->getContents(), true);
+
+        Log::info('PayMongo refund retrieved', [
+            'refund_id' => $refundId,
+            'status' => $result['data']['attributes']['status'] ?? 'unknown'
+        ]);
+
+        return $result;
+
+    } catch (GuzzleException $e) {
+        Log::error('PayMongo Retrieve Refund Error', [
+            'refund_id' => $refundId,
+            'message' => $e->getMessage()
+        ]);
+        throw new \Exception('Failed to retrieve refund: ' . $e->getMessage());
+    }
 }
 }

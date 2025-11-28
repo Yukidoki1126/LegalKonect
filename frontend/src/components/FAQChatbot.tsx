@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Search, Home, ChevronLeft, Loader, ThumbsUp, ThumbsDown, Sparkles, Clock } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { MessageCircle, X, Send, Search, Home, ChevronLeft, ThumbsUp, ThumbsDown } from 'lucide-react';
 import axios from 'axios';
 
 interface FAQ {
@@ -52,7 +52,6 @@ const FAQChatbot: React.FC = () => {
   const [categoryFaqs, setCategoryFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -64,24 +63,73 @@ const FAQChatbot: React.FC = () => {
     "How do I find lawyers near me?"
   ];
 
+  // LegalKonect system features context
+  const systemFeatures = {
+    booking: {
+      keywords: ['book', 'appointment', 'schedule', 'reserve', 'consultation', 'meeting', 'session'],
+      response: "📅 **Booking on LegalKonect**\n\nYou can easily book appointments with verified lawyers:\n\n1. Browse our lawyer directory\n2. Select a lawyer and view their schedule\n3. Choose an available time slot\n4. Pay the reservation fee (10% of consultation fee)\n5. Get instant confirmation\n\nWould you like to know more about booking?"
+    },
+    payment: {
+      keywords: ['payment', 'pay', 'fee', 'cost', 'price', 'money', 'gcash', 'card', 'visa', 'mastercard', 'paymaya', 'transaction'],
+      response: "💳 **Payment on LegalKonect**\n\nWe accept multiple payment methods:\n\n• Credit/Debit Cards (Visa, Mastercard)\n• GCash\n• PayMaya\n\nReservation System:\n• Pay 10% reservation fee upfront\n• Pay remaining 90% after consultation\n• Secure payment via PayMongo\n\nAll transactions are encrypted and secure!"
+    },
+    cancellation: {
+      keywords: ['cancel', 'refund', 'reschedule', 'change', 'modify', 'postpone', 'move'],
+      response: "🔄 **Cancellation & Refund Policy**\n\nLegalKonect offers flexible options:\n\n• **Cancel Before Appointment**: Full refund of reservation fee\n• **Reschedule**: Request new date/time (lawyer approval required)\n• **Refunds**: Processed within 5-7 business days\n\nNote: Lawyers can also cancel/reschedule appointments."
+    },
+    lawyers: {
+      keywords: ['lawyer', 'attorney', 'find', 'search', 'specialization', 'location', 'near', 'practice', 'expert', 'advocate'],
+      response: "👨‍⚖️ **Finding Lawyers on LegalKonect**\n\nOur platform helps you find the right lawyer:\n\n• **Search by Specialization**: Family Law, Criminal Law, Corporate, etc.\n• **Filter by Location**: Find lawyers near you\n• **View Profiles**: See experience, ratings, and reviews\n• **Check Availability**: Real-time schedule visibility\n\nAll lawyers are verified and licensed!"
+    },
+    reviews: {
+      keywords: ['review', 'rating', 'feedback', 'testimonial', 'comment', 'experience', 'opinion'],
+      response: "⭐ **Reviews & Ratings**\n\nLegalKonect has a transparent review system:\n\n• Leave reviews after completed consultations\n• Rate lawyers on quality and professionalism\n• Read verified client reviews\n• Admin-approved to ensure authenticity\n\nYour feedback helps other clients make informed decisions!"
+    },
+    account: {
+      keywords: ['account', 'profile', 'register', 'signup', 'login', 'password', 'email', 'username'],
+      response: "👤 **Your LegalKonect Account**\n\nManage your account easily:\n\n• **Sign Up**: Create account with email or Google\n• **Profile Management**: Update your information anytime\n• **Appointment History**: Track all your consultations\n• **Notifications**: Get updates on appointments\n\nYour account is secure and your data is protected!"
+    },
+    verification: {
+      keywords: ['verify', 'verified', 'license', 'credential', 'authentic', 'legit', 'real', 'fake'],
+      response: "✅ **Lawyer Verification**\n\nLegalKonect ensures lawyer authenticity:\n\n• All lawyers are manually verified by our admin team\n• We check license numbers and credentials\n• Only approved lawyers can accept bookings\n• Continuous monitoring for quality assurance\n\nYou can trust that you're connecting with real, licensed lawyers!"
+    },
+    google: {
+      keywords: ['google', 'calendar', 'gmail', 'sync', 'integration'],
+      response: "📆 **Google Integration**\n\nLegalKonect integrates with Google services:\n\n• **Google Sign-In**: Quick account creation\n• **Google Calendar Sync**: Lawyers can sync their schedules\n• **Automatic Updates**: Appointments added to calendar\n\nYour Google account is secure and we only access what's needed!"
+    }
+  };
+
+  // Detect intent from user query
+  const detectIntent = (query: string): string | null => {
+    const lowerQuery = query.toLowerCase();
+
+    for (const [feature, data] of Object.entries(systemFeatures)) {
+      if (data.keywords.some(keyword => lowerQuery.includes(keyword))) {
+        return feature;
+      }
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  useEffect(() => {
-    if (isOpen && categories.length === 0) {
-      fetchCategories();
-    }
-  }, [isOpen]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/faqs/categories');
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && categories.length === 0) {
+      fetchCategories();
+    }
+  }, [isOpen, categories.length, fetchCategories]);
 
   const fetchCategoryFaqs = async (slug: string) => {
     setLoading(true);
@@ -119,7 +167,7 @@ const FAQChatbot: React.FC = () => {
     if (!isOpen && messages.length === 0) {
       setTimeout(() => {
         addBotMessage(
-          "👋 Hi there! I'm your LegalKonect Assistant. I'm here to help answer your questions about our platform.",
+          "👋 **Welcome to LegalKonect!**\n\nI'm your virtual assistant, here to help you navigate our platform.\n\nI can assist you with:\n• Booking appointments with lawyers\n• Payment and pricing information\n• Cancellations and refunds\n• Finding the right lawyer for your case\n\nWhat would you like to know?",
           undefined,
           popularQuestions
         );
@@ -191,11 +239,15 @@ const FAQChatbot: React.FC = () => {
     // Simulate thinking time
     await new Promise(resolve => setTimeout(resolve, 800));
 
+    // First, try to detect intent for LegalKonect system features
+    const intent = detectIntent(textToSend);
+
     const matchingFAQs = await searchFAQs(textToSend);
 
     setIsTyping(false);
 
     if (matchingFAQs.length > 0) {
+      // FAQs found - show them with system context
       setTimeout(() => {
         matchingFAQs.slice(0, 3).forEach((faq: FAQ, index: number) => {
           setTimeout(() => {
@@ -219,12 +271,28 @@ const FAQChatbot: React.FC = () => {
           }, Math.min(matchingFAQs.length, 3) * 600);
         }
       }, 300);
+    } else if (intent) {
+      // No FAQ match but detected system feature intent
+      setTimeout(() => {
+        const featureResponse = systemFeatures[intent as keyof typeof systemFeatures].response;
+        addBotMessage(featureResponse, undefined, undefined, false);
+
+        // Add follow-up suggestions
+        setTimeout(() => {
+          addBotMessage(
+            "Need more help? Try these:",
+            undefined,
+            ["Browse all FAQs", "Talk to a lawyer", "View pricing"]
+          );
+        }, 800);
+      }, 300);
     } else {
+      // No match - provide helpful LegalKonect-specific guidance
       setTimeout(() => {
         addBotMessage(
-          "🤔 I couldn't find a specific answer to that question.\n\nHere's what you can do:",
+          "🤔 I'm not sure about that specific question, but I can help you with:\n\n• Booking appointments with lawyers\n• Understanding our payment system\n• Cancellation and refund policies\n• Finding the right lawyer for your case\n• Reviews and ratings\n\nWhat would you like to know more about?",
           undefined,
-          ["Browse all FAQs", "Talk to support", "Try different keywords"]
+          ["How to book", "Payment options", "Find a lawyer", "Browse FAQs"]
         );
       }, 300);
     }
@@ -237,11 +305,35 @@ const FAQChatbot: React.FC = () => {
       addUserMessage(reply);
       setTimeout(() => {
         addBotMessage(
-          "📧 You can reach our support team at:\n\n**Email:** support@legalkonect.com\n\nWe typically respond within 24 hours. How else can I help you?",
+          "📧 **Contact LegalKonect Support**\n\n**Email:** support@legalkonect.com\n**Response Time:** Within 24 hours\n\nOur support team can help with:\n• Account issues\n• Payment concerns\n• Technical problems\n• General inquiries\n\nHow else can I help you?",
           undefined,
           popularQuestions
         );
       }, 500);
+    } else if (reply === "Talk to a lawyer") {
+      addUserMessage(reply);
+      setTimeout(() => {
+        addBotMessage(
+          "👨‍⚖️ **Connect with a Lawyer**\n\n1. Visit our lawyer directory\n2. Browse by specialization or location\n3. View lawyer profiles and reviews\n4. Book an appointment directly\n\nReady to find the right lawyer for your case?",
+          undefined,
+          ["Browse lawyers", "How to book", "View specializations"]
+        );
+      }, 500);
+    } else if (reply === "View pricing") {
+      addUserMessage(reply);
+      setTimeout(() => {
+        addBotMessage(
+          "💰 **LegalKonect Pricing**\n\n**Reservation Fee:** 10% of consultation fee (paid upfront)\n**Consultation Fee:** Set by each lawyer (view on their profile)\n**Remaining Payment:** 90% due after consultation\n**Platform Fee:** 10% (included in lawyer's rate)\n\nNo hidden charges! All fees are clearly displayed before booking.",
+          undefined,
+          ["How to book", "Payment methods", "Refund policy"]
+        );
+      }, 500);
+    } else if (reply === "How to book") {
+      handleSendMessage("How do I book an appointment?");
+    } else if (reply === "Payment options") {
+      handleSendMessage("What payment methods do you accept?");
+    } else if (reply === "Find a lawyer") {
+      handleSendMessage("How do I find lawyers near me?");
     } else {
       handleSendMessage(reply);
     }
@@ -301,7 +393,7 @@ const FAQChatbot: React.FC = () => {
     if (messages.length === 0) {
       setTimeout(() => {
         addBotMessage(
-          "👋 Hi there! I'm your LegalKonect Assistant. What would you like to know?",
+          "👋 **LegalKonect Assistant**\n\nAsk me anything about:\n• Booking consultations\n• Payment methods\n• Finding lawyers\n• Your appointments\n\nHow can I help you today?",
           undefined,
           popularQuestions
         );
@@ -325,44 +417,42 @@ const FAQChatbot: React.FC = () => {
   };
 
   const renderWelcome = () => (
-    <div className="flex flex-col items-center justify-center h-full p-6 text-center animate-[fadeIn_0.4s_ease-out]">
-      <div className="relative mb-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
-        <div className="relative w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform">
-          <MessageCircle className="w-12 h-12 text-white animate-[bounce_2s_ease-in-out_infinite]" />
+    <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+      <div className="mb-6" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+        <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+          <MessageCircle className="w-8 h-8 text-white" />
         </div>
       </div>
 
-      <h3 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
+      <h3 className="text-2xl font-bold text-gray-900 mb-2" style={{ animation: 'fadeIn 0.6s ease-out' }}>
         How can we help you?
       </h3>
-      <p className="text-gray-600 mb-8 text-lg">
+      <p className="text-gray-600 mb-6 text-base" style={{ animation: 'fadeIn 0.7s ease-out' }}>
         Choose an option below to get started
       </p>
 
-      <div className="w-full space-y-3 mb-8">
+      <div className="w-full space-y-3 mb-6">
         <button
           onClick={goToChat}
-          className="group w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-2xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-2xl flex items-center justify-center space-x-3 font-semibold transform hover:scale-[1.02] hover:-translate-y-0.5"
+          className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium transform hover:scale-105 active:scale-95"
+          style={{ animation: 'fadeIn 0.8s ease-out' }}
         >
-          <Search className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-          <span className="text-lg">Ask a Question</span>
+          <Search className="w-5 h-5" />
+          <span>Ask a Question</span>
         </button>
 
         <button
           onClick={goToCategories}
-          className="group w-full bg-white border-2 border-gray-200 text-gray-700 py-4 px-6 rounded-2xl hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center space-x-3 font-semibold hover:shadow-lg transform hover:scale-[1.02]"
+          className="w-full bg-white border border-gray-300 text-gray-700 py-3 px-6 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center justify-center space-x-2 font-medium transform hover:scale-105 active:scale-95"
+          style={{ animation: 'fadeIn 0.9s ease-out' }}
         >
-          <Home className="w-6 h-6 group-hover:scale-110 transition-transform" />
-          <span className="text-lg">Browse FAQs</span>
+          <Home className="w-5 h-5" />
+          <span>Browse FAQs</span>
         </button>
       </div>
 
-      <div className="w-full bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100 shadow-sm">
-        <div className="flex items-center justify-center space-x-2 mb-3">
-          <Sparkles className="w-4 h-4 text-blue-600" />
-          <p className="text-sm font-bold text-gray-700">Popular Questions</p>
-        </div>
+      <div className="w-full bg-gray-50 rounded-lg p-4 border border-gray-200" style={{ animation: 'fadeIn 1s ease-out' }}>
+        <p className="text-sm font-semibold text-gray-700 mb-3">Popular Questions</p>
         <div className="space-y-2">
           {popularQuestions.slice(0, 3).map((q, i) => (
             <button
@@ -371,60 +461,58 @@ const FAQChatbot: React.FC = () => {
                 goToChat();
                 setTimeout(() => handleSendMessage(q), 500);
               }}
-              className="w-full text-left text-sm text-blue-700 hover:text-blue-900 bg-white hover:bg-blue-50 p-3 rounded-xl transition-all border border-transparent hover:border-blue-200 hover:shadow-md font-medium"
+              className="w-full text-left text-sm text-gray-700 hover:text-blue-600 bg-white hover:bg-gray-50 p-3 rounded-md transition-all duration-200 border border-gray-200 transform hover:-translate-y-0.5"
+              style={{ animation: `fadeIn 0.3s ease-out ${1.1 + i * 0.1}s both` }}
             >
-              <span className="mr-2">💬</span>
               {q}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="mt-6 text-xs text-gray-500">
-        Or contact us at <span className="text-blue-600 font-semibold">support@legalkonect.com</span>
+      <div className="mt-6 text-xs text-gray-600" style={{ animation: 'fadeIn 1.4s ease-out' }}>
+        Or contact us at <span className="text-blue-600 font-medium">support@legalkonect.com</span>
       </div>
     </div>
   );
 
   const renderCategories = () => (
-    <div className="flex flex-col h-full animate-[fadeIn_0.3s_ease-out]">
-      <div className="border-b-2 border-gray-100 p-5 flex items-center space-x-3 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50">
+    <div className="flex flex-col h-full">
+      <div className="border-b border-gray-200 p-4 flex items-center space-x-3 bg-white">
         <button
           onClick={goToWelcome}
-          className="text-gray-600 hover:text-gray-900 hover:bg-white rounded-xl p-2.5 transition-all shadow-sm hover:shadow-md"
+          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md p-2 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>
-          <h3 className="text-xl font-bold text-gray-900">Browse by Category</h3>
-          <p className="text-xs text-gray-600 mt-0.5">Select a topic to explore</p>
+          <h3 className="text-xl font-semibold text-gray-900">Browse by Category</h3>
+          <p className="text-sm text-gray-600">Select a topic to explore</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
         {categories.map((category, index) => (
           <button
             key={category.id}
             onClick={() => handleCategoryClick(category)}
-            style={{ animationDelay: `${index * 50}ms` }}
-            className="w-full bg-white border-2 border-gray-200 rounded-2xl p-5 hover:border-blue-500 hover:shadow-xl transition-all text-left group animate-[slideUp_0.4s_ease-out] hover:-translate-y-1"
+            className="w-full bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-600 hover:shadow-md transition-all duration-200 text-left transform hover:-translate-y-1"
+            style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s both` }}
           >
-            <div className="flex items-start space-x-4">
-              <div className="text-4xl group-hover:scale-110 transition-transform bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-xl group-hover:shadow-lg">
-                {category.icon}
-              </div>
-              <div className="flex-1">
-                <h4 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors mb-1">
-                  {category.name}
-                </h4>
-                <p className="text-sm text-gray-600 leading-relaxed">{category.description}</p>
-                <div className="flex items-center space-x-2 mt-3">
-                  <span className="px-3 py-1.5 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 rounded-full text-xs font-bold shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1">
+                <div className="text-2xl transition-transform duration-200 group-hover:scale-110">{category.icon}</div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-base text-gray-900">
+                    {category.name}
+                  </h4>
+                  <p className="text-sm text-gray-600">{category.description}</p>
+                  <span className="inline-block mt-2 text-xs text-gray-500">
                     {category.faqs_count} question{category.faqs_count !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
-              <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transform rotate-180 group-hover:translate-x-1 transition-all" />
+              <ChevronLeft className="w-5 h-5 text-gray-400 transform rotate-180 transition-transform duration-200 group-hover:translate-x-1" />
             </div>
           </button>
         ))}
@@ -433,46 +521,43 @@ const FAQChatbot: React.FC = () => {
   );
 
   const renderCategoryFAQs = () => (
-    <div className="flex flex-col h-full animate-[fadeIn_0.3s_ease-out]">
-      <div className="border-b-2 border-gray-100 p-5 flex items-center space-x-3 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50">
+    <div className="flex flex-col h-full">
+      <div className="border-b border-gray-200 p-4 flex items-center space-x-3 bg-white">
         <button
           onClick={goToCategories}
-          className="text-gray-600 hover:text-gray-900 hover:bg-white rounded-xl p-2.5 transition-all shadow-sm hover:shadow-md"
+          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md p-2 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <div className="text-3xl bg-white p-2 rounded-xl shadow-sm">{selectedCategory?.icon}</div>
+        <div className="text-2xl">{selectedCategory?.icon}</div>
         <div>
-          <h3 className="text-xl font-bold text-gray-900">{selectedCategory?.name}</h3>
-          <p className="text-xs text-gray-600 mt-0.5">{categoryFaqs.length} questions available</p>
+          <h3 className="text-xl font-semibold text-gray-900">{selectedCategory?.name}</h3>
+          <p className="text-sm text-gray-600">{categoryFaqs.length} questions available</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
         {loading ? (
-          <div className="flex flex-col justify-center items-center h-full space-y-4">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-              <Sparkles className="w-6 h-6 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-            </div>
-            <p className="text-gray-600 font-medium">Loading questions...</p>
+          <div className="flex flex-col justify-center items-center h-full space-y-3">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <p className="text-gray-600 text-sm">Loading questions...</p>
           </div>
         ) : (
           categoryFaqs.map((faq, index) => (
             <button
               key={faq.id}
               onClick={() => handleFAQClick(faq)}
-              style={{ animationDelay: `${index * 50}ms` }}
-              className="w-full bg-white border-2 border-gray-200 rounded-2xl p-5 hover:border-blue-500 hover:shadow-xl transition-all text-left group animate-[slideUp_0.4s_ease-out] hover:-translate-y-1"
+              className="w-full bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-600 hover:shadow-md transition-all duration-200 text-left transform hover:-translate-y-1"
+              style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s both` }}
             >
               <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-sm shadow-md group-hover:scale-110 transition-transform">
+                <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-md flex items-center justify-center font-semibold text-xs">
                   Q
                 </div>
-                <p className="flex-1 font-semibold text-gray-900 group-hover:text-blue-600 transition-colors leading-relaxed">
+                <p className="flex-1 font-medium text-gray-900 text-sm">
                   {faq.question}
                 </p>
-                <ChevronLeft className="flex-shrink-0 w-5 h-5 text-gray-400 group-hover:text-blue-600 transform rotate-180 group-hover:translate-x-1 transition-all" />
+                <ChevronLeft className="flex-shrink-0 w-5 h-5 text-gray-400 transform rotate-180 transition-transform duration-200 group-hover:translate-x-1" />
               </div>
             </button>
           ))
@@ -483,51 +568,46 @@ const FAQChatbot: React.FC = () => {
 
   const renderChat = () => (
     <div className="flex flex-col h-full">
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-5 flex items-center justify-between shadow-xl">
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={goToWelcome}
-            className="text-white hover:bg-white/20 rounded-xl p-2 transition-all shadow-sm"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg">FAQ Assistant</h3>
-              <p className="text-xs text-blue-100 flex items-center">
-                <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse shadow-lg"></span>
-                Online • Ready to help
-              </p>
-            </div>
-          </div>
+      <div className="bg-blue-600 text-white p-4 flex items-center space-x-3 border-b border-blue-700">
+        <button
+          onClick={goToWelcome}
+          className="text-white hover:bg-blue-700 rounded-md p-2 transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h3 className="font-semibold text-base">FAQ Assistant</h3>
+          <p className="text-xs text-blue-100">Online</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 via-blue-50/20 to-white">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
         {messages.map((message) => (
-          <div key={message.id} className="space-y-2 animate-[fadeIn_0.3s_ease-out]">
+          <div
+            key={message.id}
+            className="space-y-2"
+            style={{
+              animation: message.isBot ? 'slideInLeft 0.3s ease-out' : 'slideInRight 0.3s ease-out'
+            }}
+          >
             <div
               className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
             >
               <div
-                className={`max-w-[85%] rounded-2xl p-4 shadow-lg ${
+                className={`max-w-[80%] rounded-lg p-3 ${
                   message.isBot
-                    ? 'bg-white border border-gray-200 text-gray-800'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-200'
+                    ? 'bg-white border border-gray-200 text-gray-900'
+                    : 'bg-blue-600 text-white'
                 }`}
               >
-                <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                <div className="text-sm whitespace-pre-wrap">
                   {formatMessageText(message.text)}
                 </div>
                 <div
-                  className={`text-xs mt-2 flex items-center ${
+                  className={`text-xs mt-1 ${
                     message.isBot ? 'text-gray-500' : 'text-blue-100'
                   }`}
                 >
-                  <Clock className="w-3 h-3 mr-1" />
                   {message.timestamp.toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit'
@@ -538,31 +618,31 @@ const FAQChatbot: React.FC = () => {
 
             {/* Feedback buttons */}
             {message.isBot && message.showFeedback && (
-              <div className="flex justify-start ml-2 animate-[slideUp_0.3s_ease-out]">
-                <div className="flex items-center space-x-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-3 border border-gray-200 shadow-md">
-                  <span className="text-xs text-gray-700 font-medium">Was this helpful?</span>
-                  <div className="flex items-center space-x-2">
+              <div className="flex justify-start">
+                <div className="flex items-center space-x-2 bg-white rounded-lg p-2 border border-gray-200 text-sm">
+                  <span className="text-xs text-gray-600">Was this helpful?</span>
+                  <div className="flex items-center space-x-1">
                     <button
                       onClick={() => handleFeedback(message.id, 'up')}
-                      className={`p-2 rounded-lg transition-all shadow-sm ${
+                      className={`p-1.5 rounded-md transition-colors ${
                         message.feedback === 'up'
-                          ? 'bg-green-500 text-white shadow-green-200'
-                          : 'hover:bg-green-50 text-gray-400 hover:text-green-600 hover:shadow-md'
+                          ? 'bg-green-500 text-white'
+                          : 'hover:bg-gray-100 text-gray-500'
                       }`}
                       disabled={message.feedback !== undefined}
                     >
-                      <ThumbsUp className="w-4 h-4" />
+                      <ThumbsUp className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleFeedback(message.id, 'down')}
-                      className={`p-2 rounded-lg transition-all shadow-sm ${
+                      className={`p-1.5 rounded-md transition-colors ${
                         message.feedback === 'down'
-                          ? 'bg-red-500 text-white shadow-red-200'
-                          : 'hover:bg-red-50 text-gray-400 hover:text-red-600 hover:shadow-md'
+                          ? 'bg-red-500 text-white'
+                          : 'hover:bg-gray-100 text-gray-500'
                       }`}
                       disabled={message.feedback !== undefined}
                     >
-                      <ThumbsDown className="w-4 h-4" />
+                      <ThumbsDown className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -571,13 +651,13 @@ const FAQChatbot: React.FC = () => {
 
             {/* Quick reply buttons */}
             {message.quickReplies && message.quickReplies.length > 0 && (
-              <div className="flex flex-wrap gap-2 ml-2 animate-[slideUp_0.4s_ease-out]">
+              <div className="flex flex-wrap gap-2">
                 {message.quickReplies.map((reply, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleQuickReply(reply)}
-                    style={{ animationDelay: `${idx * 50}ms` }}
-                    className="px-4 py-2.5 bg-white border-2 border-blue-200 text-blue-700 rounded-xl text-sm font-semibold hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-400 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 animate-[slideUp_0.3s_ease-out]"
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 hover:border-blue-600 hover:text-blue-600 transition-all duration-200 transform hover:-translate-y-0.5 active:scale-95"
+                    style={{ animation: `fadeIn 0.3s ease-out ${idx * 0.1}s both` }}
                   >
                     {reply}
                   </button>
@@ -588,15 +668,12 @@ const FAQChatbot: React.FC = () => {
         ))}
 
         {isTyping && (
-          <div className="flex justify-start animate-[fadeIn_0.3s_ease-out]">
-            <div className="bg-gradient-to-r from-white to-blue-50 border border-gray-200 rounded-2xl p-4 shadow-lg">
-              <div className="flex space-x-2 items-center">
-                <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
-                <div className="flex space-x-1.5">
-                  <div className="w-2.5 h-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2.5 h-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2.5 h-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                </div>
+          <div className="flex justify-start" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+            <div className="bg-white border border-gray-200 rounded-lg p-3">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
             </div>
           </div>
@@ -604,28 +681,23 @@ const FAQChatbot: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t-2 border-gray-100 p-5 bg-gradient-to-t from-gray-50 to-white">
-        <div className="flex space-x-3">
+      <div className="border-t border-gray-200 p-4 bg-white">
+        <div className="flex space-x-2">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your question here..."
-            className="flex-1 border-2 border-gray-300 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-sm shadow-sm"
+            className="flex-1 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors text-sm"
           />
           <button
             onClick={() => handleSendMessage()}
             disabled={!inputText.trim() || loading || isTyping}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none disabled:opacity-50"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
           >
             <Send className="w-5 h-5" />
           </button>
-        </div>
-        <div className="mt-3 text-xs text-gray-500 text-center flex items-center justify-center space-x-2">
-          <span>Press</span>
-          <kbd className="px-2.5 py-1 bg-white border-2 border-gray-300 rounded-lg shadow-sm font-mono font-bold text-gray-700">Enter</kbd>
-          <span>to send</span>
         </div>
       </div>
     </div>
@@ -634,31 +706,23 @@ const FAQChatbot: React.FC = () => {
   return (
     <>
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 group">
-          <button
-            onClick={toggleChat}
-            className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 rounded-full shadow-2xl hover:from-blue-700 hover:to-indigo-700 transition-all hover:scale-110 transform"
-            aria-label="Open FAQ Chat"
-          >
-            <MessageCircle className="w-7 h-7 group-hover:rotate-12 transition-transform" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full animate-pulse"></span>
-          </button>
-
-          {/* Tooltip */}
-          <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            <div className="bg-gray-900 text-white text-sm px-4 py-2 rounded-lg shadow-lg whitespace-nowrap">
-              Need help? Ask us anything!
-              <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-gray-900"></div>
-            </div>
-          </div>
-        </div>
+        <button
+          onClick={toggleChat}
+          className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+          aria-label="Open FAQ Chat"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
       )}
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-[440px] h-[680px] bg-white rounded-3xl shadow-2xl flex flex-col z-50 border border-gray-200 animate-[slideIn_0.3s_ease-out] overflow-hidden">
+        <div
+          className="fixed bottom-6 right-6 w-[440px] h-[680px] bg-white rounded-lg shadow-xl flex flex-col z-50 border border-gray-200 overflow-hidden"
+          style={{ animation: 'slideIn 0.3s ease-out' }}
+        >
           <button
             onClick={closeChat}
-            className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl p-2 transition-all z-10 shadow-sm hover:shadow-md"
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md p-1.5 transition-all duration-200 hover:rotate-90 z-10"
             aria-label="Close chat"
           >
             <X className="w-5 h-5" />
@@ -700,6 +764,28 @@ const FAQChatbot: React.FC = () => {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-15px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(15px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
           }
         }
       `}</style>

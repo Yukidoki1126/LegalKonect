@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Briefcase, Scale, MapPin, Phone, Mail, Lock, User, FileText, Clock, Award, Upload, CheckCircle, XCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
+// Extend Window interface for Google Maps
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
 interface Specialization {
   id: number;
   name: string;
@@ -48,8 +55,11 @@ const LawyerRegister = () => {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const errorBannerRef = useRef<HTMLDivElement>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
     fetchSpecializations();
@@ -61,6 +71,67 @@ const LawyerRegister = () => {
       errorBannerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [errorBanner]);
+
+  // Initialize Google Places Autocomplete
+  useEffect(() => {
+    const initAutocomplete = () => {
+      if (!addressInputRef.current || !window.google) return;
+
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(
+        addressInputRef.current,
+        {
+          componentRestrictions: { country: 'ph' }, // Restrict to Philippines
+          fields: ['formatted_address', 'geometry', 'name'],
+          types: ['address']
+        }
+      );
+
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current?.getPlace();
+
+        if (place && place.formatted_address) {
+          const lat = place.geometry?.location?.lat();
+          const lng = place.geometry?.location?.lng();
+
+          setFormData(prev => ({
+            ...prev,
+            office_address: place.formatted_address || '',
+            office_latitude: lat ? lat.toString() : null,
+            office_longitude: lng ? lng.toString() : null
+          }));
+
+          // Clear error if exists
+          if (errors.office_address) {
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors.office_address;
+              return newErrors;
+            });
+          }
+        }
+      });
+    };
+
+    // Check if Google Maps API is already loaded
+    if (window.google && window.google.maps && window.google.maps.places) {
+      initAutocomplete();
+    } else {
+      // Load Google Maps API script
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      // Cleanup: remove listener
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [step]);
 
  const fetchSpecializations = async () => {
   try {
@@ -114,6 +185,25 @@ const LawyerRegister = () => {
     }));
   };
 
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[@$!%*#?&]/.test(password)) {
+      return 'Password must contain at least one special character (@$!%*#?&)';
+    }
+    return null;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, docType: keyof typeof documents) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -145,25 +235,34 @@ const LawyerRegister = () => {
 
     if (currentStep === 1) {
       if (!formData.email) newErrors.email = 'Email is required';
-      if (!formData.password) newErrors.password = 'Password is required';
-      if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      } else {
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+          newErrors.password = passwordError;
+        }
+      }
       if (formData.password !== formData.password_confirmation) {
         newErrors.password_confirmation = 'Passwords do not match';
       }
       if (!formData.phone) newErrors.phone = 'Phone number is required';
+      if (!agreedToTerms) newErrors.terms = 'You must agree to the Terms and Conditions and Privacy Policy';
     }
 
     if (currentStep === 2) {
       if (!formData.first_name) newErrors.first_name = 'First name is required';
       if (!formData.last_name) newErrors.last_name = 'Last name is required';
-      if (!formData.bio) newErrors.bio = 'Bio is required';
-      if (formData.bio.length < 50) newErrors.bio = 'Bio must be at least 50 characters';
+      // Bio is optional, but if provided, must be at least 50 characters
+      if (formData.bio && formData.bio.length < 50) {
+        newErrors.bio = 'Bio must be at least 50 characters if provided';
+      }
     }
 
     if (currentStep === 3) {
-      if (!formData.license_number) newErrors.license_number = 'License number is required';
+      if (!formData.license_number) newErrors.license_number = 'IBP number is required';
       if (!formData.years_experience) newErrors.years_experience = 'Years of experience is required';
-      if (!formData.hourly_rate) newErrors.hourly_rate = 'Hourly rate is required';
+      if (!formData.hourly_rate) newErrors.hourly_rate = 'Booking fee is required';
       if (formData.specialization_ids.length === 0) {
         newErrors.specializations = 'Please select at least one specialization';
       }
@@ -415,7 +514,38 @@ const LawyerRegister = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <>
+      {/* Google Places Autocomplete Styles */}
+      <style>{`
+        .pac-container {
+          font-family: inherit;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          border: 1px solid #e5e7eb;
+          margin-top: 4px;
+          z-index: 9999;
+        }
+        .pac-item {
+          padding: 10px 14px;
+          cursor: pointer;
+          font-size: 14px;
+          border-top: none;
+        }
+        .pac-item:hover {
+          background-color: #f3f4f6;
+        }
+        .pac-item-selected {
+          background-color: #eff6ff;
+        }
+        .pac-icon {
+          margin-right: 8px;
+        }
+        .pac-item-query {
+          font-size: 14px;
+          color: #1f2937;
+        }
+      `}</style>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
@@ -583,6 +713,33 @@ const LawyerRegister = () => {
                 </div>
                 {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
               </div>
+
+              {/* Terms Agreement Checkbox */}
+              <div className="flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    id="terms"
+                    name="terms"
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300 cursor-pointer"
+                  />
+                </div>
+                <div className="ml-3">
+                  <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer">
+                    I agree to the{' '}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                      Terms and Conditions
+                    </a>
+                    {' '}and{' '}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+              </div>
+              {errors.terms && <p className="mt-1 text-sm text-red-600">{errors.terms}</p>}
             </div>
           )}
 
@@ -627,7 +784,7 @@ const LawyerRegister = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Professional Bio
+                  Professional Bio <span className="text-gray-500 font-normal">(Optional - can be added later)</span>
                 </label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -637,10 +794,10 @@ const LawyerRegister = () => {
                     onChange={handleInputChange}
                     rows={5}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Tell clients about your experience, expertise, and what makes you unique... (minimum 50 characters)"
+                    placeholder="Tell clients about your experience, expertise, and what makes you unique... (minimum 50 characters if provided)"
                   />
                 </div>
-                <p className="mt-1 text-sm text-gray-500">{formData.bio.length} / 50 characters minimum</p>
+                <p className="mt-1 text-sm text-gray-500">{formData.bio.length} characters {formData.bio.length > 0 && formData.bio.length < 50 ? '(minimum 50 characters required)' : ''}</p>
                 {errors.bio && <p className="mt-1 text-sm text-red-600">{errors.bio}</p>}
               </div>
             </div>
@@ -652,7 +809,7 @@ const LawyerRegister = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bar License Number
+                  IBP Number (Integrated Bar of the Philippines)
                 </label>
                 <div className="relative">
                   <Award className={`absolute left-3 top-3 w-5 h-5 ${errors.license_number ? 'text-red-400' : 'text-gray-400'}`} />
@@ -666,7 +823,7 @@ const LawyerRegister = () => {
                         ? 'border-red-500 focus:ring-red-500 bg-red-50'
                         : 'border-gray-300 focus:ring-blue-500'
                     }`}
-                    placeholder="e.g., PH-LAW-2024-018"
+                    placeholder="e.g., 1234567"
                   />
                 </div>
                 {errors.license_number && (
@@ -699,7 +856,7 @@ const LawyerRegister = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hourly Rate (₱)
+                    Booking Fee (₱)
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-3 w-5 h-5 text-gray-400 flex items-center justify-center">₱</span>
@@ -709,7 +866,7 @@ const LawyerRegister = () => {
                       value={formData.hourly_rate}
                       onChange={handleInputChange}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="2000"
+                      placeholder="1000"
                       min="0"
                       step="100"
                     />
@@ -758,14 +915,17 @@ const LawyerRegister = () => {
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                   <input
+                    ref={addressInputRef}
                     type="text"
                     name="office_address"
                     value={formData.office_address}
                     onChange={handleInputChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="123 Main St, Cagayan de Oro City"
+                    placeholder="Start typing your office address..."
+                    autoComplete="off"
                   />
                 </div>
+                <p className="mt-1 text-xs text-gray-500">Type your address and select from the suggestions</p>
                 {errors.office_address && <p className="mt-1 text-sm text-red-600">{errors.office_address}</p>}
               </div>
 
@@ -795,14 +955,14 @@ const LawyerRegister = () => {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
-                  <strong>Required:</strong> Please provide your IBP credentials and upload verification documents.
+                  <strong>Required:</strong> Please provide your Roll of Attorneys credentials and upload verification documents.
                   All documents will be securely reviewed by our admin team.
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  IBP Number *
+                  Roll of Attorneys Number *
                 </label>
                 <div className="relative">
                   <Award className={`absolute left-3 top-3 w-5 h-5 ${errors.ibp_number ? 'text-red-400' : 'text-gray-400'}`} />
@@ -827,34 +987,18 @@ const LawyerRegister = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Roll of Attorneys Number (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="roll_of_attorneys_number"
-                    value={formData.roll_of_attorneys_number}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., 12345"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    PRC License Number (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="prc_license_number"
-                    value={formData.prc_license_number}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., 1234567"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  PRC License Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  name="prc_license_number"
+                  value={formData.prc_license_number}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., 1234567"
+                />
               </div>
 
               {/* File Uploads */}
@@ -1050,6 +1194,7 @@ const LawyerRegister = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

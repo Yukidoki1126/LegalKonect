@@ -79,6 +79,32 @@ export const lawyerApi = {
     return response.data;
   },
 
+  // Request reschedule
+  requestReschedule: async (appointmentId: number, data: { proposed_date: string; proposed_time: string; reason: string }) => {
+    const response = await axios.post(
+      `${API_URL}/lawyer/appointments/${appointmentId}/reschedule`,
+      data,
+      { headers: getAuthHeader() }
+    );
+    // Invalidate cache after mutation - clear all appointment-related cache
+    cacheService.invalidatePattern('appointments');
+    cacheService.invalidatePattern('dashboard');
+    return response.data;
+  },
+
+  // Bulk reschedule appointments
+  bulkReschedule: async (data: { original_date: string; proposed_date: string; proposed_time: string; reason: string; appointment_ids: number[] }) => {
+    const response = await axios.post(
+      `${API_URL}/lawyer/appointments/bulk-reschedule`,
+      data,
+      { headers: getAuthHeader() }
+    );
+    // Invalidate cache after mutation - clear all appointment-related cache
+    cacheService.invalidatePattern('appointments');
+    cacheService.invalidatePattern('dashboard');
+    return response.data;
+  },
+
   // Add notes to appointment
   addNotes: async (appointmentId: number, notes: string) => {
     const response = await axios.post(
@@ -359,10 +385,10 @@ export const lawyerApi = {
   },
 
   // Payouts - Request payout
-  requestPayout: async (amount: number) => {
+  requestPayout: async (amount: number, payoutMethod?: 'gcash' | 'bank') => {
     const response = await axios.post(
       `${API_URL}/lawyer/payouts/request`,
-      { amount },
+      { amount, payout_method: payoutMethod },
       { headers: getAuthHeader() }
     );
     // Invalidate cache after mutation

@@ -2,7 +2,6 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import api from '../services/api';
-import { useNavigate } from 'react-router-dom';
 
 interface Lawyer {
   id: number;
@@ -143,68 +142,59 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await api.post('/auth/login', { email, password });
       const { token: newToken, user: newUser } = response.data;
 
-      // Set token first so the next request can use it
+      // Set token and store user data immediately for fast login
       setToken(newToken);
+      setUser(newUser);
       localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(newUser));
       api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-      // Fetch complete user profile with all data (location, profile picture, etc.)
-      try {
-        const profileResponse = await api.get('/auth/profile');
-        let completeUser = profileResponse.data.user || profileResponse.data;
+      // Determine redirect path based on user type
+      let redirectPath = '/lawyers'; // Default for regular clients
 
-        // If user is a lawyer, also fetch their lawyer profile data
-        if (completeUser.lawyer) {
-          try {
-            const lawyerProfileResponse = await api.get('/lawyer/profile');
-            const lawyerData = lawyerProfileResponse.data;
-
-            // Merge lawyer profile data into the user's lawyer object
-            // Important: Keep the status from completeUser.lawyer (approved/pending/suspended)
-            completeUser = {
-              ...completeUser,
-              lawyer: {
-                ...lawyerData,
-                ...completeUser.lawyer, // This ensures status, id are not overwritten
-              }
-            };
-
-            console.log('Merged lawyer data:', completeUser.lawyer);
-          } catch (lawyerError) {
-            console.warn('Failed to fetch lawyer profile details:', lawyerError);
-          }
+      if (newUser.lawyer) {
+        if (newUser.lawyer.status === 'pending') {
+          redirectPath = '/pending-approval';
+        } else if (newUser.lawyer.status === 'approved') {
+          redirectPath = '/lawyer/dashboard';
         }
-
-        setUser(completeUser);
-        localStorage.setItem('user', JSON.stringify(completeUser));
-
-        // Smart redirect based on user type
-        if (completeUser.lawyer) {
-          if (completeUser.lawyer.status === 'pending') {
-            return '/pending-approval';
-          } else if (completeUser.lawyer.status === 'approved') {
-            return '/lawyer/dashboard';
-          }
-        }
-
-        return '/lawyers'; // Regular client - Find Lawyers page
-      } catch (profileError) {
-        // If profile fetch fails, use the user data from login response
-        console.warn('Failed to fetch complete profile, using login data:', profileError);
-        setUser(newUser);
-        localStorage.setItem('user', JSON.stringify(newUser));
-
-        // Smart redirect based on user type
-        if (newUser.lawyer) {
-          if (newUser.lawyer.status === 'pending') {
-            return '/pending-approval';
-          } else if (newUser.lawyer.status === 'approved') {
-            return '/lawyer/dashboard';
-          }
-        }
-
-        return '/lawyers'; // Regular client - Find Lawyers page
       }
+
+      // Fetch complete profile data in the background (non-blocking)
+      // This will update the user data with full details after login
+      setTimeout(async () => {
+        try {
+          const profileResponse = await api.get('/auth/profile');
+          let completeUser = profileResponse.data.user || profileResponse.data;
+
+          // If user is a lawyer, also fetch their lawyer profile data
+          if (completeUser.lawyer) {
+            try {
+              const lawyerProfileResponse = await api.get('/lawyer/profile');
+              const lawyerData = lawyerProfileResponse.data;
+
+              // Merge lawyer profile data
+              completeUser = {
+                ...completeUser,
+                lawyer: {
+                  ...lawyerData,
+                  ...completeUser.lawyer,
+                }
+              };
+            } catch (lawyerError) {
+              console.warn('Failed to fetch lawyer profile details:', lawyerError);
+            }
+          }
+
+          // Update user with complete data
+          setUser(completeUser);
+          localStorage.setItem('user', JSON.stringify(completeUser));
+        } catch (profileError) {
+          console.warn('Failed to fetch complete profile in background:', profileError);
+        }
+      }, 100);
+
+      return redirectPath;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.message || 'Login failed');

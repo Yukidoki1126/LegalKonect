@@ -11,8 +11,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Mail\AppointmentBooked;
+use App\Mail\RescheduleRequest;
+use App\Mail\RefundProcessed;
 use Illuminate\Support\Facades\Mail;
 use App\Services\GoogleCalendarService;
+use App\Services\PaymongoService;
 
 class AppointmentController extends Controller
 {
@@ -89,6 +92,16 @@ class AppointmentController extends Controller
             ]);
         }
 
+        // Check daily appointment limit for this day
+        $scheduleWithLimit = DB::table('lawyer_schedules')
+            ->where('lawyer_id', $lawyerId)
+            ->where('day_of_week', $dayName)
+            ->where('is_active', true)
+            ->whereNotNull('daily_appointment_limit')
+            ->first();
+
+        $dailyLimit = $scheduleWithLimit->daily_appointment_limit ?? null;
+
         // Get existing appointments for this date (get raw time strings)
         $existingAppointments = Appointment::where('lawyer_id', $lawyerId)
             ->where('appointment_date', $date->format('Y-m-d'))
@@ -102,6 +115,18 @@ class AppointmentController extends Controller
                 return substr($time, 0, 5); // Get H:i from H:i:s
             })
             ->toArray();
+
+        // Check if daily limit has been reached
+        if ($dailyLimit !== null && count($existingAppointments) >= $dailyLimit) {
+            return response()->json([
+                'available' => false,
+                'message' => 'Daily appointment limit reached for this date',
+                'slots' => [],
+                'limit_reached' => true,
+                'daily_limit' => $dailyLimit,
+                'booked_count' => count($existingAppointments)
+            ]);
+        }
 
         // Generate time slots from all schedules for this day
         $slots = [];
@@ -291,23 +316,37 @@ class AppointmentController extends Controller
     public function getUserAppointments(Request $request)
 {
     $type = $request->query('type', 'upcoming');
-    
+
     \Log::info('Fetching appointments', [
         'user_id' => auth()->id(),
         'type' => $type
     ]);
 
-    $query = Appointment::with(['lawyer.specializations', 'review'])  // ADD 'review' here
+    // Optimize query with selective eager loading and proper indexing
+    $query = Appointment::query()
+        ->select('appointments.*') // Explicitly select only appointment columns first
+        ->with([
+            'lawyer:id,first_name,last_name,office_address,reservation_fee', // Only load needed lawyer fields
+            'lawyer.specializations:id,name' // Only load needed specialization fields
+        ])
         ->where('user_id', auth()->id());
 
+    // Apply filters and ordering based on type (uses indexes created in migration)
     if ($type === 'upcoming') {
         $query->whereIn('status', ['pending', 'confirmed'])
-              ->orderBy('appointment_date', 'asc')
-              ->orderBy('appointment_time', 'asc');
+              ->orderBy('created_at', 'desc'); // Uses idx_appointments_user_created
+    } elseif ($type === 'cancelled') {
+        $query->where('status', 'cancelled')
+              ->orderBy('updated_at', 'desc'); // Uses idx_appointments_user_updated
     } else {
         $query->whereIn('status', ['completed', 'cancelled', 'no_show'])
               ->orderBy('appointment_date', 'desc')
-              ->orderBy('appointment_time', 'desc');
+              ->orderBy('appointment_time', 'desc'); // Uses idx_appointments_user_date_time
+    }
+
+    // Only load reviews for past appointments (completed/cancelled/no_show)
+    if ($type !== 'upcoming') {
+        $query->with('review:id,appointment_id,rating,comment,is_approved,created_at');
     }
 
     $appointments = $query->get();
@@ -453,8 +492,75 @@ class AppointmentController extends Controller
 
         Log::info('Appointment cancelled successfully', ['appointment_id' => $id]);
 
+        // Process refund if payment was made
+        $refundMessage = '';
+        if ($appointment->payment_status === 'paid' && $appointment->payment_reference) {
+            $refundAmount = $appointment->lawyer->reservation_fee ?? 100;
+
+            try {
+                $paymongoService = app(PaymongoService::class);
+
+                // Mark refund as pending
+                $appointment->refund_status = 'pending';
+                $appointment->refund_amount = $refundAmount;
+                $appointment->refund_requested_at = now();
+                $appointment->refund_reason = 'Appointment cancelled by client: ' . $request->cancellation_reason;
+                $appointment->save();
+
+                // Create refund via PayMongo
+                $refundResult = $paymongoService->createRefund(
+                    $appointment->payment_reference,
+                    $refundAmount,
+                    'requested_by_customer',
+                    'Appointment cancelled by client'
+                );
+
+                // Update appointment with refund details
+                $appointment->refund_id = $refundResult['data']['id'] ?? null;
+                $appointment->refund_status = 'completed';
+                $appointment->refund_completed_at = now();
+                $appointment->refund_notes = 'Processed via PayMongo API';
+                $appointment->payment_details = json_encode($refundResult['payment_details'] ?? []);
+                $appointment->save();
+
+                $refundMessage = 'Refund of ₱' . number_format($refundAmount, 2) . ' has been processed. Amount will be returned within 5-10 business days for cards, or 1-3 business days for GCash/PayMaya.';
+
+                Log::info('Refund processed for cancelled appointment', [
+                    'appointment_id' => $appointment->id,
+                    'refund_id' => $appointment->refund_id,
+                    'amount' => $refundAmount,
+                ]);
+
+                // Send refund confirmation email
+                try {
+                    Mail::to($appointment->user->email)->send(new RefundProcessed($appointment));
+                } catch (\Exception $emailError) {
+                    Log::error('Failed to send refund confirmation email', [
+                        'appointment_id' => $appointment->id,
+                        'error' => $emailError->getMessage()
+                    ]);
+                }
+
+            } catch (\Exception $e) {
+                Log::error('Refund processing failed for cancellation', [
+                    'appointment_id' => $appointment->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                // Mark refund as failed
+                $appointment->refund_status = 'failed';
+                $appointment->refund_notes = 'Auto-refund failed: ' . $e->getMessage() . '. Requires manual processing.';
+                $appointment->save();
+
+                $refundMessage = 'Refund request submitted. Our admin will process your ₱' . number_format($refundAmount, 2) . ' refund manually within 3-5 business days.';
+            }
+        } else {
+            $refundMessage = 'No refund needed as payment was not processed.';
+        }
+
         return response()->json([
             'message' => 'Appointment cancelled successfully',
+            'refund_message' => $refundMessage,
             'appointment' => $appointment
         ]);
     }
@@ -527,5 +633,336 @@ class AppointmentController extends Controller
         ]);
 
         return $schedules;
+    }
+
+    /**
+     * Request to reschedule an appointment (lawyer initiates)
+     */
+    public function requestReschedule(Request $request, $appointmentId)
+    {
+        $validated = $request->validate([
+            'proposed_date' => 'required|date',
+            'proposed_time' => 'required',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $user = $request->user();
+        $lawyer = Lawyer::where('user_id', $user->id)->first();
+
+        if (!$lawyer) {
+            return response()->json(['message' => 'Lawyer profile not found'], 404);
+        }
+
+        $appointment = Appointment::where('id', $appointmentId)
+            ->where('lawyer_id', $lawyer->id)
+            ->whereIn('status', ['confirmed', 'pending'])
+            ->first();
+
+        if (!$appointment) {
+            return response()->json(['message' => 'Appointment not found or cannot be rescheduled'], 404);
+        }
+
+        // Combine proposed date and time into a proper datetime
+        $proposedDateTime = Carbon::parse($validated['proposed_date'] . ' ' . $validated['proposed_time'])->format('Y-m-d H:i:s');
+
+        // Store original date if not already stored
+        if (!$appointment->original_date) {
+            $appointment->original_date = $appointment->appointment_date;
+        }
+
+        // Update appointment fields
+        $appointment->reschedule_status = 'pending';
+        $appointment->reschedule_reason = $validated['reason'];
+        $appointment->proposed_date = $proposedDateTime;
+        $appointment->reschedule_requested_at = now();
+        $updated = $appointment->save();
+
+        if (!$updated) {
+            Log::error('Failed to save reschedule data', [
+                'appointment_id' => $appointment->id,
+            ]);
+            return response()->json(['message' => 'Failed to save reschedule request'], 500);
+        }
+
+        // Refresh to get the saved data
+        $appointment->refresh();
+
+        Log::info('Reschedule requested', [
+            'appointment_id' => $appointment->id,
+            'original_date' => $appointment->original_date,
+            'proposed_date' => $appointment->proposed_date,
+            'reason' => $appointment->reschedule_reason,
+            'saved_successfully' => true,
+        ]);
+
+        // Send email notification to client
+        try {
+            $appointment->load(['user', 'lawyer']);
+            Mail::to($appointment->user->email)->send(new RescheduleRequest($appointment));
+            Log::info('Reschedule request email sent', ['appointment_id' => $appointment->id]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send reschedule request email', [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Reschedule request sent to client',
+            'appointment' => $appointment,
+        ]);
+    }
+
+    /**
+     * Client accepts reschedule request
+     */
+    public function acceptReschedule(Request $request, $appointmentId)
+    {
+        $user = $request->user();
+
+        $appointment = Appointment::where('id', $appointmentId)
+            ->where('user_id', $user->id)
+            ->where('reschedule_status', 'pending')
+            ->first();
+
+        if (!$appointment) {
+            return response()->json(['message' => 'Reschedule request not found'], 404);
+        }
+
+        // Update appointment fields
+        $appointment->appointment_date = $appointment->proposed_date;
+        $appointment->reschedule_status = 'accepted';
+        $appointment->reschedule_responded_at = now();
+        $updated = $appointment->save();
+
+        if (!$updated) {
+            Log::error('Failed to save reschedule acceptance', [
+                'appointment_id' => $appointment->id,
+            ]);
+            return response()->json(['message' => 'Failed to accept reschedule'], 500);
+        }
+
+        // Refresh to get the saved data
+        $appointment->refresh();
+
+        Log::info('Reschedule accepted', [
+            'appointment_id' => $appointment->id,
+            'new_date' => $appointment->appointment_date,
+            'reschedule_status' => $appointment->reschedule_status,
+        ]);
+
+        // TODO: Send confirmation email to both parties
+
+        return response()->json([
+            'message' => 'Reschedule accepted successfully',
+            'appointment' => $appointment,
+        ]);
+    }
+
+    /**
+     * Client declines reschedule request and gets refund
+     */
+    public function declineReschedule(Request $request, $appointmentId)
+    {
+        $user = $request->user();
+
+        $appointment = Appointment::where('id', $appointmentId)
+            ->where('user_id', $user->id)
+            ->where('reschedule_status', 'pending')
+            ->first();
+
+        if (!$appointment) {
+            return response()->json(['message' => 'Reschedule request not found'], 404);
+        }
+
+        // Update appointment fields
+        $appointment->reschedule_status = 'declined';
+        $appointment->reschedule_responded_at = now();
+        $appointment->status = 'cancelled';
+        $updated = $appointment->save();
+
+        if (!$updated) {
+            Log::error('Failed to save reschedule decline', [
+                'appointment_id' => $appointment->id,
+            ]);
+            return response()->json(['message' => 'Failed to decline reschedule'], 500);
+        }
+
+        // Refresh to get the saved data
+        $appointment->refresh();
+
+        Log::info('Reschedule declined, processing refund', [
+            'appointment_id' => $appointment->id,
+            'payment_method' => $appointment->payment_method,
+            'payment_reference' => $appointment->payment_reference,
+            'reschedule_status' => $appointment->reschedule_status,
+        ]);
+
+        // Process full refund (reservation fee)
+        $refundAmount = $appointment->lawyer->reservation_fee ?? 100;
+        $refundMessage = '';
+
+        // Only process refund if payment was made
+        if ($appointment->payment_status === 'paid' && $appointment->payment_reference) {
+            try {
+                $paymongoService = app(PaymongoService::class);
+
+                // Mark refund as pending
+                $appointment->refund_status = 'pending';
+                $appointment->refund_amount = $refundAmount;
+                $appointment->refund_requested_at = now();
+                $appointment->refund_reason = 'Client declined reschedule request';
+                $appointment->save();
+
+                // Create refund via PayMongo
+                $refundResult = $paymongoService->createRefund(
+                    $appointment->payment_reference,
+                    $refundAmount,
+                    'requested_by_customer',
+                    'Appointment rescheduled by lawyer - client declined new date'
+                );
+
+                // Update appointment with refund details
+                $appointment->refund_id = $refundResult['data']['id'] ?? null;
+                $appointment->refund_status = 'completed';
+                $appointment->refund_completed_at = now();
+                $appointment->payment_details = json_encode($refundResult['payment_details'] ?? []);
+                $appointment->refund_notes = 'Processed via PayMongo API';
+                $appointment->save();
+
+                $refundMessage = 'Refund of ₱' . number_format($refundAmount, 2) . ' has been processed. Amount will be returned within 5-10 business days for cards, or 1-3 business days for GCash/PayMaya.';
+
+                Log::info('Refund processed successfully', [
+                    'appointment_id' => $appointment->id,
+                    'refund_id' => $appointment->refund_id,
+                    'amount' => $refundAmount,
+                    'status' => $appointment->refund_status,
+                ]);
+
+                // Send refund confirmation email
+                try {
+                    Mail::to($appointment->user->email)->send(new RefundProcessed($appointment));
+                } catch (\Exception $emailError) {
+                    Log::error('Failed to send refund confirmation email', [
+                        'appointment_id' => $appointment->id,
+                        'error' => $emailError->getMessage()
+                    ]);
+                }
+
+            } catch (\Exception $e) {
+                Log::error('Refund processing failed', [
+                    'appointment_id' => $appointment->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                // Mark refund as failed, requires manual processing
+                $appointment->refund_status = 'failed';
+                $appointment->refund_notes = 'Auto-refund failed: ' . $e->getMessage() . '. Requires manual processing.';
+                $appointment->save();
+
+                $refundMessage = 'Refund request submitted. Our admin will process your ₱' . number_format($refundAmount, 2) . ' refund manually within 3-5 business days.';
+            }
+        } else {
+            // No payment was made or payment not completed
+            $refundMessage = 'Appointment cancelled. No refund needed as payment was not processed.';
+            Log::info('No refund needed for appointment', [
+                'appointment_id' => $appointment->id,
+                'payment_status' => $appointment->payment_status,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Appointment cancelled successfully',
+            'refund_message' => $refundMessage,
+            'appointment' => $appointment,
+        ]);
+    }
+
+    /**
+     * Bulk reschedule appointments for a specific date (lawyer initiates)
+     */
+    public function bulkReschedule(Request $request)
+    {
+        $validated = $request->validate([
+            'original_date' => 'required|date',
+            'proposed_date' => 'required|date',
+            'proposed_time' => 'required',
+            'reason' => 'required|string|max:500',
+            'appointment_ids' => 'required|array|min:1',
+            'appointment_ids.*' => 'required|integer|exists:appointments,id',
+        ]);
+
+        $user = $request->user();
+        $lawyer = Lawyer::where('user_id', $user->id)->first();
+
+        if (!$lawyer) {
+            return response()->json(['message' => 'Lawyer profile not found'], 404);
+        }
+
+        // Get all appointments for the lawyer that match the criteria
+        $appointments = Appointment::whereIn('id', $validated['appointment_ids'])
+            ->where('lawyer_id', $lawyer->id)
+            ->whereIn('status', ['confirmed', 'pending'])
+            ->get();
+
+        if ($appointments->isEmpty()) {
+            return response()->json(['message' => 'No valid appointments found to reschedule'], 404);
+        }
+
+        $rescheduledCount = 0;
+        $failedAppointments = [];
+
+        foreach ($appointments as $appointment) {
+            try {
+                // Store original date if not already stored
+                if (!$appointment->original_date) {
+                    $appointment->original_date = $appointment->appointment_date;
+                }
+
+                // Combine proposed date and time into a proper datetime
+                $proposedDateTime = Carbon::parse($validated['proposed_date'] . ' ' . $validated['proposed_time'])->format('Y-m-d H:i:s');
+
+                $appointment->update([
+                    'reschedule_status' => 'pending',
+                    'reschedule_reason' => $validated['reason'],
+                    'proposed_date' => $proposedDateTime,
+                    'reschedule_requested_at' => now(),
+                ]);
+
+                $rescheduledCount++;
+
+                Log::info('Bulk reschedule - appointment updated', [
+                    'appointment_id' => $appointment->id,
+                    'original_date' => $appointment->original_date,
+                    'proposed_date' => $proposedDateTime,
+                ]);
+
+                // Send email notification to client
+                try {
+                    $appointment->load(['user', 'lawyer']);
+                    Mail::to($appointment->user->email)->send(new RescheduleRequest($appointment));
+                    Log::info('Bulk reschedule - email sent', ['appointment_id' => $appointment->id]);
+                } catch (\Exception $emailError) {
+                    Log::error('Failed to send bulk reschedule email', [
+                        'appointment_id' => $appointment->id,
+                        'error' => $emailError->getMessage(),
+                    ]);
+                }
+
+            } catch (\Exception $e) {
+                Log::error('Failed to reschedule appointment in bulk', [
+                    'appointment_id' => $appointment->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $failedAppointments[] = $appointment->id;
+            }
+        }
+
+        return response()->json([
+            'message' => "Successfully sent reschedule requests to {$rescheduledCount} client(s)",
+            'rescheduled_count' => $rescheduledCount,
+            'failed_count' => count($failedAppointments),
+            'failed_appointments' => $failedAppointments,
+        ]);
     }
 }

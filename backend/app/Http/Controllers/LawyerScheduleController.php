@@ -45,6 +45,7 @@ class LawyerScheduleController extends Controller
             'day_of_week' => 'required|string|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
+            'daily_appointment_limit' => 'nullable|integer|min:1|max:50',
         ]);
 
         // Check for overlapping schedules
@@ -74,6 +75,7 @@ class LawyerScheduleController extends Controller
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'],
             'is_active' => true,
+            'daily_appointment_limit' => $validated['daily_appointment_limit'] ?? null,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -112,6 +114,7 @@ class LawyerScheduleController extends Controller
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'is_active' => 'sometimes|boolean',
+            'daily_appointment_limit' => 'nullable|integer|min:1|max:50',
         ]);
 
         // Check for overlapping schedules (excluding current schedule)
@@ -143,6 +146,7 @@ class LawyerScheduleController extends Controller
                 'start_time' => $validated['start_time'],
                 'end_time' => $validated['end_time'],
                 'is_active' => $validated['is_active'] ?? $schedule->is_active,
+                'daily_appointment_limit' => $validated['daily_appointment_limit'] ?? $schedule->daily_appointment_limit,
                 'updated_at' => now(),
             ]);
 

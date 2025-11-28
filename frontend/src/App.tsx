@@ -9,6 +9,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import Profile from './pages/Profile';
 import LawyerSearch from './pages/LawyerSearch';
 import LawyerDetail from './pages/LawyerDetail';
@@ -51,7 +53,9 @@ function AppContent() {
   const isAuthRoute = location.pathname === '/login' ||
                       location.pathname === '/register' ||
                       location.pathname === '/lawyer/register' ||
-                      location.pathname === '/pending-approval';
+                      location.pathname === '/pending-approval' ||
+                      location.pathname === '/terms' ||
+                      location.pathname === '/privacy';
 
   const showNavigation = !isLawyerRoute && !isAdminRoute && !isAuthRoute;
 
@@ -63,6 +67,8 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/lawyer/register" element={<LawyerRegister />} />
         <Route path="/pending-approval" element={<PendingApproval />} />
         <Route

@@ -7,7 +7,6 @@ use App\Models\Earning;
 use App\Services\PaymongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Mail\AppointmentBooked;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PaymentReceipt;
 use Illuminate\Support\Facades\Cache;
@@ -240,19 +239,16 @@ class PaymentController extends Controller
 
                 try {
                     $appointment->load(['lawyer', 'user']);
-                    
-                    // Send booking confirmation
-                    Mail::to($appointment->user->email)->send(new AppointmentBooked($appointment));
-                    
+
                     // Send payment receipt
                     Mail::to($appointment->user->email)->send(new \App\Mail\PaymentReceipt($appointment));
-                    
-                    Log::info('Payment confirmation emails sent', [
+
+                    Log::info('Payment receipt sent', [
                         'appointment_id' => $appointment->id,
                         'email' => $appointment->user->email
                     ]);
                 } catch (\Exception $e) {
-                    Log::error('Failed to send payment confirmation email: ' . $e->getMessage());
+                    Log::error('Failed to send payment receipt: ' . $e->getMessage());
                 }
 
                 return response()->json([
@@ -316,12 +312,12 @@ class PaymentController extends Controller
                         'appointment_id' => $appointment->id
                     ]);
 
-                    // Send confirmation email
+                    // Send payment receipt
                     try {
                         $appointment->load(['lawyer', 'user']);
-                        Mail::to($appointment->user->email)->send(new AppointmentBooked($appointment));
+                        Mail::to($appointment->user->email)->send(new PaymentReceipt($appointment));
                     } catch (\Exception $e) {
-                        Log::error('Failed to send webhook confirmation email: ' . $e->getMessage());
+                        Log::error('Failed to send payment receipt: ' . $e->getMessage());
                     }
                 }
             }
@@ -442,14 +438,13 @@ class PaymentController extends Controller
 
                 Log::info('Appointment marked as paid', ['appointment_id' => $appointment->id]);
 
-                // Send emails
+                // Send payment receipt
                 try {
                     $appointment->load(['lawyer', 'user']);
-                    Mail::to($appointment->user->email)->send(new AppointmentBooked($appointment));
                     Mail::to($appointment->user->email)->send(new PaymentReceipt($appointment));
-                    Log::info('Payment confirmation emails sent', ['appointment_id' => $appointment->id]);
+                    Log::info('Payment receipt sent', ['appointment_id' => $appointment->id]);
                 } catch (\Exception $e) {
-                    Log::error('Failed to send payment emails: ' . $e->getMessage());
+                    Log::error('Failed to send payment receipt: ' . $e->getMessage());
                 }
 
                 return redirect(env('FRONTEND_URL', 'http://localhost:3000') . '/appointments?payment=success');
@@ -479,7 +474,7 @@ class PaymentController extends Controller
 
     /**
      * Create earning record for completed payment
-     * Automatically splits payment: 80% to lawyer, 20% to platform
+     * Automatically splits payment: 90% to lawyer, 10% to platform
      */
     private function createEarningRecord(Appointment $appointment)
     {
@@ -493,7 +488,7 @@ class PaymentController extends Controller
 
             // Use reservation fee since that's what was actually paid
             $grossAmount = $appointment->lawyer->reservation_fee ?? 100.00;
-            $platformFeePercentage = config('app.platform_fee_percentage', 20.00); // 20% default
+            $platformFeePercentage = config('app.platform_fee_percentage', 10.00); // 10% default
             $platformFee = $grossAmount * ($platformFeePercentage / 100);
             $netAmount = $grossAmount - $platformFee;
 

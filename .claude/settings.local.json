@@ -33,7 +33,8 @@
       "Bash(if exist backendcheck_admin.php del backendcheck_admin.php)",
       "Bash(if exist backendcheck_db.php del backendcheck_db.php)",
       "Bash(rm:*)",
-      "Bash(rmdir:*)"
+      "Bash(rmdir:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

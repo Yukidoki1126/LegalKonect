@@ -164,6 +164,7 @@ class PayoutController extends Controller
         try {
             $validated = $request->validate([
                 'amount' => 'required|numeric|min:1',
+                'payout_method' => 'nullable|in:gcash,bank',
             ]);
 
             $user = $request->user();
@@ -173,14 +174,17 @@ class PayoutController extends Controller
                 return response()->json(['message' => 'Lawyer profile not found'], 404);
             }
 
-            // Check if payout info is set
-            if ($lawyer->preferred_payout_method === 'gcash' && empty($lawyer->gcash_number)) {
+            // Determine which payout method to use (from request or fallback to preferred)
+            $payoutMethod = $validated['payout_method'] ?? $lawyer->preferred_payout_method;
+
+            // Check if selected payout method info is set
+            if ($payoutMethod === 'gcash' && empty($lawyer->gcash_number)) {
                 return response()->json([
                     'message' => 'Please set up your GCash information before requesting a payout'
                 ], 422);
             }
 
-            if ($lawyer->preferred_payout_method === 'bank' && (empty($lawyer->bank_name) || empty($lawyer->bank_account_number))) {
+            if ($payoutMethod === 'bank' && (empty($lawyer->bank_name) || empty($lawyer->bank_account_number))) {
                 return response()->json([
                     'message' => 'Please set up your bank information before requesting a payout'
                 ], 422);
@@ -191,14 +195,7 @@ class PayoutController extends Controller
             $totalPayouts = $lawyer->payouts()->whereIn('status', ['approved', 'processing', 'paid', 'pending'])->sum('amount');
             $availableBalance = $totalEarnings - $totalPayouts;
 
-            // Validate amount
-            $minimumPayout = config('app.minimum_payout_amount', 500);
-            if ($validated['amount'] < $minimumPayout) {
-                return response()->json([
-                    'message' => "Minimum payout amount is ₱{$minimumPayout}"
-                ], 422);
-            }
-
+            // Validate amount - only check if sufficient balance
             if ($validated['amount'] > $availableBalance) {
                 return response()->json([
                     'message' => 'Insufficient balance',
@@ -207,18 +204,18 @@ class PayoutController extends Controller
                 ], 422);
             }
 
-            // Create payout request
+            // Create payout request using the selected method
             $payout = Payout::create([
                 'lawyer_id' => $lawyer->id,
                 'amount' => $validated['amount'],
-                'payout_method' => $lawyer->preferred_payout_method,
-                'payout_account_number' => $lawyer->preferred_payout_method === 'gcash'
+                'payout_method' => $payoutMethod,
+                'payout_account_number' => $payoutMethod === 'gcash'
                     ? $lawyer->gcash_number
                     : $lawyer->bank_account_number,
-                'payout_account_name' => $lawyer->preferred_payout_method === 'gcash'
+                'payout_account_name' => $payoutMethod === 'gcash'
                     ? $lawyer->gcash_account_name
                     : $lawyer->bank_account_name,
-                'bank_name' => $lawyer->preferred_payout_method === 'bank' ? $lawyer->bank_name : null,
+                'bank_name' => $payoutMethod === 'bank' ? $lawyer->bank_name : null,
                 'status' => 'pending',
                 'requested_at' => now(),
             ]);
@@ -227,6 +224,7 @@ class PayoutController extends Controller
                 'payout_id' => $payout->id,
                 'lawyer_id' => $lawyer->id,
                 'amount' => $validated['amount'],
+                'payout_method' => $payoutMethod,
             ]);
 
             return response()->json([

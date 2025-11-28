@@ -144,14 +144,18 @@ class AdminDashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        // Get summary statistics - using reservation fee (actual amount received)
+        // Get summary statistics
         $totalPayments = Appointment::where('payment_status', 'paid')->count();
 
-        // Calculate total amount based on reservation fees actually received
-        $totalAmount = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+        // Calculate platform revenue (10% of reservation fees)
+        $platformFeePercentage = config('app.platform_fee_percentage', 10.00);
+        $totalReservationFees = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
             ->where('appointments.payment_status', 'paid')
             ->selectRaw('SUM(COALESCE(lawyers.reservation_fee, 100)) as total')
             ->value('total') ?? 0;
+
+        // Platform revenue is the percentage we keep
+        $totalAmount = $totalReservationFees * ($platformFeePercentage / 100);
 
         $cardPayments = Appointment::where('payment_status', 'paid')
             ->where('payment_method', 'card')
@@ -160,15 +164,18 @@ class AdminDashboardController extends Controller
             ->where('payment_method', 'gcash')
             ->count();
 
-        // Transform the data - show reservation fee (actual amount received)
-        $paymentsData = $payments->map(function ($appointment) {
+        // Transform the data - show platform fee (what platform earns)
+        $paymentsData = $payments->map(function ($appointment) use ($platformFeePercentage) {
+            $reservationFee = $appointment->lawyer->reservation_fee ?? 100;
+            $platformFee = $reservationFee * ($platformFeePercentage / 100);
+
             return [
                 'id' => $appointment->id,
                 'client_name' => $appointment->user->name ?? 'Unknown',
                 'lawyer_name' => $appointment->lawyer
                     ? $appointment->lawyer->first_name . ' ' . $appointment->lawyer->last_name
                     : 'Unknown',
-                'amount' => $appointment->lawyer->reservation_fee ?? 100,
+                'amount' => $platformFee,
                 'payment_method' => $appointment->payment_method,
                 'payment_reference' => $appointment->payment_reference,
                 'payment_date' => $appointment->created_at,

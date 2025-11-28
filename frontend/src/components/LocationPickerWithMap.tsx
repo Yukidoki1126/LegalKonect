@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { GoogleMap, Marker, Autocomplete, useLoadScript } from '@react-google-maps/api';
+import React, { useState, useCallback, memo } from 'react';
+import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 
 interface LocationPickerWithMapProps {
   initialLat?: number;
@@ -45,7 +45,6 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
       : null
   );
   const [address, setAddress] = useState(initialAddress || '');
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isMapLocked, setIsMapLocked] = useState(true); // Lock map by default to prevent accidental clicks
 
@@ -63,32 +62,6 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
   const onUnmount = useCallback(() => {
     setMap(null);
   }, []);
-
-  const onAutocompleteLoad = (autocomplete: google.maps.places.Autocomplete) => {
-    setAutocomplete(autocomplete);
-  };
-
-  const onPlaceChanged = () => {
-    if (autocomplete !== null) {
-      const place = autocomplete.getPlace();
-      if (place.geometry && place.geometry.location) {
-        const lat = Number(place.geometry.location.lat());
-        const lng = Number(place.geometry.location.lng());
-        const formattedAddress = place.formatted_address || '';
-
-        const newCenter = { lat, lng };
-        setCenter(newCenter);
-        setMarkerPosition(newCenter);
-        setAddress(formattedAddress);
-        onLocationChange(lat, lng, formattedAddress);
-
-        // Animate to new location
-        if (map) {
-          map.panTo(newCenter);
-        }
-      }
-    }
-  };
 
   const onMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
@@ -338,4 +311,4 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
   );
 };
 
-export default LocationPickerWithMap;
+export default memo(LocationPickerWithMap);

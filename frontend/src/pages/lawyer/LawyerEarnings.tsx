@@ -3,7 +3,6 @@ import { lawyerApi } from '../../services/lawyerApi';
 import {
   TrendingUp,
   Clock,
-  Download,
   AlertCircle,
   CheckCircle,
   XCircle,
@@ -65,6 +64,7 @@ export default function LawyerEarnings() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [payoutAmount, setPayoutAmount] = useState('');
+  const [selectedPayoutMethod, setSelectedPayoutMethod] = useState<'gcash' | 'bank'>('gcash');
   const [submittingPayout, setSubmittingPayout] = useState(false);
 
   // Payout info form
@@ -150,15 +150,17 @@ export default function LawyerEarnings() {
       return;
     }
 
-    // Check if payout info is set
-    if (earnings.payoutInfo.preferred_payout_method === 'gcash') {
-      if (!earnings.payoutInfo.gcash_number || !earnings.payoutInfo.gcash_account_name) {
+    // Check if selected payout method info is set
+    if (selectedPayoutMethod === 'gcash') {
+      if (!earnings.payoutInfo.gcash_number) {
+        alert('Please set up your GCash information first');
         setShowPayoutModal(false);
         setShowPayoutInfoRequiredModal(true);
         return;
       }
     } else {
-      if (!earnings.payoutInfo.bank_account_number || !earnings.payoutInfo.bank_account_name || !earnings.payoutInfo.bank_name) {
+      if (!earnings.payoutInfo.bank_account_number || !earnings.payoutInfo.bank_name) {
+        alert('Please set up your bank information first');
         setShowPayoutModal(false);
         setShowPayoutInfoRequiredModal(true);
         return;
@@ -167,7 +169,7 @@ export default function LawyerEarnings() {
 
     try {
       setSubmittingPayout(true);
-      await lawyerApi.requestPayout(amount);
+      await lawyerApi.requestPayout(amount, selectedPayoutMethod);
       setShowPayoutModal(false);
       setPayoutAmount('');
       setSuccessMessage('Payout request submitted successfully!');
@@ -269,7 +271,7 @@ export default function LawyerEarnings() {
           </div>
           <button
             onClick={() => setShowPayoutModal(true)}
-            disabled={earnings.availableBalance < 500}
+            disabled={earnings.availableBalance <= 0}
             className="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             Request Payout
@@ -483,9 +485,6 @@ export default function LawyerEarnings() {
                       ₱{earnings.availableBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </span>
                   </p>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Minimum Payout: <span className="font-semibold text-gray-900">₱500.00</span>
-                  </p>
                 </div>
 
                 <div>
@@ -495,7 +494,7 @@ export default function LawyerEarnings() {
                   <input
                     type="number"
                     step="0.01"
-                    min="500"
+                    min="1"
                     max={earnings.availableBalance}
                     value={payoutAmount}
                     onChange={(e) => setPayoutAmount(e.target.value)}
@@ -505,17 +504,63 @@ export default function LawyerEarnings() {
                   />
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">
-                    <strong>Payout Method:</strong> {earnings.payoutInfo.preferred_payout_method.toUpperCase()}
-                  </p>
-                  <p className="text-sm text-blue-800 mt-1">
-                    <strong>Account:</strong>{' '}
-                    {earnings.payoutInfo.preferred_payout_method === 'gcash'
-                      ? earnings.payoutInfo.gcash_number
-                      : `${earnings.payoutInfo.bank_name} - ${earnings.payoutInfo.bank_account_number}`
-                    }
-                  </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payout Method
+                  </label>
+                  <div className="space-y-2">
+                    {earnings.payoutInfo.gcash_number && (
+                      <label
+                        className={`flex items-center p-3 border rounded-md cursor-pointer ${
+                          selectedPayoutMethod === 'gcash'
+                            ? 'border-indigo-600 bg-indigo-50'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="payoutMethod"
+                          value="gcash"
+                          checked={selectedPayoutMethod === 'gcash'}
+                          onChange={() => setSelectedPayoutMethod('gcash')}
+                          className="mr-3"
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">GCash</p>
+                          <p className="text-sm text-gray-600">{earnings.payoutInfo.gcash_number}</p>
+                          {earnings.payoutInfo.gcash_account_name && (
+                            <p className="text-sm text-gray-500">{earnings.payoutInfo.gcash_account_name}</p>
+                          )}
+                        </div>
+                      </label>
+                    )}
+
+                    {earnings.payoutInfo.bank_account_number && (
+                      <label
+                        className={`flex items-center p-3 border rounded-md cursor-pointer ${
+                          selectedPayoutMethod === 'bank'
+                            ? 'border-indigo-600 bg-indigo-50'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="payoutMethod"
+                          value="bank"
+                          checked={selectedPayoutMethod === 'bank'}
+                          onChange={() => setSelectedPayoutMethod('bank')}
+                          className="mr-3"
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{earnings.payoutInfo.bank_name}</p>
+                          <p className="text-sm text-gray-600">{earnings.payoutInfo.bank_account_number}</p>
+                          {earnings.payoutInfo.bank_account_name && (
+                            <p className="text-sm text-gray-500">{earnings.payoutInfo.bank_account_name}</p>
+                          )}
+                        </div>
+                      </label>
+                    )}
+                  </div>
                 </div>
               </div>
 

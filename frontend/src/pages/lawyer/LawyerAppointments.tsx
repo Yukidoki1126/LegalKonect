@@ -27,6 +27,10 @@ interface Appointment {
   cancellation_reason: string;
   meeting_type: string;
   meeting_link: string;
+  reschedule_status?: string | null;
+  reschedule_reason?: string | null;
+  original_date?: string | null;
+  proposed_date?: string | null;
   user: User;
 }
 
@@ -39,10 +43,17 @@ const LawyerAppointments: React.FC = () => {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showBulkRescheduleModal, setShowBulkRescheduleModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [notes, setNotes] = useState('');
   const [declineReason, setDeclineReason] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [proposedDate, setProposedDate] = useState('');
+  const [proposedTime, setProposedTime] = useState('');
+  const [selectedAppointmentIds, setSelectedAppointmentIds] = useState<number[]>([]);
+  const [bulkRescheduleDate, setBulkRescheduleDate] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date>(new Date());
@@ -169,6 +180,103 @@ const LawyerAppointments: React.FC = () => {
       console.error('Error completing appointment:', err);
       setShowCompleteModal(false);
       setSuccessMessage('Failed to complete appointment');
+      setShowSuccessModal(true);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRescheduleClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setRescheduleReason('');
+    // Pre-fill with the original appointment date and time for easy adjustment
+    const appointmentDate = new Date(appointment.appointment_date);
+    setProposedDate(appointmentDate.toISOString().split('T')[0]); // Format: YYYY-MM-DD
+    setProposedTime(appointment.appointment_time); // Format: HH:MM:SS or HH:MM
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleSubmit = async () => {
+    if (!selectedAppointment || !rescheduleReason.trim() || !proposedDate || !proposedTime) {
+      setSuccessMessage('Please fill in all fields');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await lawyerApi.requestReschedule(selectedAppointment.id, {
+        proposed_date: proposedDate,
+        proposed_time: proposedTime,
+        reason: rescheduleReason,
+      });
+      setShowRescheduleModal(false);
+      setSuccessMessage('Reschedule request sent to client successfully!');
+      setShowSuccessModal(true);
+      // Add a small delay to ensure backend has processed the request
+      setTimeout(() => {
+        fetchAppointments();
+      }, 500);
+    } catch (err: any) {
+      console.error('Error requesting reschedule:', err);
+      setShowRescheduleModal(false);
+      setSuccessMessage(err.response?.data?.message || 'Failed to request reschedule');
+      setShowSuccessModal(true);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBulkRescheduleClick = (date: string) => {
+    // Get all confirmed appointments for this date that haven't been rescheduled
+    const appointmentsOnDate = appointments.filter(apt =>
+      apt.appointment_date.startsWith(date) &&
+      apt.status === 'confirmed' &&
+      !apt.reschedule_status
+    );
+
+    if (appointmentsOnDate.length === 0) {
+      setSuccessMessage('No appointments available for bulk reschedule on this date');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    setSelectedAppointmentIds(appointmentsOnDate.map(apt => apt.id));
+    setBulkRescheduleDate(date);
+    setRescheduleReason('');
+    // Pre-fill with the same date and first appointment's time for easy adjustment
+    setProposedDate(date); // Original date in YYYY-MM-DD format
+    setProposedTime(appointmentsOnDate[0]?.appointment_time || ''); // Use first appointment's time
+    setShowBulkRescheduleModal(true);
+  };
+
+  const handleBulkRescheduleSubmit = async () => {
+    if (!rescheduleReason.trim() || !proposedDate || !proposedTime || selectedAppointmentIds.length === 0) {
+      setSuccessMessage('Please fill in all fields');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const response = await lawyerApi.bulkReschedule({
+        original_date: bulkRescheduleDate,
+        proposed_date: proposedDate,
+        proposed_time: proposedTime,
+        reason: rescheduleReason,
+        appointment_ids: selectedAppointmentIds,
+      });
+      setShowBulkRescheduleModal(false);
+      setSuccessMessage(response.message || `Successfully sent reschedule requests to ${response.rescheduled_count} client(s)`);
+      setShowSuccessModal(true);
+      // Add a small delay to ensure backend has processed the request
+      setTimeout(() => {
+        fetchAppointments();
+      }, 500);
+    } catch (err: any) {
+      console.error('Error bulk rescheduling:', err);
+      setShowBulkRescheduleModal(false);
+      setSuccessMessage(err.response?.data?.message || 'Failed to bulk reschedule appointments');
       setShowSuccessModal(true);
     } finally {
       setActionLoading(false);
@@ -405,6 +513,56 @@ const LawyerAppointments: React.FC = () => {
         </nav>
       </div>
 
+      {/* Bulk Reschedule Helper */}
+      {(activeTab === 'all' || activeTab === 'confirmed') && appointments.length > 0 && (() => {
+        // Group appointments by date (only confirmed appointments)
+        const appointmentsByDate: Record<string, Appointment[]> = {};
+        appointments.forEach(apt => {
+          // Only include confirmed appointments that haven't been rescheduled
+          if (apt.status === 'confirmed' && !apt.reschedule_status) {
+            const date = apt.appointment_date.split('T')[0];
+            if (!appointmentsByDate[date]) {
+              appointmentsByDate[date] = [];
+            }
+            appointmentsByDate[date].push(apt);
+          }
+        });
+
+        // Find dates with multiple appointments that can be rescheduled
+        const datesWithMultiple = Object.entries(appointmentsByDate)
+          .filter(([_, apts]) => apts.length >= 2)
+          .map(([date, apts]) => ({ date, count: apts.length }));
+
+        return datesWithMultiple.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-yellow-900 mb-2">Bulk Reschedule Available</h4>
+                <p className="text-xs text-yellow-700 mb-3">
+                  You have multiple appointments on the same day. Reschedule them all at once:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {datesWithMultiple.map(({ date, count }) => (
+                    <button
+                      key={date}
+                      onClick={() => handleBulkRescheduleClick(date)}
+                      className="px-3 py-1.5 bg-yellow-600 text-white text-xs rounded-md hover:bg-yellow-700 transition-colors"
+                    >
+                      {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ({count} appointments)
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Appointments List */}
       {appointments.length === 0 ? (
         <div className="text-center py-8 sm:py-12 bg-white rounded-lg border border-gray-200">
@@ -430,6 +588,12 @@ const LawyerAppointments: React.FC = () => {
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                       {appointment.user.name}
                     </h3>
+                    {/* Show reschedule status badge if pending */}
+                    {appointment.reschedule_status === 'pending' && (
+                      <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-300">
+                        Reschedule Pending
+                      </span>
+                    )}
                     {/* Only show status badge if not confirmed (since all appointments are auto-confirmed) */}
                     {appointment.status !== 'confirmed' && (
                       <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getStatusBadge(appointment.status)}`}>
@@ -496,6 +660,36 @@ const LawyerAppointments: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Reschedule Request Status */}
+                  {appointment.reschedule_status === 'pending' && appointment.proposed_date && (
+                    <div className="bg-orange-50 border-l-4 border-orange-500 rounded-lg p-3 mb-3">
+                      <p className="text-xs font-semibold text-orange-900 mb-2">Reschedule Request Sent</p>
+                      <p className="text-sm text-orange-800">
+                        <strong>New Date:</strong> {formatDate(appointment.proposed_date)} at {formatTime(appointment.proposed_date.split(' ')[1] || appointment.appointment_time)}
+                      </p>
+                      <p className="text-sm text-orange-800 mt-1">
+                        <strong>Reason:</strong> {appointment.reschedule_reason}
+                      </p>
+                      <p className="text-xs text-orange-700 mt-2">Waiting for client response...</p>
+                    </div>
+                  )}
+
+                  {/* Reschedule Accepted */}
+                  {appointment.reschedule_status === 'accepted' && (
+                    <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-3 mb-3">
+                      <p className="text-xs font-semibold text-green-900 mb-1">Reschedule Accepted</p>
+                      <p className="text-sm text-green-800">Client accepted your reschedule request. Appointment updated.</p>
+                    </div>
+                  )}
+
+                  {/* Reschedule Declined */}
+                  {appointment.reschedule_status === 'declined' && (
+                    <div className="bg-gray-50 border-l-4 border-gray-500 rounded-lg p-3 mb-3">
+                      <p className="text-xs font-semibold text-gray-900 mb-1">Reschedule Declined</p>
+                      <p className="text-sm text-gray-800">Client declined the reschedule. Appointment cancelled and refunded.</p>
+                    </div>
+                  )}
+
                   {/* Meeting Link */}
                   {appointment.meeting_link && appointment.status === 'confirmed' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
@@ -531,7 +725,7 @@ const LawyerAppointments: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[160px]">
-                    {appointment.status === 'confirmed' && (
+                    {appointment.status === 'confirmed' && !appointment.reschedule_status && (
                       <>
                         <button
                           onClick={() => handleCompleteClick(appointment)}
@@ -541,6 +735,13 @@ const LawyerAppointments: React.FC = () => {
                           ✓ Mark Complete
                         </button>
                         <button
+                          onClick={() => handleRescheduleClick(appointment)}
+                          disabled={actionLoading}
+                          className="w-full bg-yellow-600 text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          🔄 Reschedule
+                        </button>
+                        <button
                           onClick={() => handleDeclineClick(appointment)}
                           disabled={actionLoading}
                           className="w-full bg-red-600 text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -548,6 +749,14 @@ const LawyerAppointments: React.FC = () => {
                           ✕ Decline
                         </button>
                       </>
+                    )}
+
+                    {/* Show reschedule status */}
+                    {appointment.reschedule_status === 'pending' && (
+                      <div className="w-full bg-yellow-50 border border-yellow-300 px-4 py-2.5 rounded-md text-sm">
+                        <p className="font-medium text-yellow-900">Awaiting Client Response</p>
+                        <p className="text-xs text-yellow-700 mt-1">Reschedule request sent</p>
+                      </div>
                     )}
 
                     {/* Add/Edit Notes Button */}
@@ -743,6 +952,170 @@ const LawyerAppointments: React.FC = () => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Appointment Modal */}
+      {showRescheduleModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Request Reschedule
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Propose a new date and time for this appointment with {selectedAppointment.user.name}. The client can accept or decline. If declined, they will receive a full refund.
+            </p>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+              <p className="text-xs font-semibold text-gray-700 mb-1">Original Appointment:</p>
+              <p className="text-sm text-gray-900">
+                {new Date(selectedAppointment.appointment_date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })} at {selectedAppointment.appointment_time}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Date
+                </label>
+                <input
+                  type="date"
+                  value={proposedDate}
+                  onChange={(e) => setProposedDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Time
+                </label>
+                <input
+                  type="time"
+                  value={proposedTime}
+                  onChange={(e) => setProposedTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason for Reschedule
+                </label>
+                <textarea
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="e.g., Emergency hearing, Court schedule conflict, Personal emergency"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-xs text-yellow-800">
+                  <strong>Note:</strong> The client can accept the new date or decline and receive a full ₱{selectedAppointment.reservation_fee || 100} refund.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowRescheduleModal(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRescheduleSubmit}
+                disabled={actionLoading || !rescheduleReason.trim() || !proposedDate || !proposedTime}
+                className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50"
+              >
+                {actionLoading ? 'Sending...' : 'Send Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Reschedule Modal */}
+      {showBulkRescheduleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Bulk Reschedule Appointments
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Reschedule all {selectedAppointmentIds.length} appointment(s) on {new Date(bulkRescheduleDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} to a new date and time. Clients can accept or decline.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Date
+                </label>
+                <input
+                  type="date"
+                  value={proposedDate}
+                  onChange={(e) => setProposedDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Time
+                </label>
+                <input
+                  type="time"
+                  value={proposedTime}
+                  onChange={(e) => setProposedTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason for Reschedule
+                </label>
+                <textarea
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="e.g., Emergency hearing, Court schedule conflict, Personal emergency"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>Note:</strong> All {selectedAppointmentIds.length} clients will be notified. They can individually accept the new date or decline and receive a full refund.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowBulkRescheduleModal(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkRescheduleSubmit}
+                disabled={actionLoading || !rescheduleReason.trim() || !proposedDate || !proposedTime}
+                className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50"
+              >
+                {actionLoading ? 'Sending...' : `Send to ${selectedAppointmentIds.length} Client(s)`}
+              </button>
             </div>
           </div>
         </div>

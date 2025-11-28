@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import adminApi from '../../services/adminApi';
+import adminApi, { clearAdminCache } from '../../services/adminApi';
 import PageTransition from '../../components/PageTransition';
 
 interface Lawyer {
@@ -58,6 +58,10 @@ const AdminVerifications: React.FC = () => {
   const loadLawyers = async () => {
     try {
       setLoading(true);
+
+      // Clear cache to ensure fresh data
+      clearAdminCache();
+
       let response;
 
       if (filterStatus === 'pending') {

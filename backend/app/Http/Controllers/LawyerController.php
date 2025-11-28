@@ -15,38 +15,46 @@ class LawyerController extends Controller
     // Get all approved lawyers
     public function index(Request $request)
     {
-        $lawyers = Lawyer::with(['user', 'specializations'])
-            ->approved()
-            ->available()
-            ->get();
+        // Cache the lawyers list for 5 minutes to speed up repeated requests
+        $cacheKey = 'lawyers_list_v1';
+        $cacheDuration = 300; // 5 minutes
 
-        // Transform data to include needed fields
-        $transformedLawyers = $lawyers->map(function ($lawyer) {
+        $data = \Cache::remember($cacheKey, $cacheDuration, function () {
+            $lawyers = Lawyer::with(['user', 'specializations'])
+                ->approved()
+                ->available()
+                ->get();
+
+            // Transform data to include needed fields
+            $transformedLawyers = $lawyers->map(function ($lawyer) {
+                return [
+                    'id' => $lawyer->id,
+                    'first_name' => $lawyer->first_name,
+                    'last_name' => $lawyer->last_name,
+                    'bio' => $lawyer->bio,
+                    'profile_photo' => $lawyer->profile_photo,
+                    'specialization' => $lawyer->specializations->pluck('name')->join(', '),
+                    'specializations' => $lawyer->specializations,
+                    'status' => $lawyer->status,
+                    'is_available' => $lawyer->is_available,
+                    'rating' => $lawyer->rating ?? 0,
+                    'total_reviews' => $lawyer->total_reviews ?? 0,
+                    'consultation_fee' => $lawyer->hourly_rate,
+                    'years_experience' => $lawyer->years_experience,
+                    'office_address' => $lawyer->office_address,
+                    'office_latitude' => $lawyer->office_latitude,
+                    'office_longitude' => $lawyer->office_longitude,
+                    'created_at' => $lawyer->created_at,
+                ];
+            });
+
             return [
-                'id' => $lawyer->id,
-                'first_name' => $lawyer->first_name,
-                'last_name' => $lawyer->last_name,
-                'bio' => $lawyer->bio,
-                'profile_photo' => $lawyer->profile_photo,
-                'specialization' => $lawyer->specializations->pluck('name')->join(', '),
-                'specializations' => $lawyer->specializations,
-                'status' => $lawyer->status,
-                'is_available' => $lawyer->is_available,
-                'rating' => $lawyer->rating ?? 0,
-                'total_reviews' => $lawyer->total_reviews ?? 0,
-                'consultation_fee' => $lawyer->hourly_rate,
-                'years_experience' => $lawyer->years_experience,
-                'office_address' => $lawyer->office_address,
-                'office_latitude' => $lawyer->office_latitude,
-                'office_longitude' => $lawyer->office_longitude,
-                'created_at' => $lawyer->created_at,
+                'lawyers' => $transformedLawyers,
+                'total' => $transformedLawyers->count()
             ];
         });
 
-        return response()->json([
-            'lawyers' => $transformedLawyers,
-            'total' => $transformedLawyers->count()
-        ]);
+        return response()->json($data);
     }
 
     // Get single lawyer profile
@@ -89,11 +97,19 @@ class LawyerController extends Controller
     // Get all specializations
     public function specializations()
     {
-        $specializations = Specialization::active()->get();
+        // Cache specializations for 10 minutes (changes infrequently)
+        $cacheKey = 'specializations_list_v1';
+        $cacheDuration = 600; // 10 minutes
 
-        return response()->json([
-            'specializations' => $specializations
-        ]);
+        $data = \Cache::remember($cacheKey, $cacheDuration, function () {
+            $specializations = Specialization::active()->get();
+
+            return [
+                'specializations' => $specializations
+            ];
+        });
+
+        return response()->json($data);
     }
 
     // Add after the specializations() method
@@ -104,7 +120,7 @@ public function createProfile(Request $request)
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'bio' => 'required|string|min:50',
+            'bio' => 'nullable|string|min:50',
             'license_number' => 'required|string|unique:lawyers',
             'years_experience' => 'required|integer|min:0',
             'hourly_rate' => 'required|numeric|min:0',
@@ -124,6 +140,7 @@ public function createProfile(Request $request)
             'government_id' => 'required|file|mimes:jpg,jpeg,png,pdf|max:20480',
             'good_standing_cert' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:20480',
         ], [
+            'bio.min' => 'Bio must be at least 50 characters if provided.',
             'government_id.max' => 'The government ID file size exceeds 20MB. Please compress or resize your image.',
             'ibp_card.max' => 'The IBP card file size exceeds 20MB. Please compress or resize your image.',
             'prc_license.max' => 'The PRC license file size exceeds 20MB. Please compress or resize your image.',
@@ -155,7 +172,7 @@ public function createProfile(Request $request)
         'user_id' => $request->user()->id,
         'first_name' => $validated['first_name'],
         'last_name' => $validated['last_name'],
-        'bio' => $validated['bio'],
+        'bio' => $validated['bio'] ?? null,
         'license_number' => $validated['license_number'],
         'years_experience' => $validated['years_experience'],
         'hourly_rate' => $validated['hourly_rate'],

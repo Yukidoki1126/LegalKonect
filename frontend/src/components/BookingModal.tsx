@@ -32,6 +32,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [showRedirectScreen, setShowRedirectScreen] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [limitReached, setLimitReached] = useState(false);
+  const [dailyLimitInfo, setDailyLimitInfo] = useState<{ limit: number; booked: number } | null>(null);
 
   // Ref to track the current AbortController for request cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -84,8 +86,23 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
       if (!abortController.signal.aborted) {
         if (response.data.available) {
           setAvailableSlots(response.data.slots);
+          setLimitReached(false);
+          setDailyLimitInfo(null);
         } else {
           setAvailableSlots([]);
+
+          // Check if daily limit was reached
+          if (response.data.limit_reached) {
+            setLimitReached(true);
+            setDailyLimitInfo({
+              limit: response.data.daily_limit,
+              booked: response.data.booked_count
+            });
+          } else {
+            setLimitReached(false);
+            setDailyLimitInfo(null);
+          }
+
           setError(response.data.message || 'No slots available for this date');
         }
       }
@@ -198,6 +215,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
     setMeetingType('in-person');
     setError('');
     setAvailableSlots([]);
+    setLimitReached(false);
+    setDailyLimitInfo(null);
   };
 
   const handleClose = () => {
@@ -362,12 +381,31 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                          <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <p className="text-gray-600 font-medium text-sm">No available slots</p>
-                          <p className="text-gray-500 text-xs mt-1">Please select a different date</p>
+                        <div className={`text-center py-8 rounded-lg border-2 border-dashed ${
+                          limitReached ? 'bg-orange-50 border-orange-300' : 'bg-gray-50 border-gray-300'
+                        }`}>
+                          {limitReached ? (
+                            <>
+                              <svg className="w-12 h-12 text-orange-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                              <p className="text-orange-700 font-medium text-sm">Daily Appointment Limit Reached</p>
+                              {dailyLimitInfo && (
+                                <p className="text-orange-600 text-xs mt-2">
+                                  This lawyer has reached their maximum of {dailyLimitInfo.limit} appointment{dailyLimitInfo.limit > 1 ? 's' : ''} for this day
+                                </p>
+                              )}
+                              <p className="text-gray-600 text-xs mt-2">Please select a different date</p>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <p className="text-gray-600 font-medium text-sm">No available slots</p>
+                              <p className="text-gray-500 text-xs mt-1">Please select a different date</p>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>

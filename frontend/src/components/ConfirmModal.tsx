@@ -93,14 +93,14 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={onCancel}
       ></div>
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full border border-slate-700 transform transition-all animate-in zoom-in-95 duration-200">
+        <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 transform transition-all animate-in zoom-in-95 duration-200">
           {/* Icon */}
           <div className="flex items-center justify-center pt-8">
             <div className={`w-16 h-16 rounded-full ${colors.iconBg} flex items-center justify-center relative`}>
@@ -159,13 +159,13 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
           {/* Content */}
           <div className="px-8 py-6 text-center">
-            <h3 className="text-2xl font-bold text-white mb-3">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
               {title}
             </h3>
-            
+
             {/* User Details Card */}
             {userDetails && (
-              <div className="mb-4 p-4 bg-slate-700/50 rounded-xl border border-slate-600">
+              <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <div className="flex items-center gap-4">
                   {/* Avatar */}
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -173,27 +173,27 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                       {userDetails.name?.charAt(0) || 'U'}
                     </span>
                   </div>
-                  
+
                   {/* User Info */}
                   <div className="flex-1 text-left">
-                    <p className="text-white font-semibold text-base">
+                    <p className="text-gray-900 font-semibold text-base">
                       {userDetails.name}
                     </p>
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-gray-600 text-sm">
                       {userDetails.email}
                     </p>
                     <div className="flex items-center gap-3 mt-2">
                       {userDetails.type && (
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          userDetails.type === 'Lawyer' 
-                            ? 'bg-purple-500/20 text-purple-400' 
-                            : 'bg-blue-500/20 text-blue-400'
+                          userDetails.type === 'Lawyer'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-blue-100 text-blue-700'
                         }`}>
                           {userDetails.type}
                         </span>
                       )}
                       {userDetails.appointments !== undefined && (
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-600">
                           📅 {userDetails.appointments} appointment{userDetails.appointments !== 1 ? 's' : ''}
                         </span>
                       )}
@@ -202,23 +202,23 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 </div>
               </div>
             )}
-            
-            <p className="text-gray-400 text-sm leading-relaxed">
+
+            <p className="text-gray-600 text-sm leading-relaxed">
               {message}
             </p>
             
             {/* Countdown Notice */}
             {requireCountdown && countdown > 0 && (
-              <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                <p className="text-yellow-400 text-sm font-medium">
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-yellow-700 text-sm font-medium">
                   ⏱️ Please wait {countdown} second{countdown !== 1 ? 's' : ''} before confirming
                 </p>
               </div>
             )}
 
             {requireCountdown && countdown === 0 && (
-              <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-                <p className="text-green-400 text-sm font-medium">
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-700 text-sm font-medium">
                   ✓ You can now proceed with this action
                 </p>
               </div>
@@ -229,15 +229,15 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           <div className="flex gap-3 px-8 pb-8">
             <button
               onClick={onCancel}
-              className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+              className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
             >
               {cancelText}
             </button>
             <button
               onClick={onConfirm}
               disabled={!isEnabled}
-              className={`flex-1 px-6 py-3 text-white rounded-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 ${
-                isEnabled 
+              className={`flex-1 px-6 py-3 text-white rounded-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                isEnabled
                   ? `${colors.button} transform hover:scale-[1.02]`
                   : colors.buttonDisabled
               }`}

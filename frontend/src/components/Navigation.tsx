@@ -1,12 +1,11 @@
 // src/components/Navigation.tsx - REDESIGNED
 // Professional, minimal design - clean white background, simple borders
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navigation: React.FC = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);

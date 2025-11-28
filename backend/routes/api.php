@@ -92,6 +92,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/appointments', [AppointmentController::class, 'getUserAppointments']);
     Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
     Route::post('/appointments/{id}/cancel', [AppointmentController::class, 'cancel']);
+    Route::post('/appointments/{id}/reschedule/accept', [AppointmentController::class, 'acceptReschedule']);
+    Route::post('/appointments/{id}/reschedule/decline', [AppointmentController::class, 'declineReschedule']);
 
     // Get authenticated user
     Route::get('/user', function (Request $request) {
@@ -160,6 +162,8 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
     Route::post('/appointments/{id}/decline', [LawyerDashboardController::class, 'declineAppointment']);
     Route::post('/appointments/{id}/complete', [LawyerDashboardController::class, 'completeAppointment']);
     Route::post('/appointments/{id}/notes', [LawyerDashboardController::class, 'addNotes']);
+    Route::post('/appointments/{id}/reschedule', [AppointmentController::class, 'requestReschedule']);
+    Route::post('/appointments/bulk-reschedule', [AppointmentController::class, 'bulkReschedule']);
     Route::get('/earnings', [LawyerDashboardController::class, 'earnings']);
     Route::post('/toggle-availability', [LawyerDashboardController::class, 'toggleAvailability']);
     Route::get('/profile', [LawyerDashboardController::class, 'getProfile']);

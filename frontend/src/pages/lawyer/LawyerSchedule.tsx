@@ -8,6 +8,7 @@ interface Schedule {
   start_time: string;
   end_time: string;
   is_active: boolean;
+  daily_appointment_limit: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -35,6 +36,7 @@ const LawyerSchedule: React.FC = () => {
     day_of_week: 'Monday',
     start_time: '09:00',
     end_time: '17:00',
+    daily_appointment_limit: null as number | null,
   });
 
   useEffect(() => {
@@ -77,6 +79,7 @@ const LawyerSchedule: React.FC = () => {
         day_of_week: 'Monday',
         start_time: '09:00',
         end_time: '17:00',
+        daily_appointment_limit: null,
       });
       fetchSchedules(false);
       setTimeout(() => setSuccess(''), 3000);
@@ -133,6 +136,7 @@ const LawyerSchedule: React.FC = () => {
       day_of_week: schedule.day_of_week,
       start_time: schedule.start_time.substring(0, 5),
       end_time: schedule.end_time.substring(0, 5),
+      daily_appointment_limit: schedule.daily_appointment_limit,
     });
   };
 
@@ -143,6 +147,7 @@ const LawyerSchedule: React.FC = () => {
       day_of_week: 'Monday',
       start_time: '09:00',
       end_time: '17:00',
+      daily_appointment_limit: null,
     });
     setError('');
   };
@@ -324,9 +329,16 @@ const LawyerSchedule: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs sm:text-sm font-medium text-gray-900">
-                        {formatTime12Hour(schedule.start_time.substring(0, 5))} - {formatTime12Hour(schedule.end_time.substring(0, 5))}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs sm:text-sm font-medium text-gray-900">
+                          {formatTime12Hour(schedule.start_time.substring(0, 5))} - {formatTime12Hour(schedule.end_time.substring(0, 5))}
+                        </span>
+                        {schedule.daily_appointment_limit && (
+                          <span className="text-xs text-orange-600 font-medium">
+                            Max {schedule.daily_appointment_limit} appointments/day
+                          </span>
+                        )}
+                      </div>
                       <button
                         onClick={() => handleToggleActive(schedule.id)}
                         className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
@@ -425,20 +437,46 @@ const LawyerSchedule: React.FC = () => {
                 />
               </div>
 
-              <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4">
-                <button
-                  type="button"
-                  onClick={closeModals}
-                  className="flex-1 px-4 py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  {editingSchedule ? 'Update' : 'Add'}
-                </button>
+              <div className="border-t pt-3 sm:pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-end">
+                  <div className="flex-1 w-full">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                      Daily Limit <span className="text-gray-500 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="daily_appointment_limit"
+                      value={formData.daily_appointment_limit ?? ''}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        daily_appointment_limit: e.target.value ? parseInt(e.target.value) : null
+                      }))}
+                      min="1"
+                      max="50"
+                      placeholder="Unlimited"
+                      className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Max appointments per day
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={closeModals}
+                      className="flex-1 px-4 py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      {editingSchedule ? 'Update' : 'Add'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </form>
           </div>

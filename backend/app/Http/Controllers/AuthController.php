@@ -91,6 +91,12 @@ class AuthController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'address' => $user->address,
+            'city' => $user->city,
+            'province' => $user->province,
+            'latitude' => $user->latitude,
+            'longitude' => $user->longitude,
+            'profile_picture' => $user->profile_picture,
             'lawyer' => $user->lawyer ? [
                 'id' => $user->lawyer->id,
                 'first_name' => $user->lawyer->first_name,
@@ -284,22 +290,53 @@ public function updateProfile(Request $request)
     }
 
     /**
-     * Login with Google ID Token (for direct API calls)
+     * Login with Google ID Token or Access Token (for direct API calls)
      */
-    public function googleLogin(Request $request, GoogleAuthService $googleAuthService)
+    public function googleLogin(Request $request)
     {
         $request->validate([
             'id_token' => 'required|string',
         ]);
 
         try {
-            $userData = $googleAuthService->verifyIdToken($request->id_token);
+            // Always use access token to get user info (more reliable than verifyIdToken)
+            $ch = curl_init('https://www.googleapis.com/oauth2/v3/userinfo');
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Authorization: Bearer ' . $request->id_token
+            ]);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For local development
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-            if (!$userData) {
+            if ($httpCode !== 200) {
+                Log::error('Google token validation failed', [
+                    'http_code' => $httpCode,
+                    'response' => $response
+                ]);
+
                 return response()->json([
                     'message' => 'Invalid Google token'
                 ], 401);
             }
+
+            $googleUser = json_decode($response, true);
+
+            if (!isset($googleUser['sub']) || !isset($googleUser['email'])) {
+                Log::error('Invalid Google user data', ['data' => $googleUser]);
+
+                return response()->json([
+                    'message' => 'Invalid Google user data'
+                ], 401);
+            }
+
+            $userData = [
+                'id' => $googleUser['sub'],
+                'email' => $googleUser['email'],
+                'name' => $googleUser['name'] ?? $googleUser['email'],
+                'picture' => $googleUser['picture'] ?? null,
+            ];
 
             // Find or create user
             $user = User::where('google_id', $userData['id'])->first();
@@ -308,32 +345,54 @@ public function updateProfile(Request $request)
                 $user = User::where('email', $userData['email'])->first();
 
                 if ($user) {
-                    // Link Google account
-                    $user->update([
-                        'google_id' => $userData['id'],
-                        'avatar' => $userData['picture'],
-                        'auth_provider' => 'google',
-                    ]);
+                    // Link Google account - only update picture if user doesn't have one
+                    $updateData = ['google_id' => $userData['id']];
+
+                    // Only set Google profile picture if user doesn't have one already
+                    if (empty($user->profile_picture)) {
+                        $updateData['profile_picture'] = $userData['picture'];
+                    }
+
+                    $user->update($updateData);
                 } else {
-                    // Create new user
+                    // Create new user with Google profile picture
                     $user = User::create([
                         'name' => $userData['name'],
                         'email' => $userData['email'],
                         'google_id' => $userData['id'],
-                        'avatar' => $userData['picture'],
-                        'auth_provider' => 'google',
+                        'profile_picture' => $userData['picture'],
                         'password' => Hash::make(\Illuminate\Support\Str::random(32)),
                         'email_verified_at' => now(),
                     ]);
                 }
             }
 
+            // Load lawyer relationship
+            $user->load('lawyer');
+
             // Create token
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'message' => 'Login successful',
-                'user' => $user,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'address' => $user->address,
+                    'city' => $user->city,
+                    'province' => $user->province,
+                    'latitude' => $user->latitude,
+                    'longitude' => $user->longitude,
+                    'profile_picture' => $user->profile_picture,
+                    'lawyer' => $user->lawyer ? [
+                        'id' => $user->lawyer->id,
+                        'first_name' => $user->lawyer->first_name,
+                        'last_name' => $user->lawyer->last_name,
+                        'status' => $user->lawyer->status,
+                    ] : null
+                ],
                 'token' => $token
             ]);
 

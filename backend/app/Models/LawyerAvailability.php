@@ -17,6 +17,7 @@ class LawyerAvailability extends Model
         'start_time',
         'end_time',
         'is_available',
+        'daily_appointment_limit',
     ];
 
     protected $casts = [
