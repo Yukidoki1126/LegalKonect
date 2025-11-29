@@ -355,34 +355,55 @@ const LawyerCases: React.FC = () => {
 
   if (loading && !isTabSwitching) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header Skeleton */}
-          <div className="mb-8 animate-pulse">
-            <div className="h-8 bg-gray-200 rounded-lg w-64 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded-lg w-96"></div>
+          <div className="mb-6 animate-pulse">
+            <div className="h-7 bg-gray-200 rounded w-48 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-72"></div>
           </div>
 
           {/* Stats Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-16"></div>
+              <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="h-3 bg-gray-200 rounded w-16 mb-2"></div>
+                    <div className="h-6 bg-gray-200 rounded w-8"></div>
+                  </div>
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg"></div>
+                </div>
               </div>
             ))}
+          </div>
+
+          {/* Filter Tabs Skeleton */}
+          <div className="bg-white rounded-lg border border-gray-200 p-1 mb-6 animate-pulse">
+            <div className="flex gap-1">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex-1 h-9 bg-gray-100 rounded-md"></div>
+              ))}
+            </div>
           </div>
 
           {/* Cases Skeleton */}
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm animate-pulse">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="h-6 bg-gray-200 rounded w-48"></div>
-                  <div className="h-8 bg-gray-200 rounded w-24"></div>
+              <div key={i} className="bg-white rounded-lg border border-gray-200 p-5 animate-pulse">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-5 bg-gray-200 rounded w-40"></div>
+                    <div className="h-5 bg-gray-100 rounded-full w-20"></div>
+                  </div>
+                  <div className="h-8 bg-gray-200 rounded-md w-20"></div>
                 </div>
                 <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="flex gap-4">
+                  <div className="h-3 bg-gray-100 rounded w-24"></div>
+                  <div className="h-3 bg-gray-100 rounded w-32"></div>
+                </div>
               </div>
             ))}
           </div>
@@ -392,33 +413,33 @@ const LawyerCases: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 p-4 ${!isTabSwitching ? 'animate-fadeIn' : ''}`}>
+    <div className={`min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 ${!isTabSwitching ? 'animate-fadeIn' : ''}`}>
       <div className="max-w-7xl mx-auto">
         {/* Spinner overlay for tab switching */}
         {loading && isTabSwitching && (
-          <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-white/75 flex items-center justify-center z-50">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading cases...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-gray-900 mx-auto"></div>
+              <p className="mt-3 text-sm text-gray-600">Loading cases...</p>
             </div>
           </div>
         )}
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl font-semibold text-gray-900">
                 Case Management
               </h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-gray-600 mt-1">
                 Manage and track your legal cases efficiently
               </p>
             </div>
             <button
               onClick={openNewCaseModal}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 font-semibold"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm font-medium"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Create New Case
@@ -427,57 +448,57 @@ const LawyerCases: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Cases</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+                <p className="text-xs font-medium text-gray-500">Total Cases</p>
+                <p className="text-2xl font-semibold text-gray-900 mt-1">{stats.total}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-1">{stats.pending}</p>
+                <p className="text-xs font-medium text-gray-500">Pending Review</p>
+                <p className="text-2xl font-semibold text-yellow-600 mt-1">{stats.pending}</p>
               </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">In Progress</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">{stats.ongoing}</p>
+                <p className="text-xs font-medium text-gray-500">In Progress</p>
+                <p className="text-2xl font-semibold text-blue-600 mt-1">{stats.ongoing}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Resolved</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{stats.closed}</p>
+                <p className="text-xs font-medium text-gray-500">Resolved</p>
+                <p className="text-2xl font-semibold text-green-600 mt-1">{stats.closed}</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -486,17 +507,17 @@ const LawyerCases: React.FC = () => {
         </div>
 
         {/* Filter Tabs */}
-        <div className="bg-white rounded-2xl p-1 shadow-sm border border-gray-100 mb-8">
-          <div className="flex space-x-1">
+        <div className="bg-white rounded-lg border border-gray-200 p-1 mb-6">
+          <div className="flex gap-1">
             {(['all', 'pending', 'ongoing', 'closed'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleFilterChange(tab)}
                 className={`
-                  flex-1 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                  flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors
                   ${
                     filter === tab
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'bg-blue-600 text-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }
                 `}
@@ -504,8 +525,8 @@ const LawyerCases: React.FC = () => {
                 <div className="flex items-center justify-center gap-2">
                   <span className="capitalize">{tab}</span>
                   <span className={`
-                    px-2 py-1 rounded-full text-xs font-medium
-                    ${filter === tab ? 'bg-white text-blue-600' : 'bg-gray-100 text-gray-600'}
+                    px-1.5 py-0.5 rounded text-xs font-medium
+                    ${filter === tab ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}
                   `}>
                     {tab === 'all' ? stats.total :
                      tab === 'pending' ? stats.pending :
@@ -519,14 +540,14 @@ const LawyerCases: React.FC = () => {
 
         {/* Cases List */}
         {filteredCases.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white rounded-lg border border-gray-200 p-10 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No cases found</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No cases found</h3>
+            <p className="text-sm text-gray-600 mb-5 max-w-sm mx-auto">
               {filter === 'all' 
                 ? "Get started by creating your first case from a completed appointment."
                 : `No ${filter} cases at the moment.`}
@@ -534,28 +555,28 @@ const LawyerCases: React.FC = () => {
             {filter === 'all' && (
               <button
                 onClick={openNewCaseModal}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-semibold"
+                className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 Create Your First Case
               </button>
             )}
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="space-y-4">
             {filteredCases.map((caseItem) => (
               <div
                 key={caseItem.id}
-                className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100"
+                className="bg-white rounded-lg border border-gray-200 p-5 hover:border-gray-300 transition-colors"
               >
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-semibold text-gray-900">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-medium text-gray-900">
                           {caseItem.title}
                         </h3>
                         <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                          className={`px-2 py-0.5 rounded text-xs font-medium border ${getStatusColor(
                             caseItem.status
                           )}`}
                         >
@@ -565,28 +586,28 @@ const LawyerCases: React.FC = () => {
                     </div>
 
                     {caseItem.description && (
-                      <p className="text-gray-600 mb-4 line-clamp-2">
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                         {caseItem.description}
                       </p>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                       {caseItem.case_type && (
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                           </svg>
                           {caseItem.case_type}
                         </span>
                       )}
-                      <span className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         {caseItem.user?.name}
                       </span>
-                      <span className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         Created {new Date(caseItem.created_at).toLocaleDateString()}
@@ -597,13 +618,13 @@ const LawyerCases: React.FC = () => {
                     <div className="mt-4 space-y-3">
                       {/* Progress Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                          <span>Case Progress</span>
+                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
+                          <span>Progress</span>
                           <span>{caseItem.progress_percentage}%</span>
                         </div>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
+                            className="h-full bg-blue-600 transition-all duration-500"
                             style={{ width: `${caseItem.progress_percentage}%` }}
                           ></div>
                         </div>
@@ -611,31 +632,31 @@ const LawyerCases: React.FC = () => {
 
                       {/* Todos Summary */}
                       {caseItem.todos && caseItem.todos.length > 0 && (
-                        <div className="bg-gray-50 rounded-xl p-4">
-                          <div className="flex items-center justify-between text-sm mb-3">
-                            <span className="font-medium text-gray-900">Client Checklist</span>
-                            <span className="text-gray-600">
-                              {caseItem.completed_todos_count || 0} of {caseItem.todos_count || 0} completed
+                        <div className="bg-gray-50 rounded-md p-3 border border-gray-100">
+                          <div className="flex items-center justify-between text-xs mb-2">
+                            <span className="font-medium text-gray-700">Client Checklist</span>
+                            <span className="text-gray-500">
+                              {caseItem.completed_todos_count || 0}/{caseItem.todos_count || 0}
                             </span>
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             {caseItem.todos.slice(0, 3).map((todo) => (
-                              <div key={todo.id} className="flex items-center gap-3">
+                              <div key={todo.id} className="flex items-center gap-2">
                                 {todo.is_completed ? (
-                                  <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <svg className="w-3.5 h-3.5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                   </svg>
                                 ) : (
-                                  <div className="w-4 h-4 border-2 border-gray-300 rounded flex-shrink-0"></div>
+                                  <div className="w-3.5 h-3.5 border border-gray-300 rounded flex-shrink-0"></div>
                                 )}
-                                <span className={`text-sm ${todo.is_completed ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
+                                <span className={`text-xs ${todo.is_completed ? 'text-gray-400 line-through' : 'text-gray-600'}`}>
                                   {todo.title}
                                 </span>
                               </div>
                             ))}
                             {caseItem.todos.length > 3 && (
-                              <p className="text-xs text-gray-500 italic">
-                                +{caseItem.todos.length - 3} more items
+                              <p className="text-xs text-gray-400">
+                                +{caseItem.todos.length - 3} more
                               </p>
                             )}
                           </div>
@@ -647,15 +668,15 @@ const LawyerCases: React.FC = () => {
                   <div className="flex lg:flex-col gap-2">
                     <button
                       onClick={() => openUpdateModal(caseItem)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium text-sm"
+                      className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
                     >
                       Update
                     </button>
                     <button
                       onClick={() => openUpdateModal(caseItem)}
-                      className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium text-sm"
+                      className="border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
                     >
-                      View Details
+                      Details
                     </button>
                   </div>
                 </div>
@@ -666,68 +687,47 @@ const LawyerCases: React.FC = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
 
         {/* New Case Modal */}
         {showNewCaseModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-fadeIn overflow-hidden">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg border border-gray-200 max-w-xl w-full max-h-[90vh] flex flex-col animate-fadeIn overflow-hidden">
               {/* Header */}
-              <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-2xl font-bold text-white">Create New Case</h2>
-                </div>
+              <div className="flex-shrink-0 px-5 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-lg font-medium text-gray-900">Create New Case</h2>
                 <button
                   onClick={() => setShowNewCaseModal(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition"
+                  className="text-gray-400 hover:text-gray-600 p-1 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               <form onSubmit={handleSubmitCase} className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex-1 p-6 space-y-4 overflow-y-auto">
+                <div className="flex-1 p-5 space-y-4 overflow-y-auto">
                   {/* Info Banner */}
-                  <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <p className="text-sm font-medium text-blue-900 mb-0.5">Track Your Legal Cases</p>
-                        <p className="text-xs text-blue-700">
-                          Create a case from your completed appointments to manage ongoing legal matters with your clients.
-                        </p>
-                      </div>
-                    </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                    <p className="text-xs text-gray-600">
+                      Create a case from your completed appointments to manage ongoing legal matters with your clients.
+                    </p>
                   </div>
 
                   {/* Select Appointment */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Select Appointment <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <select
-                        required
-                        value={selectedAppointment || ''}
-                        onChange={(e) => setSelectedAppointment(Number(e.target.value))}
-                        className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white shadow-sm hover:border-gray-400"
+                    <select
+                      required
+                      value={selectedAppointment || ''}
+                      onChange={(e) => setSelectedAppointment(Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition text-sm bg-white"
                       >
                         <option value="">Choose a completed appointment...</option>
                         {appointments.map((apt) => {
@@ -757,98 +757,77 @@ const LawyerCases: React.FC = () => {
                           );
                         })}
                       </select>
-                    </div>
                     {appointments.length === 0 && (
-                      <div className="mt-2 flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                        <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <p className="text-sm">You need to have at least one completed appointment to create a case.</p>
-                      </div>
+                      <p className="mt-1.5 text-xs text-amber-600">
+                        You need at least one completed appointment to create a case.
+                      </p>
                     )}
                   </div>
 
                   {/* Case Title */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Case Title <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        value={newCase.title}
-                        onChange={(e) => setNewCase({ ...newCase, title: e.target.value })}
-                        className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-400"
-                        placeholder="e.g., Property Dispute Resolution"
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={newCase.title}
+                      onChange={(e) => setNewCase({ ...newCase, title: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition text-sm"
+                      placeholder="e.g., Property Dispute Resolution"
+                    />
                   </div>
 
                   {/* Case Type */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Case Type
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                        </svg>
-                      </div>
-                      <select
-                        value={newCase.case_type}
-                        onChange={(e) => setNewCase({ ...newCase, case_type: e.target.value })}
-                        className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white shadow-sm hover:border-gray-400"
-                      >
-                        <option value="">Select a type...</option>
-                        {caseTypes.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      value={newCase.case_type}
+                      onChange={(e) => setNewCase({ ...newCase, case_type: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition text-sm bg-white"
+                    >
+                      <option value="">Select a type...</option>
+                      {caseTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Description */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Description
                     </label>
                     <textarea
-                      rows={4}
+                      rows={3}
                       value={newCase.description}
                       onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-400 resize-none"
-                      placeholder="Provide details about the case, including key facts, client concerns, and initial assessment..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition text-sm resize-none"
+                      placeholder="Provide details about the case..."
                     />
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex-shrink-0 border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <div className="flex-shrink-0 border-t border-gray-200 px-5 py-4 bg-gray-50 rounded-b-lg">
                   <div className="flex gap-3">
                     <button
                       type="button"
                       onClick={() => setShowNewCaseModal(false)}
-                      className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-white hover:border-gray-400 transition shadow-sm"
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-100 transition text-sm"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={appointments.length === 0}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition shadow-lg hover:shadow-xl disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
                       Create Case
                     </button>
                   </div>
@@ -860,36 +839,36 @@ const LawyerCases: React.FC = () => {
 
         {/* Update Case Modal */}
         {showUpdateModal && selectedCase && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg border border-gray-200 max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
-              <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-white">Update Case</h2>
+              <div className="flex-shrink-0 px-5 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-lg font-medium text-gray-900">Update Case</h2>
                 <button
                   onClick={() => setShowUpdateModal(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition"
+                  className="text-gray-400 hover:text-gray-600 p-1 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex-1 p-5 overflow-y-auto">
                 {/* Status Tracker */}
                 <CaseStatusTracker status={selectedCase.status} />
 
                 {/* Case Info */}
-                <div className="mt-6 mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                <div className="mt-5 mb-5">
+                  <h3 className="text-base font-medium text-gray-900 mb-2">
                     {selectedCase.title}
                   </h3>
-                  <div className="flex gap-2 mb-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedCase.status)}`}>
+                  <div className="flex gap-2 mb-2">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getStatusColor(selectedCase.status)}`}>
                       {selectedCase.status_label}
                     </span>
                     {selectedCase.case_type && (
-                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
                         {selectedCase.case_type}
                       </span>
                     )}
@@ -898,25 +877,25 @@ const LawyerCases: React.FC = () => {
                     <p className="text-sm text-gray-600 mb-4">{selectedCase.description}</p>
                   )}
                   {selectedCase.user && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <h4 className="text-sm font-semibold text-blue-900 mb-1">Client</h4>
-                      <p className="text-blue-700 font-medium">{selectedCase.user.name}</p>
-                      <p className="text-blue-600 text-sm">{selectedCase.user.email}</p>
+                    <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                      <h4 className="text-xs font-medium text-gray-500 mb-1">Client</h4>
+                      <p className="text-gray-900 font-medium text-sm">{selectedCase.user.name}</p>
+                      <p className="text-gray-600 text-sm">{selectedCase.user.email}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Update Form */}
-                <form onSubmit={handleUpdateCase} className="space-y-5 border-t pt-6">
+                <form onSubmit={handleUpdateCase} className="space-y-4 border-t border-gray-200 pt-5">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Case Status <span className="text-red-500">*</span>
                     </label>
                     <select
                       required
                       value={updateForm.status}
                       onChange={(e) => setUpdateForm({ ...updateForm, status: e.target.value as 'pending' | 'ongoing' | 'closed' })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-400 bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white"
                     >
                       <option value="pending">Pending Review</option>
                       <option value="ongoing">In Progress</option>
@@ -925,94 +904,92 @@ const LawyerCases: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Updates for Client
                     </label>
                     <textarea
                       rows={3}
                       value={updateForm.lawyer_updates}
                       onChange={(e) => setUpdateForm({ ...updateForm, lawyer_updates: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-400 resize-none"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition resize-none"
                       placeholder="Provide updates on the case progress..."
                     />
                   </div>
 
                   {updateForm.status === 'closed' && (
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Resolution Summary
                       </label>
                       <textarea
                         rows={3}
                         value={updateForm.resolution_summary}
                         onChange={(e) => setUpdateForm({ ...updateForm, resolution_summary: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-400 resize-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition resize-none"
                         placeholder="Summarize how the case was resolved..."
                       />
                     </div>
                   )}
 
                   {/* Todo List Section */}
-                  <div className="border-t pt-6 mt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  <div className="border-t border-gray-200 pt-5 mt-5">
+                    <h3 className="text-sm font-medium text-gray-900 mb-3">
                       Client Checklist
-                      <span className="text-sm font-normal text-gray-500 ml-2">(Items the client should bring)</span>
+                      <span className="text-xs font-normal text-gray-500 ml-2">(Items the client should bring)</span>
                     </h3>
 
                     {/* Add New Todo Form */}
-                    <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                      <div className="space-y-3">
-                        <div className="flex gap-3">
-                          <input
-                            type="text"
-                            value={newTodo.title}
-                            onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-                            placeholder="What should the client bring? (e.g., Valid ID, Birth Certificate)"
-                            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white"
-                          />
-                          <input
-                            type="date"
-                            value={newTodo.due_date}
-                            onChange={(e) => setNewTodo({ ...newTodo, due_date: e.target.value })}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleCreateTodo}
-                            disabled={!newTodo.title.trim() || !newTodo.due_date}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap"
-                          >
-                            Add Item
-                          </button>
-                        </div>
+                    <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newTodo.title}
+                          onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+                          placeholder="What should the client bring? (e.g., Valid ID, Birth Certificate)"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white text-sm"
+                        />
+                        <input
+                          type="date"
+                          value={newTodo.due_date}
+                          onChange={(e) => setNewTodo({ ...newTodo, due_date: e.target.value })}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 bg-white text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateTodo}
+                          disabled={!newTodo.title.trim() || !newTodo.due_date}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          Add Item
+                        </button>
                       </div>
                     </div>
 
                     {/* Todo List */}
                     <div className="space-y-2">
                       {todos.length === 0 ? (
-                        <p className="text-gray-500 text-sm text-center py-4">
+                        <p className="text-gray-500 text-sm text-center py-3">
                           No items yet. Add items for the client to bring.
                         </p>
                       ) : (
                         todos.map((todo) => (
                           <div
                             key={todo.id}
-                            className={`flex items-center justify-between p-3 border-2 rounded-lg transition ${
+                            className={`flex items-center justify-between p-2.5 border rounded-md transition ${
                               todo.is_completed
-                                ? 'bg-green-50 border-green-300'
-                                : 'bg-white border-gray-200 hover:shadow-sm'
+                                ? 'bg-green-50 border-green-200'
+                                : 'bg-white border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            <div className="flex items-center gap-3 flex-1">
+                            <div className="flex items-center gap-2.5 flex-1">
                               <input
                                 type="checkbox"
                                 checked={todo.is_completed}
                                 onChange={() => handleToggleTodo(todo.id)}
-                                className="w-5 h-5 text-blue-600 rounded cursor-pointer"
+                                className="w-4 h-4 text-gray-900 rounded cursor-pointer border-gray-300"
                               />
-                              <span className={`text-gray-900 font-medium ${todo.is_completed ? 'line-through text-gray-500' : ''}`}>
+                              <span className={`text-sm ${todo.is_completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
                                 {todo.title}
                               </span>
                               {todo.due_date && (
@@ -1022,7 +999,7 @@ const LawyerCases: React.FC = () => {
                               )}
                               {todo.is_completed && (
                                 <span className="ml-auto text-xs text-green-600 font-medium flex items-center gap-1">
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                   </svg>
                                   Completed
@@ -1032,9 +1009,9 @@ const LawyerCases: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleDeleteTodo(todo.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition ml-2"
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition ml-2"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
@@ -1047,18 +1024,18 @@ const LawyerCases: React.FC = () => {
               </div>
 
               {/* Action Buttons Footer */}
-              <div className="flex-shrink-0 border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-2xl">
+              <div className="flex-shrink-0 border-t border-gray-200 px-5 py-3 bg-gray-50 rounded-b-lg">
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setShowUpdateModal(false)}
-                    className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-white hover:border-gray-400 transition shadow-sm"
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition text-sm"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpdateCase}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition shadow-lg hover:shadow-xl"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition text-sm"
                   >
                     Update Case
                   </button>

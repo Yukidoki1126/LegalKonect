@@ -11,6 +11,12 @@ import {
 export default function Home() {
   const navigate = useNavigate();
 
+  // Reset page opacity on load for smooth transition
+  useEffect(() => {
+    document.body.style.opacity = '1';
+    document.body.style.transition = 'opacity 0.5s ease-in';
+  }, []);
+
   // Check if user is already logged in and redirect accordingly
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -106,14 +112,22 @@ export default function Home() {
 
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate('/login')}
-                className="px-6 py-2.5 text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                onClick={() => {
+                  document.body.style.opacity = '0';
+                  document.body.style.transition = 'opacity 0.3s ease-out';
+                  setTimeout(() => navigate('/login'), 300);
+                }}
+                className="px-6 py-2.5 text-gray-700 hover:text-gray-900 font-medium transition-all hover:scale-105"
               >
                 Sign In
               </button>
               <button
-                onClick={() => navigate('/lawyers')}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
+                onClick={() => {
+                  document.body.style.opacity = '0';
+                  document.body.style.transition = 'opacity 0.3s ease-out';
+                  setTimeout(() => navigate('/lawyers'), 300);
+                }}
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-all hover:scale-105"
               >
                 Find Lawyers
               </button>
@@ -144,16 +158,24 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <button
-                onClick={() => navigate('/lawyers')}
-                className="group px-8 py-4 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                onClick={() => {
+                  document.body.style.opacity = '0';
+                  document.body.style.transition = 'opacity 0.3s ease-out';
+                  setTimeout(() => navigate('/lawyers'), 300);
+                }}
+                className="group px-8 py-4 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 transition-all hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2"
               >
                 Browse Lawyers
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
-                onClick={() => navigate('/lawyer/register')}
-                className="px-8 py-4 bg-white text-blue-600 border-2 border-blue-600 rounded-md font-semibold hover:bg-blue-50 transition-colors"
+                onClick={() => {
+                  document.body.style.opacity = '0';
+                  document.body.style.transition = 'opacity 0.3s ease-out';
+                  setTimeout(() => navigate('/lawyer/register'), 300);
+                }}
+                className="px-8 py-4 bg-white text-blue-600 border-2 border-blue-600 rounded-md font-semibold hover:bg-blue-50 transition-all hover:scale-105 hover:shadow-lg"
               >
                 Join as Lawyer
               </button>

@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Lawyer;
 use App\Models\Payout;
 use App\Models\Earning;
+use App\Mail\PayoutSuccessful;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class PayoutController extends Controller
 {
@@ -485,6 +487,28 @@ class PayoutController extends Controller
                 'transaction_reference' => $validated['transaction_reference'] ?? null,
                 'admin_notes' => $validated['admin_notes'] ?? null,
             ]);
+
+            // Reload payout with lawyer relationship for email
+            $payout->load('lawyer.user');
+
+            // Send payout successful email to lawyer
+            try {
+                if ($payout->lawyer && $payout->lawyer->user && $payout->lawyer->user->email) {
+                    Mail::to($payout->lawyer->user->email)
+                        ->send(new PayoutSuccessful($payout));
+
+                    Log::info('Payout successful email sent', [
+                        'payout_id' => $payout->id,
+                        'lawyer_email' => $payout->lawyer->user->email,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Log email error but don't fail the payout operation
+                Log::error('Failed to send payout successful email', [
+                    'payout_id' => $payout->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             Log::info('Payout marked as paid', [
                 'payout_id' => $payout->id,

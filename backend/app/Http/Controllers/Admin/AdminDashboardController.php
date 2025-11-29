@@ -84,31 +84,50 @@ class AdminDashboardController extends Controller
         return response()->json(['lawyers' => $transformedLawyers]);
     }
 
-    public function appointments()
+    public function appointments(Request $request)
     {
+        $perPage = $request->get('per_page', 15);
+        
         $appointments = Appointment::with(['user', 'lawyer.user'])
             ->orderBy('appointment_date', 'desc')
-            ->get()
-            ->map(function ($appointment) {
-                return [
-                    'id' => $appointment->id,
-                    'client_name' => $appointment->user ? $appointment->user->name : 'Unknown',
-                    'client_email' => $appointment->user ? $appointment->user->email : 'N/A',
-                    'lawyer_name' => $appointment->lawyer
-                        ? $appointment->lawyer->first_name . ' ' . $appointment->lawyer->last_name
-                        : 'Unknown Lawyer',
-                    'appointment_date' => $appointment->appointment_date,
-                    'time_slot' => $appointment->appointment_time,
-                    'status' => $appointment->status,
-                    'payment_status' => $appointment->payment_status,
-                    'payment_method' => $appointment->payment_method,
-                    'consultation_fee' => $appointment->consultation_fee,
-                    'meeting_type' => $appointment->meeting_type,
-                    'created_at' => $appointment->created_at,
-                ];
-            });
+            ->paginate($perPage);
 
-        return response()->json($appointments);
+        // Get stats for all appointments (not just current page)
+        $stats = [
+            'total' => Appointment::count(),
+            'pending' => Appointment::where('status', 'pending')->count(),
+            'confirmed' => Appointment::where('status', 'confirmed')->count(),
+            'completed' => Appointment::where('status', 'completed')->count(),
+            'cancelled' => Appointment::where('status', 'cancelled')->count(),
+        ];
+
+        $appointments->getCollection()->transform(function ($appointment) {
+            return [
+                'id' => $appointment->id,
+                'client_name' => $appointment->user ? $appointment->user->name : 'Unknown',
+                'client_email' => $appointment->user ? $appointment->user->email : 'N/A',
+                'lawyer_name' => $appointment->lawyer
+                    ? $appointment->lawyer->first_name . ' ' . $appointment->lawyer->last_name
+                    : 'Unknown Lawyer',
+                'appointment_date' => $appointment->appointment_date,
+                'time_slot' => $appointment->appointment_time,
+                'status' => $appointment->status,
+                'payment_status' => $appointment->payment_status,
+                'payment_method' => $appointment->payment_method,
+                'consultation_fee' => $appointment->consultation_fee,
+                'meeting_type' => $appointment->meeting_type,
+                'created_at' => $appointment->created_at,
+            ];
+        });
+
+        return response()->json([
+            'data' => $appointments->items(),
+            'current_page' => $appointments->currentPage(),
+            'last_page' => $appointments->lastPage(),
+            'per_page' => $appointments->perPage(),
+            'total' => $appointments->total(),
+            'stats' => $stats,
+        ]);
     }
 
     public function users(Request $request)
@@ -336,12 +355,27 @@ class AdminDashboardController extends Controller
         $days = $request->input('days', 30);
         $startDate = now()->subDays($days);
         
-        // Most requested legal expertise (by specialization) - FIXED
+        // Most requested legal expertise (by primary specialization only)
+        // Use a subquery to get only the first specialization per lawyer to avoid double counting
         $topSpecializations = DB::table('appointments')
             ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
-            ->join('lawyer_specializations', 'lawyers.id', '=', 'lawyer_specializations.lawyer_id')
-            ->join('specializations', 'lawyer_specializations.specialization_id', '=', 'specializations.id')
-            ->select('specializations.id', 'specializations.name', DB::raw('COUNT(DISTINCT appointments.id) as appointment_count'))
+            ->joinSub(
+                // Subquery: Get the first specialization for each lawyer
+                DB::table('lawyer_specializations as ls1')
+                    ->select('ls1.lawyer_id', 'ls1.specialization_id')
+                    ->whereNotExists(function ($query) {
+                        $query->select(DB::raw(1))
+                            ->from('lawyer_specializations as ls2')
+                            ->whereColumn('ls2.lawyer_id', 'ls1.lawyer_id')
+                            ->whereRaw('ls2.id < ls1.id');
+                    }),
+                'primary_spec',
+                'lawyers.id',
+                '=',
+                'primary_spec.lawyer_id'
+            )
+            ->join('specializations', 'primary_spec.specialization_id', '=', 'specializations.id')
+            ->select('specializations.id', 'specializations.name', DB::raw('COUNT(*) as appointment_count'))
             ->where('appointments.created_at', '>=', $startDate)
             ->groupBy('specializations.id', 'specializations.name')
             ->orderBy('appointment_count', 'desc')
@@ -398,15 +432,29 @@ class AdminDashboardController extends Controller
             ->groupBy('meeting_type')
             ->get();
         
-        // Average consultation fee by specialization - FIXED
+        // Average consultation fee by primary specialization (to avoid double counting)
         $avgFeeBySpecialization = DB::table('appointments')
             ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
-            ->join('lawyer_specializations', 'lawyers.id', '=', 'lawyer_specializations.lawyer_id')
-            ->join('specializations', 'lawyer_specializations.specialization_id', '=', 'specializations.id')
+            ->joinSub(
+                // Subquery: Get the first specialization for each lawyer
+                DB::table('lawyer_specializations as ls1')
+                    ->select('ls1.lawyer_id', 'ls1.specialization_id')
+                    ->whereNotExists(function ($query) {
+                        $query->select(DB::raw(1))
+                            ->from('lawyer_specializations as ls2')
+                            ->whereColumn('ls2.lawyer_id', 'ls1.lawyer_id')
+                            ->whereRaw('ls2.id < ls1.id');
+                    }),
+                'primary_spec',
+                'lawyers.id',
+                '=',
+                'primary_spec.lawyer_id'
+            )
+            ->join('specializations', 'primary_spec.specialization_id', '=', 'specializations.id')
             ->select(
                 'specializations.id',
                 'specializations.name',
-                DB::raw('COALESCE(SUM(appointments.consultation_fee) / NULLIF(COUNT(DISTINCT appointments.id),0),0) as avg_fee'),
+                DB::raw('COALESCE(AVG(appointments.consultation_fee), 0) as avg_fee'),
                 DB::raw('MIN(appointments.consultation_fee) as min_fee'),
                 DB::raw('MAX(appointments.consultation_fee) as max_fee')
             )
@@ -447,6 +495,9 @@ class AdminDashboardController extends Controller
             ->where('created_at', '>=', $startDate)
             ->select(DB::raw('AVG(DATEDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
             ->first();
+
+        // Total appointments count (accurate, no JOINs)
+        $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
         
         return response()->json([
             'top_specializations' => $topSpecializations,
@@ -460,7 +511,8 @@ class AdminDashboardController extends Controller
             'repeat_clients' => $repeatClients,
             'cancellation_reasons' => $cancellationReasons,
             'avg_response_time_minutes' => round($avgResponseTime->avg_minutes ?? 0, 1),
-            'period_days' => $days
+            'period_days' => $days,
+            'total_appointments' => $totalAppointments,
         ]);
     }
 

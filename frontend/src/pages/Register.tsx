@@ -1,9 +1,9 @@
 // src/pages/Register.tsx - Professional, minimal design
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleSignInButton from '../components/GoogleSignInButton';
-import { Scale, Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, Briefcase } from 'lucide-react';
+import { Scale, Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, Briefcase, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 
 const Register: React.FC = () => {
@@ -22,6 +22,31 @@ const Register: React.FC = () => {
 
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  // Reset page opacity on load for smooth transition
+  useEffect(() => {
+    document.body.style.opacity = '1';
+    document.body.style.transition = 'opacity 0.5s ease-in';
+  }, []);
+
+  // Smart back button - go to previous page or home
+  const handleBack = () => {
+    const referrer = document.referrer;
+    const isFromLogin = referrer.includes('/login');
+
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease-out';
+
+    setTimeout(() => {
+      if (isFromLogin) {
+        // If coming from login, go to home
+        navigate('/');
+      } else {
+        // Otherwise, go back to previous page or home
+        window.history.length > 1 ? navigate(-1) : navigate('/');
+      }
+    }, 300);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -109,13 +134,28 @@ const Register: React.FC = () => {
     setError(error);
   };
 
+  const handleNavigate = (path: string) => {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease-out';
+    setTimeout(() => navigate(path), 300);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500">
+      <div className="max-w-md w-full space-y-6 animate-in slide-in-from-bottom-4 duration-700">
+        {/* Smart Back Button */}
+        <button
+          onClick={handleBack}
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-medium">Back</span>
+        </button>
+
         {/* Logo and Header */}
         <div className="text-center">
           <Link to="/" className="inline-flex justify-center mb-6">
-            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-all hover:scale-105">
               <Scale className="w-10 h-10 text-white" />
             </div>
           </Link>
@@ -124,9 +164,12 @@ const Register: React.FC = () => {
           </h2>
           <p className="text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+            <button
+              onClick={() => handleNavigate('/login')}
+              className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+            >
               Sign in
-            </Link>
+            </button>
           </p>
         </div>
 
@@ -140,12 +183,12 @@ const Register: React.FC = () => {
                 <p className="text-xs text-gray-600">Join as a legal professional</p>
               </div>
             </div>
-            <Link
-              to="/lawyer/register"
+            <button
+              onClick={() => handleNavigate('/lawyer/register')}
               className="flex-shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
             >
               Lawyer Sign Up
-            </Link>
+            </button>
           </div>
         </div>
 

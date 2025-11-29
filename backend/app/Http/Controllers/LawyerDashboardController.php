@@ -74,10 +74,58 @@ class LawyerDashboardController extends Controller
                 ];
             });
 
+        // Get today's appointments
+        $todayAppointments = $lawyer->appointments()
+            ->with('user:id,name,email,phone,profile_picture')
+            ->where('appointment_date', now()->toDateString())
+            ->whereIn('status', ['confirmed', 'pending'])
+            ->orderBy('appointment_time', 'asc')
+            ->get()
+            ->map(function ($apt) {
+                return [
+                    'id' => $apt->id,
+                    'client_name' => $apt->user->name ?? 'Unknown',
+                    'client_photo' => $apt->user->profile_picture ?? null,
+                    'start_time' => $apt->appointment_time,
+                    'end_time' => null,
+                    'status' => $apt->status,
+                    'consultation_type' => $apt->consultation_type ?? 'consultation',
+                ];
+            });
+
+        // Get recent booking activity (last 10 appointments by created_at)
+        $recentActivity = $lawyer->appointments()
+            ->with('user:id,name')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function ($apt) {
+                $action = match($apt->status) {
+                    'pending' => 'New booking request',
+                    'confirmed' => 'Booking confirmed',
+                    'completed' => 'Session completed',
+                    'cancelled' => 'Booking cancelled',
+                    'declined' => 'Booking declined',
+                    default => 'Booking updated'
+                };
+                
+                return [
+                    'id' => $apt->id,
+                    'action' => $action,
+                    'client_name' => $apt->user->name ?? 'Unknown',
+                    'status' => $apt->status,
+                    'appointment_date' => $apt->appointment_date,
+                    'created_at' => $apt->created_at->diffForHumans(),
+                    'amount' => $apt->consultation_fee ?? 0,
+                ];
+            });
+
         return response()->json([
             'lawyer' => $lawyer,
             'stats' => $stats,
-            'recent_reviews' => $recentReviews
+            'recent_reviews' => $recentReviews,
+            'today_appointments' => $todayAppointments,
+            'recent_activity' => $recentActivity,
         ]);
     }
 

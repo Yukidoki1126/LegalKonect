@@ -236,7 +236,6 @@ bg-white          // Cards, main backgrounds
 bg-gray-50        // Page background
 bg-gray-100       // Secondary backgrounds
 bg-blue-600       // Primary buttons
-bg-gray-100       // Secondary buttons
 text-gray-900     // Headings
 text-gray-700     // Body text
 text-gray-600     // Secondary text
@@ -266,6 +265,72 @@ text-sm text-gray-600        // Secondary
 
 ---
 
+## Button Styles (Copy-Paste Ready)
+
+### Primary Button (Blue)
+Use for main actions: Create, Submit, Save, Confirm, Update
+```tsx
+className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors text-sm"
+```
+
+### Primary Button with Icon
+```tsx
+className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm font-medium"
+```
+
+### Secondary Button (Outline)
+Use for secondary actions: Cancel, Back, Details, View
+```tsx
+className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors text-sm"
+```
+
+### Danger Button (Red)
+Use for destructive actions: Delete, Remove
+```tsx
+className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition-colors text-sm"
+```
+
+### Disabled State
+Add to any button:
+```tsx
+disabled:opacity-50 disabled:cursor-not-allowed
+// OR for primary buttons:
+disabled:bg-gray-300 disabled:cursor-not-allowed
+```
+
+### Tab/Filter Buttons
+Active state:
+```tsx
+className="bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium"
+```
+Inactive state:
+```tsx
+className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium"
+```
+
+### Button Sizes
+```tsx
+// Small (tables, cards)
+px-3 py-1.5 text-sm
+
+// Default (forms, modals)
+px-4 py-2 text-sm
+
+// Large (hero sections)
+px-6 py-3 text-base
+```
+
+### ❌ DON'T USE
+```tsx
+bg-gray-900      // Too dark, use bg-blue-600 instead
+bg-gradient-*    // No gradients on buttons
+rounded-xl       // Too rounded, use rounded-md
+shadow-lg        // No shadows on buttons
+hover:scale-*    // No transform animations
+```
+
+---
+
 ## Files Modified
 
 1. ✅ `designSystem.ts` - Created centralized design tokens
@@ -287,6 +352,7 @@ text-sm text-gray-600        // Secondary
 
 ❌ **Don't Use:**
 - `bg-gradient-to-r from-blue-600 to-purple-600`
+- `bg-gray-900` for buttons (use `bg-blue-600` instead)
 - `rounded-2xl`, `rounded-3xl`
 - `shadow-2xl`
 - `transform hover:scale-105`
@@ -295,7 +361,8 @@ text-sm text-gray-600        // Secondary
 - Multiple shadows per element
 
 ✅ **Do Use:**
-- Solid colors
+- `bg-blue-600 hover:bg-blue-700` for primary buttons
+- `border border-gray-300` for secondary buttons
 - `rounded-md`, `rounded-lg` max
 - `border border-gray-200` instead of shadows
 - `transition-colors` only

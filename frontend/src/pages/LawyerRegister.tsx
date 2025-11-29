@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Briefcase, Scale, MapPin, Phone, Mail, Lock, User, FileText, Clock, Award, Upload, CheckCircle, XCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Briefcase, Scale, MapPin, Phone, Mail, Lock, User, FileText, Clock, Award, Upload, CheckCircle, XCircle, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
 
 // Extend Window interface for Google Maps
 declare global {
@@ -15,6 +16,7 @@ interface Specialization {
 }
 
 const LawyerRegister = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [specializations, setSpecializations] = useState<Specialization[]>([]);
   const [formData, setFormData] = useState({
@@ -61,9 +63,34 @@ const LawyerRegister = () => {
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
+  // Reset page opacity on load for smooth transition
+  useEffect(() => {
+    document.body.style.opacity = '1';
+    document.body.style.transition = 'opacity 0.5s ease-in';
+  }, []);
+
   useEffect(() => {
     fetchSpecializations();
   }, []);
+
+  // Smart back button - go to previous page or home
+  const handleBack = () => {
+    const referrer = document.referrer;
+    const isFromRegister = referrer.includes('/register');
+
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease-out';
+
+    setTimeout(() => {
+      if (isFromRegister) {
+        // If coming from regular register, go to home
+        navigate('/');
+      } else {
+        // Otherwise, go back to previous page or home
+        window.history.length > 1 ? navigate(-1) : navigate('/');
+      }
+    }, 300);
+  };
 
   // Scroll to error banner when errors occur
   useEffect(() => {
@@ -289,7 +316,7 @@ const LawyerRegister = () => {
     }
   };
 
-  const handleBack = () => {
+  const handlePreviousStep = () => {
     setStep(step - 1);
   };
 
@@ -492,9 +519,9 @@ const LawyerRegister = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-green-50 border border-green-200 rounded-lg flex items-center justify-center mx-auto mb-6">
             <Award className="w-10 h-10 text-green-600" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Registration Successful!</h2>
@@ -504,7 +531,7 @@ const LawyerRegister = () => {
           </p>
           <a
             href="/login"
-            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
           >
             Go to Login
           </a>
@@ -545,8 +572,17 @@ const LawyerRegister = () => {
           color: #1f2937;
         }
       `}</style>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
+      <div className="min-h-screen bg-gray-50 py-12 px-4 animate-in fade-in duration-500">
+      <div className="max-w-3xl mx-auto animate-in slide-in-from-bottom-4 duration-700">
+        {/* Smart Back Button */}
+        <button
+          onClick={handleBack}
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group mb-6"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-medium">Back</span>
+        </button>
+
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <img src="/logo.png" alt="LegalKonect" className="h-16" />
@@ -555,31 +591,35 @@ const LawyerRegister = () => {
           <p className="text-gray-600 mt-2">Register as a legal professional and connect with clients</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-center mb-3">
-            {[1, 2, 3, 4, 5].map((num) => (
-              <div key={num} className="flex items-center flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${
-                  step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {num}
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          {/* Step Indicator */}
+          <div className="flex items-center justify-between mb-4">
+            {[
+              { num: 1, label: 'Account' },
+              { num: 2, label: 'Personal' },
+              { num: 3, label: 'Professional' },
+              { num: 4, label: 'Office' },
+              { num: 5, label: 'Verification' }
+            ].map(({ num, label }, index) => (
+              <React.Fragment key={num}>
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm transition-colors ${
+                    step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {num}
+                  </div>
+                  <span className={`text-xs font-medium whitespace-nowrap ${
+                    step >= num ? 'text-gray-900' : 'text-gray-600'
+                  }`}>
+                    {label}
+                  </span>
                 </div>
-                {num < 5 && (
-                  <div className={`flex-1 h-1 mx-1 ${
+                {index < 4 && (
+                  <div className={`flex-1 h-0.5 mx-2 transition-colors ${
                     step > num ? 'bg-blue-600' : 'bg-gray-200'
                   }`} />
                 )}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-xs text-gray-600">
-            {['Account', 'Personal', 'Professional', 'Office', 'Verification'].map((label, index) => (
-              <div key={index} className="flex-1 flex items-center">
-                <span className={`${index === 0 ? 'text-left' : index === 4 ? 'text-right' : 'text-center'} ${index < 4 ? 'flex-1' : ''}`}>
-                  {label}
-                </span>
-                {index < 4 && <div className="flex-1" />}
-              </div>
+              </React.Fragment>
             ))}
           </div>
         </div>
@@ -588,19 +628,13 @@ const LawyerRegister = () => {
         {errorBanner && (
           <div
             ref={errorBannerRef}
-            className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 mb-6 shadow-md animate-pulse"
+            className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
           >
             <div className="flex items-start">
-              <AlertCircle className="w-6 h-6 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-red-900 font-bold text-lg mb-1">Registration Error</h3>
-                <p className="text-red-800 text-sm leading-relaxed">{errorBanner}</p>
-                <button
-                  onClick={() => setErrorBanner(null)}
-                  className="mt-3 text-red-700 hover:text-red-900 text-sm font-medium underline"
-                >
-                  Dismiss
-                </button>
+                <h3 className="text-base font-semibold text-red-900 mb-1">Registration Error</h3>
+                <p className="text-sm text-red-800">{errorBanner}</p>
               </div>
               <button
                 onClick={() => setErrorBanner(null)}
@@ -612,10 +646,10 @@ const LawyerRegister = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-sm p-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-8">
           {step === 1 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Information</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Account Information</h2>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -628,7 +662,7 @@ const LawyerRegister = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="your.email@example.com"
                   />
                 </div>
@@ -646,7 +680,7 @@ const LawyerRegister = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="Min. 8 characters"
                   />
                   <button
@@ -678,7 +712,7 @@ const LawyerRegister = () => {
                     name="password_confirmation"
                     value={formData.password_confirmation}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="Re-enter password"
                   />
                   <button
@@ -707,7 +741,7 @@ const LawyerRegister = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="+63 912 345 6789"
                   />
                 </div>
@@ -723,7 +757,7 @@ const LawyerRegister = () => {
                     type="checkbox"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300 cursor-pointer"
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-600 border-gray-300 cursor-pointer"
                   />
                 </div>
                 <div className="ml-3">
@@ -745,7 +779,7 @@ const LawyerRegister = () => {
 
           {step === 2 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Personal Information</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -759,7 +793,7 @@ const LawyerRegister = () => {
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                       placeholder="Juan"
                     />
                   </div>
@@ -775,7 +809,7 @@ const LawyerRegister = () => {
                     name="last_name"
                     value={formData.last_name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="Dela Cruz"
                   />
                   {errors.last_name && <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>}
@@ -793,7 +827,7 @@ const LawyerRegister = () => {
                     value={formData.bio}
                     onChange={handleInputChange}
                     rows={5}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
                     placeholder="Tell clients about your experience, expertise, and what makes you unique... (minimum 50 characters if provided)"
                   />
                 </div>
@@ -805,7 +839,7 @@ const LawyerRegister = () => {
 
           {step === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Professional Information</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Professional Information</h2>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -818,10 +852,10 @@ const LawyerRegister = () => {
                     name="license_number"
                     value={formData.license_number}
                     onChange={handleInputChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-md focus:ring-2 focus:border-transparent ${
                       errors.license_number
                         ? 'border-red-500 focus:ring-red-500 bg-red-50'
-                        : 'border-gray-300 focus:ring-blue-500'
+                        : 'border-gray-300 focus:ring-blue-600'
                     }`}
                     placeholder="e.g., 1234567"
                   />
@@ -846,7 +880,7 @@ const LawyerRegister = () => {
                       name="years_experience"
                       value={formData.years_experience}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                       placeholder="5"
                       min="0"
                     />
@@ -865,7 +899,7 @@ const LawyerRegister = () => {
                       name="hourly_rate"
                       value={formData.hourly_rate}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                       placeholder="1000"
                       min="0"
                       step="100"
@@ -893,7 +927,7 @@ const LawyerRegister = () => {
                         type="checkbox"
                         checked={formData.specialization_ids.includes(spec.id)}
                         onChange={() => handleSpecializationToggle(spec.id)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-600"
                       />
                       <span className="ml-3 text-sm font-medium text-gray-900">{spec.name}</span>
                     </label>
@@ -906,7 +940,7 @@ const LawyerRegister = () => {
 
           {step === 4 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Office Information</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Office Information</h2>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -920,7 +954,7 @@ const LawyerRegister = () => {
                     name="office_address"
                     value={formData.office_address}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="Start typing your office address..."
                     autoComplete="off"
                   />
@@ -940,7 +974,7 @@ const LawyerRegister = () => {
                     name="office_phone"
                     value={formData.office_phone}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="+63 88 123 4567"
                   />
                 </div>
@@ -951,7 +985,7 @@ const LawyerRegister = () => {
 
           {step === 5 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Verification Documents</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Verification Documents</h2>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
@@ -971,10 +1005,10 @@ const LawyerRegister = () => {
                     name="ibp_number"
                     value={formData.ibp_number}
                     onChange={handleInputChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-md focus:ring-2 focus:border-transparent ${
                       errors.ibp_number
                         ? 'border-red-500 focus:ring-red-500 bg-red-50'
-                        : 'border-gray-300 focus:ring-blue-500'
+                        : 'border-gray-300 focus:ring-blue-600'
                     }`}
                     placeholder="e.g., 1234567"
                   />
@@ -996,7 +1030,7 @@ const LawyerRegister = () => {
                   name="prc_license_number"
                   value={formData.prc_license_number}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   placeholder="e.g., 1234567"
                 />
               </div>
@@ -1010,7 +1044,7 @@ const LawyerRegister = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     IBP Card * (Front and Back)
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition">
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 hover:border-blue-600 transition-colors">
                     <input
                       type="file"
                       id="ibp_card"
@@ -1043,7 +1077,7 @@ const LawyerRegister = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Valid Government ID *
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition">
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 hover:border-blue-600 transition-colors">
                     <input
                       type="file"
                       id="government_id"
@@ -1076,7 +1110,7 @@ const LawyerRegister = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     PRC License (Optional)
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition">
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 hover:border-blue-600 transition-colors">
                     <input
                       type="file"
                       id="prc_license"
@@ -1109,7 +1143,7 @@ const LawyerRegister = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Certificate of Good Standing (Optional)
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition">
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 hover:border-blue-600 transition-colors">
                     <input
                       type="file"
                       id="good_standing_cert"
@@ -1156,8 +1190,8 @@ const LawyerRegister = () => {
             {step > 1 && (
               <button
                 type="button"
-                onClick={handleBack}
-                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                onClick={handlePreviousStep}
+                className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition-colors"
               >
                 Back
               </button>
@@ -1167,7 +1201,7 @@ const LawyerRegister = () => {
               <button
                 type="button"
                 onClick={handleNext}
-                className="ml-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                className="ml-auto px-6 py-3 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors"
               >
                 Next
               </button>
@@ -1176,7 +1210,7 @@ const LawyerRegister = () => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
-                className="ml-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="ml-auto px-6 py-3 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Submitting...' : 'Submit Registration'}
               </button>

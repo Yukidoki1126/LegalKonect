@@ -24,9 +24,24 @@ interface PaginatedResponse {
   total: number;
 }
 
+interface AppointmentStats {
+  total: number;
+  pending: number;
+  confirmed: number;
+  completed: number;
+  cancelled: number;
+}
+
 const AdminAppointments: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<AppointmentStats>({
+    total: 0,
+    pending: 0,
+    confirmed: 0,
+    completed: 0,
+    cancelled: 0,
+  });
   const [pagination, setPagination] = useState({
     currentPage: 1,
     lastPage: 1,
@@ -44,12 +59,27 @@ const AdminAppointments: React.FC = () => {
     try {
       setLoading(true);
       const response = await adminApi.get(`/appointments?page=${pagination.currentPage}`);
-      setAppointments(response.data.data || response.data || []);
+      
+      setAppointments(response.data.data || []);
       setPagination({
         currentPage: response.data.current_page || 1,
         lastPage: response.data.last_page || 1,
         total: response.data.total || 0,
       });
+      
+      // Use stats from response if available
+      if (response.data.stats) {
+        setStats(response.data.stats);
+      } else {
+        // Fallback: calculate from total
+        setStats({
+          total: response.data.total || 0,
+          pending: 0,
+          confirmed: 0,
+          completed: 0,
+          cancelled: 0,
+        });
+      }
     } catch (error) {
       console.error('Error loading appointments:', error);
       setAppointments([]);
@@ -145,25 +175,19 @@ const AdminAppointments: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
           <p className="text-gray-600 text-sm">Total Appointments</p>
-          <p className="text-2xl font-bold text-gray-900">{pagination.total}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
         </div>
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
           <p className="text-gray-600 text-sm">Pending</p>
-          <p className="text-2xl font-bold text-yellow-600">
-            {(appointments || []).filter(a => a.status === 'pending').length}
-          </p>
+          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
         </div>
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
           <p className="text-gray-600 text-sm">Confirmed</p>
-          <p className="text-2xl font-bold text-green-600">
-            {(appointments || []).filter(a => a.status === 'confirmed').length}
-          </p>
+          <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
         </div>
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
           <p className="text-gray-600 text-sm">Completed</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {(appointments || []).filter(a => a.status === 'completed').length}
-          </p>
+          <p className="text-2xl font-bold text-blue-600">{stats.completed}</p>
         </div>
       </div>
 

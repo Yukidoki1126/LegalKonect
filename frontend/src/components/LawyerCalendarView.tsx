@@ -204,84 +204,86 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
   const hours = Array.from({ length: 13 }, (_, i) => i + 8);
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
-      <div className="p-6 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-slate-800">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Calendar Header */}
+      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-medium text-gray-900">
               {months[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h2>
             <button
               onClick={goToToday}
-              className="px-4 py-2 text-sm font-semibold text-blue-600 bg-white border-2 border-blue-600 rounded-xl hover:bg-blue-50 transition-colors shadow-sm"
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
             >
               Today
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
             <button
               onClick={navigatePrevious}
-              className="p-3 text-slate-700 bg-white hover:bg-blue-50 rounded-xl transition-colors border border-blue-200 shadow-sm"
+              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <button
               onClick={navigateNext}
-              className="p-3 text-slate-700 bg-white hover:bg-blue-50 rounded-xl transition-colors border border-blue-200 shadow-sm"
+              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-2 mt-3">
           <button
             onClick={() => setView('week')}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
               view === 'week'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-700 bg-white border-2 border-slate-300 hover:border-blue-300 hover:bg-blue-50'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
             }`}
           >
-            Week View
+            Week
           </button>
           <button
             onClick={() => setView('day')}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
               view === 'day'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-700 bg-white border-2 border-slate-300 hover:border-blue-300 hover:bg-blue-50'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
             }`}
           >
-            Day View
+            Day
           </button>
         </div>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center p-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-gray-900"></div>
         </div>
       ) : view === 'week' ? (
         <div className="overflow-x-auto">
           <div className="min-w-[800px]">
-            <div className="grid grid-cols-8 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
-              <div className="p-2 text-xs font-medium text-slate-600 border-r border-slate-200">Time</div>
+            {/* Week Header */}
+            <div className="grid grid-cols-8 border-b border-gray-200 bg-gray-50">
+              <div className="p-2 text-xs font-medium text-gray-500 border-r border-gray-200">Time</div>
               {weekDays.map((date, index) => (
                 <div
                   key={index}
-                  className={`p-2 text-center border-r border-slate-200 ${
-                    formatDate(date) === formatDate(new Date()) ? 'bg-blue-100' : ''
+                  className={`p-2 text-center border-r border-gray-200 ${
+                    formatDate(date) === formatDate(new Date()) ? 'bg-blue-50' : ''
                   }`}
                 >
-                  <div className="text-xs font-medium text-slate-600">{days[date.getDay()]}</div>
-                  <div className={`text-lg font-bold ${
-                    formatDate(date) === formatDate(new Date()) ? 'text-blue-600' : 'text-slate-800'
+                  <div className="text-xs font-medium text-gray-500">{days[date.getDay()].slice(0, 3)}</div>
+                  <div className={`text-sm font-semibold ${
+                    formatDate(date) === formatDate(new Date()) ? 'text-blue-600' : 'text-gray-900'
                   }`}>
                     {date.getDate()}
                   </div>
@@ -289,10 +291,11 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
               ))}
             </div>
 
-            <div className="divide-y divide-slate-200">
+            {/* Time Slots */}
+            <div className="divide-y divide-gray-200">
               {hours.map(hour => (
-                <div key={hour} className="grid grid-cols-8 hover:bg-slate-50/50 transition-colors">
-                  <div className="p-2 text-xs text-slate-600 font-medium border-r border-slate-200 bg-slate-50/50">
+                <div key={hour} className="grid grid-cols-8 hover:bg-gray-50/50 transition-colors">
+                  <div className="p-2 text-xs text-gray-500 font-medium border-r border-gray-200 bg-gray-50/50">
                     {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
                   </div>
                   {weekDays.map((date, dayIndex) => {
@@ -300,22 +303,22 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
                     return (
                       <div
                         key={dayIndex}
-                        className={`p-1 min-h-[60px] border-r border-slate-200 ${
-                          formatDate(date) === formatDate(new Date()) ? 'bg-blue-50/40' : ''
+                        className={`p-1 min-h-[50px] border-r border-gray-200 ${
+                          formatDate(date) === formatDate(new Date()) ? 'bg-blue-50/30' : ''
                         }`}
                       >
                         {dayEvents.map(event => (
                           <div
                             key={event.id}
-                            className={`text-xs p-1 mb-1 rounded border-l-2 ${getEventColor(event)}`}
+                            className={`text-xs p-1.5 mb-1 rounded border-l-2 ${getEventColor(event)}`}
                             title={event.description || ''}
                           >
                             <div className={`font-medium truncate ${getEventTextStyle(event)}`}>{event.summary}</div>
-                            <div className={`text-xs opacity-75 ${getEventTextStyle(event)}`}>
+                            <div className={`text-[10px] opacity-75 ${getEventTextStyle(event)}`}>
                               {formatTime(event.start)} - {formatTime(event.end)}
                             </div>
                             {event.status === 'completed' && (
-                              <div className="text-[10px] mt-0.5 font-semibold text-teal-700">✓ Completed</div>
+                              <div className="text-[10px] mt-0.5 font-medium text-green-700">✓ Completed</div>
                             )}
                           </div>
                         ))}
@@ -328,9 +331,10 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
           </div>
         </div>
       ) : (
+        /* Day View */
         <div className="p-4">
-          <div className="text-center mb-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg">
-            <h3 className="text-lg font-bold text-slate-800">
+          <div className="text-center mb-4 py-2 bg-gray-50 rounded-md border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-900">
               {days[currentDate.getDay()]}, {months[currentDate.getMonth()]} {currentDate.getDate()}, {currentDate.getFullYear()}
             </h3>
           </div>
@@ -338,25 +342,25 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
             {hours.map(hour => {
               const hourEvents = getEventsForTimeSlot(currentDate, hour);
               return (
-                <div key={hour} className="flex gap-4 border-b border-slate-200 pb-2 hover:bg-slate-50/50 transition-colors">
-                  <div className="w-20 text-sm text-slate-600 font-medium pt-1">
+                <div key={hour} className="flex gap-4 border-b border-gray-100 pb-2 hover:bg-gray-50/50 transition-colors">
+                  <div className="w-16 text-xs text-gray-500 font-medium pt-1">
                     {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
                   </div>
                   <div className="flex-1 min-h-[40px]">
                     {hourEvents.map(event => (
                       <div
                         key={event.id}
-                        className={`p-2 mb-2 rounded-lg border-l-4 ${getEventColor(event)} shadow-sm`}
+                        className={`p-2 mb-2 rounded-md border-l-2 ${getEventColor(event)}`}
                       >
-                        <div className={`font-medium ${getEventTextStyle(event)}`}>{event.summary}</div>
-                        <div className={`text-xs mt-1 ${getEventTextStyle(event)}`}>
+                        <div className={`text-sm font-medium ${getEventTextStyle(event)}`}>{event.summary}</div>
+                        <div className={`text-xs mt-0.5 opacity-75 ${getEventTextStyle(event)}`}>
                           {formatTime(event.start)} - {formatTime(event.end)}
                         </div>
                         {event.status === 'completed' && (
-                          <div className="text-xs mt-1 font-semibold text-teal-700">✓ Completed</div>
+                          <div className="text-xs mt-1 font-medium text-green-700">✓ Completed</div>
                         )}
                         {event.description && (
-                          <div className="text-xs mt-1 text-slate-600">{event.description}</div>
+                          <div className="text-xs mt-1 text-gray-600">{event.description}</div>
                         )}
                       </div>
                     ))}
@@ -368,21 +372,22 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
         </div>
       )}
 
+      {/* All-day events section */}
       {events.some(e => e.is_all_day) && (
-        <div className="p-4 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
-          <div className="text-sm font-medium text-slate-700 mb-2">All-day events</div>
+        <div className="p-4 border-t border-gray-200 bg-gray-50">
+          <div className="text-xs font-medium text-gray-500 mb-2">All-day events</div>
           <div className="space-y-1">
             {events.filter(e => e.is_all_day).map(event => (
               <div
                 key={event.id}
-                className={`p-2 rounded-lg border-l-4 ${getEventColor(event)} shadow-sm`}
+                className={`p-2 rounded-md border-l-2 ${getEventColor(event)}`}
               >
-                <div className={`font-medium text-sm ${getEventTextStyle(event)}`}>{event.summary}</div>
+                <div className={`text-sm font-medium ${getEventTextStyle(event)}`}>{event.summary}</div>
                 {event.status === 'completed' && (
-                  <div className="text-xs mt-1 font-semibold text-teal-700">✓ Completed</div>
+                  <div className="text-xs mt-0.5 font-medium text-green-700">✓ Completed</div>
                 )}
                 {event.description && (
-                  <div className="text-xs mt-1 text-slate-600">{event.description}</div>
+                  <div className="text-xs mt-1 text-gray-600">{event.description}</div>
                 )}
               </div>
             ))}

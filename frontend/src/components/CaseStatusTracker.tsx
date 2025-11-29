@@ -6,9 +6,9 @@ interface StatusTrackerProps {
 
 const CaseStatusTracker: React.FC<StatusTrackerProps> = ({ status }) => {
   const stages = [
-    { key: 'pending', label: 'Pending Review', icon: '📋' },
-    { key: 'ongoing', label: 'In Progress', icon: '⚖️' },
-    { key: 'closed', label: 'Resolved', icon: '✅' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'ongoing', label: 'In Progress' },
+    { key: 'closed', label: 'Resolved' },
   ];
 
   const getStageIndex = (statusKey: string) => {
@@ -18,87 +18,52 @@ const CaseStatusTracker: React.FC<StatusTrackerProps> = ({ status }) => {
   const currentIndex = getStageIndex(status);
 
   return (
-    <div className="w-full py-6">
-      {/* Progress Bar Container */}
+    <div className="w-full">
+      {/* Progress Steps */}
       <div className="relative">
         {/* Background Line */}
-        <div className="absolute top-8 left-0 w-full h-1 bg-gray-200"></div>
+        <div className="absolute top-3 left-0 w-full h-0.5 bg-gray-200"></div>
 
         {/* Progress Line */}
         <div
-          className="absolute top-8 left-0 h-1 bg-blue-600 transition-all duration-500"
+          className="absolute top-3 left-0 h-0.5 bg-blue-600 transition-all"
           style={{ width: `${(currentIndex / (stages.length - 1)) * 100}%` }}
         ></div>
 
-        {/* Status Stages */}
+        {/* Steps */}
         <div className="relative flex justify-between">
           {stages.map((stage, index) => {
             const isCompleted = index < currentIndex;
             const isCurrent = index === currentIndex;
-            const isPending = index > currentIndex;
 
             return (
-              <div key={stage.key} className="flex flex-col items-center flex-1">
+              <div key={stage.key} className="flex flex-col items-center">
                 {/* Circle */}
                 <div
                   className={`
-                    w-16 h-16 rounded-full flex items-center justify-center text-2xl
-                    border-4 transition-all duration-300 z-10 bg-white
-                    ${
-                      isCompleted
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : isCurrent
-                        ? 'border-blue-600 bg-white animate-pulse'
-                        : 'border-gray-300 bg-white'
-                    }
+                    w-6 h-6 rounded-full flex items-center justify-center text-xs
+                    border-2 bg-white z-10 transition-colors
+                    ${isCompleted ? 'border-blue-600 bg-blue-600 text-white' : ''}
+                    ${isCurrent ? 'border-blue-600' : ''}
+                    ${!isCompleted && !isCurrent ? 'border-gray-300' : ''}
                   `}
                 >
-                  {stage.icon}
+                  {isCompleted ? (
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <span className={isCurrent ? 'text-blue-600' : 'text-gray-400'}>{index + 1}</span>
+                  )}
                 </div>
 
                 {/* Label */}
-                <div className="mt-3 text-center">
-                  <p
-                    className={`
-                      text-sm font-semibold
-                      ${
-                        isCompleted || isCurrent
-                          ? 'text-blue-600'
-                          : 'text-gray-400'
-                      }
-                    `}
-                  >
-                    {stage.label}
-                  </p>
-                  {isCurrent && (
-                    <p className="text-xs text-gray-500 mt-1">Current Status</p>
-                  )}
-                </div>
+                <p className={`mt-2 text-xs font-medium ${isCompleted || isCurrent ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {stage.label}
+                </p>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Status Description */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 text-2xl">
-            {stages[currentIndex].icon}
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold text-blue-900 mb-1">
-              {stages[currentIndex].label}
-            </h4>
-            <p className="text-xs text-blue-700">
-              {status === 'pending' &&
-                'Your case has been created and is pending review.'}
-              {status === 'ongoing' &&
-                'Your case is ongoing. Your lawyer is actively working on it.'}
-              {status === 'closed' &&
-                'Your case has been closed. You can view the resolution summary below.'}
-            </p>
-          </div>
         </div>
       </div>
     </div>

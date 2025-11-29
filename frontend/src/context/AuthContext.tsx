@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Use a small delay to ensure state is updated before redirect
         setTimeout(() => {
-          window.location.href = '/login';
+          window.location.href = '/';
         }, 100);
       }
       // If user is removed in another tab
@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         delete api.defaults.headers.common['Authorization'];
 
         setTimeout(() => {
-          window.location.href = '/login';
+          window.location.href = '/';
         }, 100);
       }
       // If token changes in another tab (someone else logged in), force logout
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         setTimeout(() => {
           alert('Another user has logged in. You have been logged out.');
-          window.location.href = '/login';
+          window.location.href = '/';
         }, 100);
       }
       // If user changes in another tab, force logout
@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           setTimeout(() => {
             alert('Another user has logged in. You have been logged out.');
-            window.location.href = '/login';
+            window.location.href = '/';
           }, 100);
         }
       }
@@ -225,12 +225,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     console.log('Logging out user...');
+    // Clear storage and API header first
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setUser(null);
-    setToken(null);
     delete api.defaults.headers.common['Authorization'];
-    window.location.href = '/login';
+    // Redirect immediately BEFORE React state updates to avoid ProtectedRoute redirect
+    window.location.href = '/';
   };
 
   const updateUser = (userData: Partial<User>) => {

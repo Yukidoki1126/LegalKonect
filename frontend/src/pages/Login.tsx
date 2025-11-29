@@ -1,10 +1,10 @@
 // src/pages/Login.tsx - Professional, minimal design
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { adminAuthService } from '../services/adminApi';
 import GoogleSignInButton from '../components/GoogleSignInButton';
-import { Scale, Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Scale, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 
 const Login: React.FC = () => {
@@ -16,6 +16,12 @@ const Login: React.FC = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Reset page opacity on load for smooth transition
+  useEffect(() => {
+    document.body.style.opacity = '1';
+    document.body.style.transition = 'opacity 0.5s ease-in';
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,13 +76,28 @@ const Login: React.FC = () => {
     setError(error);
   };
 
+  const handleNavigate = (path: string) => {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease-out';
+    setTimeout(() => navigate(path), 300);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500">
+      <div className="max-w-md w-full space-y-8 animate-in slide-in-from-bottom-4 duration-700">
+        {/* Back Button */}
+        <button
+          onClick={() => handleNavigate('/')}
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-medium">Back to Home</span>
+        </button>
+
         {/* Logo and Header */}
         <div className="text-center">
           <Link to="/" className="inline-flex justify-center mb-6">
-            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-all hover:scale-105">
               <Scale className="w-10 h-10 text-white" />
             </div>
           </Link>
@@ -85,9 +106,12 @@ const Login: React.FC = () => {
           </h2>
           <p className="text-gray-600">
             Or{' '}
-            <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+            <button
+              onClick={() => handleNavigate('/register')}
+              className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+            >
               create a new account
-            </Link>
+            </button>
           </p>
         </div>
 
@@ -215,9 +239,12 @@ const Login: React.FC = () => {
         {/* Footer Links */}
         <div className="text-center text-sm text-gray-600">
           Are you a lawyer?{' '}
-          <Link to="/lawyer/register" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+          <button
+            onClick={() => handleNavigate('/lawyer/register')}
+            className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+          >
             Register as a legal professional
-          </Link>
+          </button>
         </div>
       </div>
     </div>

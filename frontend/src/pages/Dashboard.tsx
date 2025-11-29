@@ -60,12 +60,12 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+    <div className="min-h-screen bg-gray-50 animate-fadeIn">
+      <div className="max-w-screen-xl mx-auto px-6 lg:px-10 py-4">
         {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left Side: Welcome and Quick Actions */}
-          <div className="lg:col-span-9 space-y-6">
+          <div className="lg:col-span-9 space-y-4">
             {/* Welcome and Time Section */}
             <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 text-white">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">

@@ -1,5 +1,5 @@
-import React, { useState, useCallback, memo } from 'react';
-import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
+import React, { useState, useCallback, memo, useRef, useEffect } from 'react';
+import { GoogleMap, Marker, useLoadScript, Autocomplete } from '@react-google-maps/api';
 
 interface LocationPickerWithMapProps {
   initialLat?: number;
@@ -10,7 +10,7 @@ interface LocationPickerWithMapProps {
 
 const mapContainerStyle = {
   width: '100%',
-  height: '400px',
+  height: '280px',
 };
 
 const defaultCenter = {
@@ -47,6 +47,15 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
   const [address, setAddress] = useState(initialAddress || '');
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isMapLocked, setIsMapLocked] = useState(true); // Lock map by default to prevent accidental clicks
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+
+  // Store original saved location for reset functionality
+  const [savedLocation] = useState({
+    lat: hasValidCoords && parseLat !== null ? parseLat : null,
+    lng: hasValidCoords && parseLng !== null ? parseLng : null,
+    address: initialAddress || ''
+  });
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
@@ -90,6 +99,39 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
     },
     [onLocationChange, isMapLocked]
   );
+
+  const onAutocompleteLoad = useCallback((autocompleteInstance: google.maps.places.Autocomplete) => {
+    setAutocomplete(autocompleteInstance);
+  }, []);
+
+  const onPlaceChanged = useCallback(() => {
+    // Only allow place selection if map is unlocked (in edit mode)
+    if (!isMapLocked && autocomplete) {
+      const place = autocomplete.getPlace();
+
+      if (place.geometry && place.geometry.location) {
+        const lat = Number(place.geometry.location.lat());
+        const lng = Number(place.geometry.location.lng());
+        const position = { lat, lng };
+
+        setCenter(position);
+        setMarkerPosition(position);
+        setAddress(place.formatted_address || '');
+        setSearchInput('');
+
+        onLocationChange(lat, lng, place.formatted_address || '');
+
+        // Pan and zoom to the selected location
+        if (map) {
+          map.panTo(position);
+          map.setZoom(17);
+        }
+      }
+    } else if (isMapLocked) {
+      // Clear search input if map is locked
+      setSearchInput('');
+    }
+  }, [autocomplete, map, onLocationChange, isMapLocked]);
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -164,6 +206,34 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
     }
   };
 
+  const resetToSavedLocation = () => {
+    if (savedLocation.lat !== null && savedLocation.lng !== null) {
+      const position = { lat: savedLocation.lat, lng: savedLocation.lng };
+
+      setCenter(position);
+      setMarkerPosition(position);
+      setAddress(savedLocation.address);
+      setSearchInput('');
+
+      // Pan to saved location
+      if (map) {
+        map.panTo(position);
+        map.setZoom(15);
+      }
+
+      // Notify parent of reset (back to original saved location)
+      onLocationChange(savedLocation.lat, savedLocation.lng, savedLocation.address);
+    }
+  };
+
+  // Check if current location is different from saved location
+  const hasUnsavedChanges =
+    markerPosition &&
+    savedLocation.lat !== null &&
+    savedLocation.lng !== null &&
+    (Math.abs(markerPosition.lat - savedLocation.lat) > 0.000001 ||
+     Math.abs(markerPosition.lng - savedLocation.lng) > 0.000001);
+
   if (loadError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -199,43 +269,86 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Map Controls */}
-      <div className="flex items-center gap-3">
+    <div className="space-y-3">
+      {/* Search and Controls Row */}
+      <div className="flex gap-2">
+        <div className="flex-1 relative">
+          <Autocomplete
+            onLoad={onAutocompleteLoad}
+            onPlaceChanged={onPlaceChanged}
+            options={{
+              componentRestrictions: { country: 'ph' },
+              fields: ['formatted_address', 'geometry', 'name'],
+            }}
+          >
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder={isMapLocked ? 'Click "Edit" to search' : 'Search location...'}
+                disabled={isMapLocked}
+                className={`w-full pl-9 pr-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
+                  isMapLocked ? 'bg-gray-50 cursor-not-allowed text-gray-400' : ''
+                }`}
+              />
+            </div>
+          </Autocomplete>
+        </div>
         <button
           type="button"
           onClick={() => setIsMapLocked(!isMapLocked)}
-          className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
             isMapLocked
               ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-yellow-600 text-white hover:bg-yellow-700'
+              : 'bg-amber-500 text-white hover:bg-amber-600'
           }`}
         >
-          {isMapLocked ? 'Edit Map' : 'Done Editing'}
+          {isMapLocked ? 'Edit' : 'Lock'}
         </button>
         <button
           type="button"
           onClick={getCurrentLocation}
-          className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+          className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center gap-1.5 text-sm"
+          title="Use current location"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span>Use Current Location</span>
+          <span className="hidden sm:inline">Current</span>
         </button>
+        {/* Reset Button - Show when there are unsaved changes */}
+        {hasUnsavedChanges && !isMapLocked && (
+          <button
+            type="button"
+            onClick={resetToSavedLocation}
+            className="px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center gap-1.5 text-sm"
+            title="Reset to saved location"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span className="hidden sm:inline">Reset</span>
+          </button>
+        )}
       </div>
 
       {/* Map */}
-      <div className={`border border-gray-300 rounded-lg overflow-hidden shadow-sm relative ${isMapLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+      <div className={`border border-gray-200 rounded-md overflow-hidden relative ${isMapLocked ? 'cursor-not-allowed' : 'cursor-crosshair'}`}>
         {isMapLocked && (
-          <div className="absolute inset-0 bg-gray-900 bg-opacity-5 z-10 flex items-center justify-center pointer-events-none">
-            <div className="bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-300">
-              <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+          <div className="absolute inset-0 bg-black/5 z-10 flex items-center justify-center pointer-events-none">
+            <div className="bg-white px-3 py-1.5 rounded-md shadow-sm border border-gray-200">
+              <p className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                 </svg>
-                Click "Edit Map" to change location
+                Click "Edit" to change
               </p>
             </div>
           </div>
@@ -262,51 +375,20 @@ const LocationPickerWithMap: React.FC<LocationPickerWithMapProps> = ({
         </GoogleMap>
       </div>
 
-      {/* Selected Address Display */}
+      {/* Selected Address Display - Compact */}
       {markerPosition && address && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
-              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-blue-900 mb-1">Selected Office Location:</p>
-              <p className="text-sm text-blue-800">{address}</p>
-              <p className="text-xs text-blue-600 mt-2">
-                Coordinates: {Number(markerPosition.lat).toFixed(6)}, {Number(markerPosition.lng).toFixed(6)}
-              </p>
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${Number(markerPosition.lat)},${Number(markerPosition.lng)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-xs text-blue-700 hover:text-blue-900 font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                Get Directions
-              </a>
-            </div>
+        <div className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
+          <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-gray-900 truncate">{address}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {Number(markerPosition.lat).toFixed(6)}, {Number(markerPosition.lng).toFixed(6)}
+            </p>
           </div>
         </div>
       )}
-
-      {/* Instructions */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div className="flex items-start gap-2">
-          <span className="text-lg">💡</span>
-          <div className="flex-1">
-            <p className="text-xs text-gray-700 font-medium mb-1">How to pin your office location:</p>
-            <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-              <li>Click "Use Current Location" if you're at your office to get your coordinates</li>
-              <li>Or unlock the map and click anywhere to manually pin your exact location</li>
-              <li>Make sure the pin is placed at your actual office address</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

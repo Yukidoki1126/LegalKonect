@@ -308,11 +308,11 @@ const Appointments: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Appointments</h1>
-          <p className="text-gray-600 mt-2">Manage your legal consultations</p>
+    <div className="min-h-screen bg-gray-50 animate-fadeIn">
+      <div className="max-w-screen-xl mx-auto px-6 lg:px-10 py-4">
+        <div className="mb-4">
+          <h1 className="text-2xl font-semibold text-gray-900">My Appointments</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage your legal consultations</p>
         </div>
 
         {toast.show && (

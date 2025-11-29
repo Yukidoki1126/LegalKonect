@@ -41,6 +41,7 @@ interface DescriptiveAnalytics {
   cancellation_reasons: { cancellation_reason: string; count: number }[];
   avg_response_time_minutes: number;
   period_days: number;
+  total_appointments: number;
 }
 
 const AdminAnalytics: React.FC = () => {
@@ -95,7 +96,8 @@ const loadDescriptiveAnalytics = async () => {
       repeat_clients: 0,
       cancellation_reasons: [],
       avg_response_time_minutes: 0,
-      period_days: period
+      period_days: 30,
+      total_appointments: 0
     });
   } finally {
     setLoading(false);
@@ -337,7 +339,7 @@ const loadDescriptiveAnalytics = async () => {
                     <div className="flex-1">
                       <p className="text-orange-100 text-sm font-medium mb-1">Appointments</p>
                       <p className="text-3xl font-bold text-white break-words">
-                        {Number(descriptive.appointment_trends.reduce((sum, t) => sum + t.total, 0)).toLocaleString('en-US')}
+                        {(descriptive.total_appointments ?? 0).toLocaleString()}
                       </p>
                       <p className="text-orange-100 text-xs mt-1">total bookings</p>
                     </div>

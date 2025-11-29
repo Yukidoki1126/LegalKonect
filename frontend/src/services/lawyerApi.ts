@@ -25,9 +25,12 @@ const cachedGet = async <T = any>(url: string, ttl: number = 30000): Promise<T> 
 };
 
 export const lawyerApi = {
-  // Get dashboard stats (cached for 30 seconds)
+  // Get dashboard stats (no cache for reliability)
   getDashboard: async () => {
-    return cachedGet(`${API_URL}/lawyer/dashboard`, 30000);
+    const response = await axios.get(`${API_URL}/lawyer/dashboard`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
   },
 
   // Get appointments (optional status filter) - cached for 20 seconds

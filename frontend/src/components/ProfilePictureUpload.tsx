@@ -1,4 +1,4 @@
-import React, { useState, useRef, memo } from 'react';
+import React, { useState, useRef, memo, useEffect } from 'react';
 import { User, Camera, Trash2, Upload, CheckCircle } from 'lucide-react';
 
 interface ProfilePictureUploadProps {
@@ -22,6 +22,21 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   const [successMessage, setSuccessMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevPictureRef = useRef<string | null | undefined>(currentPicture);
+
+  // Reset preview when currentPicture changes to a new image (after successful upload)
+  // Only clear preview when we get a NEW picture (not when it becomes null during deletion)
+  useEffect(() => {
+    const prevPicture = prevPictureRef.current;
+
+    // Only clear preview if currentPicture changed from null/undefined to a value
+    // This means a new upload succeeded - we should show the server image
+    if (!prevPicture && currentPicture) {
+      setPreview(null);
+    }
+
+    prevPictureRef.current = currentPicture;
+  }, [currentPicture]);
 
   const getImageUrl = (path: string | null | undefined) => {
     if (!path) return null;
@@ -61,7 +76,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
     // Upload file
     try {
       await onUpload(file);
-      showSuccess('Profile picture uploaded successfully!');
+      // Success message is handled by parent component
     } catch (error) {
       console.error('Upload failed:', error);
     }
@@ -105,7 +120,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
     if (onDelete) {
       try {
         await onDelete();
-        showSuccess('Profile picture deleted successfully!');
+        // Success message is handled by parent component
       } catch (error) {
         console.error('Delete failed:', error);
       }
@@ -120,13 +135,13 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
   return (
     <>
-      <div className={`flex flex-col items-center ${className}`}>
-        {/* Profile Picture Display */}
-        <div className="relative group">
+      <div className={`flex items-center gap-4 ${className}`}>
+        {/* Profile Picture Display - Compact */}
+        <div className="relative group flex-shrink-0">
           <div
             className={`
-              w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg
-              ${dragActive ? 'ring-4 ring-blue-400' : ''}
+              w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-100
+              ${dragActive ? 'ring-2 ring-blue-500' : ''}
             `}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -140,53 +155,53 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                <User className="w-16 h-16 text-white" />
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                <User className="w-10 h-10 text-gray-400" />
               </div>
             )}
           </div>
 
           {/* Overlay on hover */}
-          <div className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+          <div className="absolute inset-0 rounded-lg bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
               className="text-white hover:text-blue-300 transition-colors"
               type="button"
             >
-              <Camera className="w-8 h-8" />
+              <Camera className="w-5 h-5" />
             </button>
           </div>
 
           {/* Loading spinner */}
           {isUploading && (
-            <div className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <div className="absolute inset-0 rounded-lg bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
             </div>
           )}
         </div>
 
-        {/* Upload/Delete Buttons */}
-        <div className="mt-4 flex gap-2">
+        {/* Upload/Delete Buttons - Vertical Stack */}
+        <div className="flex flex-col gap-2">
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             type="button"
           >
-            <Upload className="w-4 h-4" />
-            {displayImage ? 'Change Photo' : 'Upload Photo'}
+            <Upload className="w-3.5 h-3.5" />
+            {displayImage ? 'Change' : 'Upload'}
           </button>
 
           {displayImage && onDelete && (
             <button
               onClick={handleDeleteClick}
               disabled={isUploading}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-600 font-medium rounded-md hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               type="button"
             >
-              <Trash2 className="w-4 h-4" />
-              Delete
+              <Trash2 className="w-3.5 h-3.5" />
+              Remove
             </button>
           )}
         </div>
@@ -199,42 +214,35 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
           onChange={handleFileInputChange}
           className="hidden"
         />
-
-        {/* Help text */}
-        <p className="mt-2 text-xs text-gray-500 text-center">
-          JPEG, PNG or GIF (Max 10MB)
-          <br />
-          Drag and drop or click to upload
-        </p>
       </div>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <Trash2 className="w-8 h-8 text-red-600" />
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg border border-gray-200 max-w-sm w-full p-6">
+            <div className="text-center">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Trash2 className="w-5 h-5 text-red-600" />
               </div>
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Delete Profile Picture?
+              <h3 className="text-base font-semibold text-gray-900 mb-1">
+                Delete photo?
               </h3>
 
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete your profile picture? This action cannot be undone.
+              <p className="text-sm text-gray-600 mb-5">
+                This action cannot be undone.
               </p>
 
-              <div className="flex gap-3 w-full">
+              <div className="flex gap-3">
                 <button
                   onClick={handleDeleteCancel}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-semibold"
+                  className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
-                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold"
+                  className="flex-1 px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
                 >
                   Delete
                 </button>
@@ -246,26 +254,26 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
-                <CheckCircle className="w-10 h-10 text-green-600" />
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg border border-gray-200 max-w-sm w-full p-6">
+            <div className="text-center">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-base font-semibold text-gray-900 mb-1">
                 Success!
               </h3>
 
-              <p className="text-gray-600 mb-6">
+              <p className="text-sm text-gray-600 mb-5">
                 {successMessage}
               </p>
 
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold"
+                className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
               >
-                OK
+                Done
               </button>
             </div>
           </div>
