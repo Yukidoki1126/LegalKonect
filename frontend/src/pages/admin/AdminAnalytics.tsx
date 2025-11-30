@@ -173,46 +173,46 @@ const loadDescriptiveAnalytics = async () => {
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 shadow-lg">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm font-medium mb-1">Total Revenue</p>
-                  <p className="text-3xl font-bold text-white">₱{analytics.revenue.total.toLocaleString()}</p>
+                  <p className="text-gray-500 text-sm font-medium mb-1">Total Revenue</p>
+                  <p className="text-3xl font-bold text-gray-900">₱{analytics.revenue.total.toLocaleString()}</p>
                 </div>
-                <span className="w-12 h-12 text-white/80 flex items-center justify-center text-2xl">₱</span>
+                <span className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-500 text-2xl font-bold">₱</span>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 shadow-lg">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-sm font-medium mb-1">Total Appointments</p>
-                  <p className="text-3xl font-bold text-white">{analytics.appointments.total}</p>
-                  <p className="text-blue-100 text-xs mt-1">{analytics.appointments.completed} completed</p>
+                  <p className="text-gray-500 text-sm font-medium mb-1">Total Appointments</p>
+                  <p className="text-3xl font-bold text-gray-900">{analytics.appointments.total}</p>
+                  <p className="text-gray-400 text-xs mt-1">{analytics.appointments.completed} completed</p>
                 </div>
-                <Calendar className="w-12 h-12 text-white/80" />
+                <Calendar className="w-12 h-12 text-blue-500 bg-blue-50 rounded-xl p-2" />
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 shadow-lg">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium mb-1">Active Lawyers</p>
-                  <p className="text-3xl font-bold text-white">{analytics.lawyers.active}</p>
-                  <p className="text-purple-100 text-xs mt-1">{analytics.lawyers.total} total</p>
+                  <p className="text-gray-500 text-sm font-medium mb-1">Active Lawyers</p>
+                  <p className="text-3xl font-bold text-gray-900">{analytics.lawyers.active}</p>
+                  <p className="text-gray-400 text-xs mt-1">{analytics.lawyers.total} total</p>
                 </div>
-                <Users className="w-12 h-12 text-white/80" />
+                <Users className="w-12 h-12 text-purple-500 bg-purple-50 rounded-xl p-2" />
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-6 shadow-lg">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-pink-100 text-sm font-medium mb-1">Total Users</p>
-                  <p className="text-3xl font-bold text-white">{analytics.users.total}</p>
-                  <p className="text-pink-100 text-xs mt-1">{analytics.users.new_this_month} this month</p>
+                  <p className="text-gray-500 text-sm font-medium mb-1">Total Users</p>
+                  <p className="text-3xl font-bold text-gray-900">{analytics.users.total}</p>
+                  <p className="text-gray-400 text-xs mt-1">{analytics.users.new_this_month} this month</p>
                 </div>
-                <Users className="w-12 h-12 text-white/80" />
+                <Users className="w-12 h-12 text-pink-500 bg-pink-50 rounded-xl p-2" />
               </div>
             </div>
           </div>
@@ -301,49 +301,49 @@ const loadDescriptiveAnalytics = async () => {
             <>
               {/* Key Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 shadow-lg">
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-purple-100 text-sm font-medium mb-1">Client Retention</p>
-                      <p className="text-3xl font-bold text-white break-words">{descriptive.retention_rate.toLocaleString()}%</p>
-                      <p className="text-purple-100 text-xs mt-1">{descriptive.repeat_clients.toLocaleString()} repeat clients</p>
+                      <p className="text-gray-500 text-sm font-medium mb-1">Client Retention</p>
+                      <p className="text-3xl font-bold text-gray-900 break-words">{descriptive.retention_rate.toLocaleString()}%</p>
+                      <p className="text-gray-400 text-xs mt-1">{descriptive.repeat_clients.toLocaleString()} repeat clients</p>
                     </div>
-                    <Users className="w-12 h-12 text-white/80 flex-shrink-0" />
+                    <Users className="w-12 h-12 text-purple-500 bg-purple-50 rounded-xl p-2 flex-shrink-0" />
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 shadow-lg">
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-blue-100 text-sm font-medium mb-1">Avg Response Time</p>
-                      <p className="text-3xl font-bold text-white break-words">{descriptive.avg_response_time_minutes.toLocaleString()}</p>
-                      <p className="text-blue-100 text-xs mt-1">minutes</p>
+                      <p className="text-gray-500 text-sm font-medium mb-1">Avg Response Time</p>
+                      <p className="text-3xl font-bold text-gray-900 break-words">{descriptive.avg_response_time_minutes.toLocaleString()}</p>
+                      <p className="text-gray-400 text-xs mt-1">minutes</p>
                     </div>
-                    <Clock className="w-12 h-12 text-white/80 flex-shrink-0" />
+                    <Clock className="w-12 h-12 text-blue-500 bg-blue-50 rounded-xl p-2 flex-shrink-0" />
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 shadow-lg">
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-green-100 text-sm font-medium mb-1">Total Clients</p>
-                      <p className="text-3xl font-bold text-white break-words">{descriptive.total_clients.toLocaleString()}</p>
-                      <p className="text-green-100 text-xs mt-1">in this period</p>
+                      <p className="text-gray-500 text-sm font-medium mb-1">Total Clients</p>
+                      <p className="text-3xl font-bold text-gray-900 break-words">{descriptive.total_clients.toLocaleString()}</p>
+                      <p className="text-gray-400 text-xs mt-1">in this period</p>
                     </div>
-                    <Users className="w-12 h-12 text-white/80 flex-shrink-0" />
+                    <Users className="w-12 h-12 text-green-500 bg-green-50 rounded-xl p-2 flex-shrink-0" />
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 shadow-lg">
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-orange-100 text-sm font-medium mb-1">Appointments</p>
-                      <p className="text-3xl font-bold text-white break-words">
+                      <p className="text-gray-500 text-sm font-medium mb-1">Appointments</p>
+                      <p className="text-3xl font-bold text-gray-900 break-words">
                         {(descriptive.total_appointments ?? 0).toLocaleString()}
                       </p>
-                      <p className="text-orange-100 text-xs mt-1">total bookings</p>
+                      <p className="text-gray-400 text-xs mt-1">total bookings</p>
                     </div>
-                    <Calendar className="w-12 h-12 text-white/80 flex-shrink-0" />
+                    <Calendar className="w-12 h-12 text-orange-500 bg-orange-50 rounded-xl p-2 flex-shrink-0" />
                   </div>
                 </div>
               </div>
@@ -551,17 +551,19 @@ const loadDescriptiveAnalytics = async () => {
 
               {/* Cancellation Reasons */}
               {descriptive.cancellation_reasons.length > 0 && (
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                   <div className="flex items-center space-x-3 mb-6">
-                    <AlertCircle className="w-6 h-6 text-red-400" />
-                    <h3 className="text-xl font-bold text-white">Top Cancellation Reasons</h3>
+                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                      <AlertCircle className="w-5 h-5 text-red-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900">Top Cancellation Reasons</h3>
                   </div>
                   <div className="space-y-3">
                     {descriptive.cancellation_reasons.map((reason, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                        <span className="text-white">{reason.cancellation_reason}</span>
-                        <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-sm font-bold">
-                          {reason.count} times
+                      <div key={index} className="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-lg">
+                        <span className="text-gray-700 font-medium">{reason.cancellation_reason}</span>
+                        <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-bold">
+                          {reason.count} {reason.count === 1 ? 'time' : 'times'}
                         </span>
                       </div>
                     ))}

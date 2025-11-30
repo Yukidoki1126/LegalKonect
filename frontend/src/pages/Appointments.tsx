@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import ReviewModal from '../components/ReviewModal';
 import { Star, Eye } from 'lucide-react';
+import { notificationService } from '../services/notificationService';
 
 interface Appointment {
   id: number;
@@ -35,12 +36,14 @@ interface Appointment {
     reservation_fee?: number;
     specializations: Array<{ name: string }>;
   };
+  specialization?: { id: number; name: string } | null;
+  confirmed_specialization?: { id: number; name: string } | null;
 }
 
 const Appointments: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'cancelled' | 'past'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'reschedule' | 'cancelled' | 'past'>('upcoming');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
@@ -111,6 +114,19 @@ const Appointments: React.FC = () => {
     }, 15000); // 15 seconds
 
     return () => clearInterval(intervalId);
+  }, [fetchAppointments]);
+
+  // Subscribe to notifications for immediate refresh (client-side)
+  useEffect(() => {
+    const unsubscribe = notificationService.onNewNotification((notification) => {
+      // Immediately refresh when reschedule-related notifications arrive
+      if (['reschedule_requested', 'appointment_confirmed', 'appointment_cancelled'].includes(notification.type)) {
+        console.log('[Appointments] Refreshing due to:', notification.type);
+        fetchAppointments(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, [fetchAppointments]);
 
   useEffect(() => {
@@ -308,24 +324,42 @@ const Appointments: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 animate-fadeIn">
-      <div className="max-w-screen-xl mx-auto px-6 lg:px-10 py-4">
-        <div className="mb-4">
-          <h1 className="text-2xl font-semibold text-gray-900">My Appointments</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage your legal consultations</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 animate-fadeIn pt-16">
+      <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 py-6">
+        {/* Enhanced Header */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">My Appointments</h1>
+              <p className="text-sm text-gray-500">Manage your legal consultations</p>
+            </div>
+          </div>
         </div>
 
         {toast.show && (
-          <div className={`mb-6 px-4 py-3 rounded-lg flex items-center justify-between ${
-            toast.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'
+          <div className={`mb-6 px-5 py-4 rounded-xl flex items-center justify-between shadow-lg animate-slideDown ${
+            toast.type === 'success' 
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 text-green-800' 
+              : 'bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 text-red-800'
           }`}>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span className="font-medium">{toast.message}</span>
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${toast.type === 'success' ? 'bg-green-100' : 'bg-red-100'}`}>
+                <svg className={`w-5 h-5 ${toast.type === 'success' ? 'text-green-600' : 'text-red-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                  {toast.type === 'success' ? (
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  ) : (
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  )}
+                </svg>
+              </div>
+              <span className="font-semibold">{toast.message}</span>
             </div>
-            <button onClick={() => setToast({ show: false, message: '', type: '' })} className="hover:opacity-75">
+            <button onClick={() => setToast({ show: false, message: '', type: '' })} className="p-1 hover:bg-white/50 rounded-lg transition">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
@@ -334,14 +368,19 @@ const Appointments: React.FC = () => {
         )}
 
         {showNotification && paymentStatus === 'success' && (
-          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span className="font-medium">Payment successful! Your appointment has been confirmed.</span>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 text-green-800 px-5 py-4 rounded-xl mb-6 flex items-center justify-between shadow-lg animate-slideDown">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-md">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-bold block">Payment Successful!</span>
+                <span className="text-sm text-green-600">Your appointment has been confirmed.</span>
+              </div>
             </div>
-            <button onClick={() => setShowNotification(false)} className="text-green-600 hover:text-green-800">
+            <button onClick={() => setShowNotification(false)} className="p-2 hover:bg-white/50 rounded-lg transition">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
@@ -350,14 +389,19 @@ const Appointments: React.FC = () => {
         )}
 
         {showNotification && paymentStatus === 'failed' && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <span className="font-medium">Payment failed. Please try again or contact support.</span>
+          <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 text-red-800 px-5 py-4 rounded-xl mb-6 flex items-center justify-between shadow-lg animate-slideDown">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center shadow-md">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-bold block">Payment Failed</span>
+                <span className="text-sm text-red-600">Please try again or contact support.</span>
+              </div>
             </div>
-            <button onClick={() => setShowNotification(false)} className="text-red-600 hover:text-red-800">
+            <button onClick={() => setShowNotification(false)} className="p-2 hover:bg-white/50 rounded-lg transition">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
@@ -365,37 +409,59 @@ const Appointments: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md mb-6">
-          <div className="border-b">
+        <div className="bg-white rounded-2xl shadow-soft border border-gray-100 mb-6 overflow-hidden">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <div className="flex">
               <button
                 onClick={() => setActiveTab('upcoming')}
-                className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
+                className={`flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2 ${
                   activeTab === 'upcoming'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 Upcoming
               </button>
               <button
-                onClick={() => setActiveTab('cancelled')}
-                className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
-                  activeTab === 'cancelled'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                onClick={() => setActiveTab('reschedule')}
+                className={`flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2 ${
+                  activeTab === 'reschedule'
+                    ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reschedule
+              </button>
+              <button
+                onClick={() => setActiveTab('cancelled')}
+                className={`flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2 ${
+                  activeTab === 'cancelled'
+                    ? 'text-red-600 border-b-2 border-red-600 bg-red-50/50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
                 Cancelled
               </button>
               <button
                 onClick={() => setActiveTab('past')}
-                className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
+                className={`flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2 ${
                   activeTab === 'past'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'text-green-600 border-b-2 border-green-600 bg-green-50/50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 Completed
               </button>
             </div>
@@ -403,46 +469,92 @@ const Appointments: React.FC = () => {
 
           <div className="p-6" style={{ minHeight: '400px' }}>
             {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-600 mt-4">Loading appointments...</p>
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="border border-gray-100 rounded-xl p-6 animate-pulse">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="h-6 bg-gray-200 rounded-lg w-48 mb-3"></div>
+                        <div className="flex gap-2 mb-3">
+                          <div className="h-6 bg-gray-100 rounded-full w-24"></div>
+                          <div className="h-6 bg-gray-100 rounded-full w-20"></div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="h-7 bg-gray-100 rounded-full w-20"></div>
+                        <div className="h-7 bg-gray-100 rounded-full w-16"></div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="h-5 bg-gray-100 rounded w-40"></div>
+                      <div className="h-5 bg-gray-100 rounded w-32"></div>
+                      <div className="h-5 bg-gray-100 rounded w-28"></div>
+                      <div className="h-5 bg-gray-100 rounded w-36"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : appointments.length === 0 ? (
-              <div className="text-center py-12">
-                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
-                <p className="text-gray-600 mb-4">
+              <div className="text-center py-16">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-soft">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No appointments found</h3>
+                <p className="text-gray-500 mb-6 max-w-sm mx-auto">
                   {activeTab === 'upcoming'
-                    ? "You don't have any upcoming appointments"
+                    ? "You don't have any upcoming appointments. Book a consultation with a lawyer to get started."
+                    : activeTab === 'reschedule'
+                    ? "You don't have any pending reschedule requests at the moment."
                     : activeTab === 'cancelled'
-                    ? "You don't have any cancelled appointments"
-                    : "You don't have any past appointments"}
+                    ? "You don't have any cancelled appointments."
+                    : "You don't have any completed appointments yet."}
                 </p>
-                <button
-                  onClick={() => navigate('/lawyers')}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                  Find a Lawyer
-                </button>
+                {activeTab === 'upcoming' && (
+                  <button
+                    onClick={() => navigate('/lawyers')}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all inline-flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Find a Lawyer
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
                 {appointments.map((appointment) => (
-                  <div key={appointment.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+                  <div key={appointment.id} className="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-card hover:border-blue-200 transition-all duration-300 group">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                           {appointment.lawyer.first_name} {appointment.lawyer.last_name}
                         </h3>
                         <div className="flex flex-wrap gap-2 mb-2">
                           {appointment.lawyer.specializations.map((spec, idx) => (
-                            <span key={idx} className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                            <span key={idx} className="text-xs font-medium text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
                               {spec.name}
                             </span>
                           ))}
                         </div>
+                        {/* Show selected case type */}
+                        {(appointment.specialization || appointment.confirmed_specialization) && (
+                          <div className="flex items-center gap-1 mb-2">
+                            <span className="text-sm text-purple-700 bg-purple-100 px-2 py-1 rounded flex items-center gap-1">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Case: {appointment.confirmed_specialization?.name || appointment.specialization?.name}
+                              {appointment.confirmed_specialization && (
+                                <svg className="w-4 h-4 text-green-600 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         {/* Show reschedule status badge if pending */}
@@ -577,8 +689,11 @@ const Appointments: React.FC = () => {
                     <div className="flex flex-wrap gap-3">
                       <button
                         onClick={() => navigate(`/lawyers/${appointment.lawyer.id}`)}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                        className="px-4 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2"
                       >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
                         View Lawyer
                       </button>
 
@@ -586,9 +701,21 @@ const Appointments: React.FC = () => {
                         <button
                           onClick={() => handleCancelClick(appointment)}
                           disabled={cancellingId === appointment.id}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition"
+                          className="px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-medium hover:from-red-600 hover:to-rose-600 hover:shadow-lg disabled:from-gray-300 disabled:to-gray-300 transition-all flex items-center gap-2"
                         >
-                          {cancellingId === appointment.id ? 'Cancelling...' : 'Cancel Appointment'}
+                          {cancellingId === appointment.id ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              Cancelling...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Cancel
+                            </>
+                          )}
                         </button>
                       )}
 
@@ -749,6 +876,72 @@ const Appointments: React.FC = () => {
                   <span className="font-medium">Time:</span> {formatTime(selectedAppointment.appointment_time)}
                 </p>
               </div>
+
+              {/* Refund Policy Information */}
+              {selectedAppointment.payment_status === 'paid' && (
+                <div className="mb-6">
+                  <div className="p-4 rounded-xl border-2 border-blue-200 bg-blue-50">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-bold text-blue-900 mb-2">Refund Policy</h4>
+                        {(() => {
+                          const appointmentDateTime = new Date(`${selectedAppointment.appointment_date}T${selectedAppointment.appointment_time}`);
+                          const now = new Date();
+                          const hoursUntilAppointment = (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+                          const isMoreThan24Hours = hoursUntilAppointment >= 24;
+                          
+                          return isMoreThan24Hours ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                  <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  Eligible for Instant Refund
+                                </span>
+                              </div>
+                              <p className="text-xs text-blue-800">
+                                Since you're cancelling <strong>more than 24 hours</strong> before your appointment, 
+                                your refund of <strong>₱{selectedAppointment.lawyer.reservation_fee?.toLocaleString() || '100'}</strong> will 
+                                be processed <strong>automatically</strong>.
+                              </p>
+                              <p className="text-xs text-blue-700">
+                                💳 Card payments: 5-7 business days<br />
+                                📱 GCash/PayMaya: 1-3 business days
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                  <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  Admin Review Required
+                                </span>
+                              </div>
+                              <p className="text-xs text-amber-800">
+                                Since you're cancelling <strong>less than 24 hours</strong> before your appointment, 
+                                your refund request of <strong>₱{selectedAppointment.lawyer.reservation_fee?.toLocaleString() || '100'}</strong> will 
+                                be reviewed by our admin team.
+                              </p>
+                              <p className="text-xs text-amber-700">
+                                ⏱️ Review period: 3-5 business days<br />
+                                📧 You'll be notified once your refund is approved
+                              </p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="mb-6">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-3">

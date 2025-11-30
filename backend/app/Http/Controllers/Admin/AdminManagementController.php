@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -20,10 +20,21 @@ class AdminManagementController extends Controller
             return response()->json(['message' => 'Unauthorized. Super Admin access required.'], 403);
         }
 
-        $admins = User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])
-            ->select('id', 'name', 'email', 'role', 'status', 'last_login_at', 'created_at')
+        $admins = Admin::whereIn('role', [Admin::ROLE_ADMIN, Admin::ROLE_SUPER_ADMIN])
+            ->select('id', 'name', 'email', 'role', 'is_active', 'last_login_at', 'created_at')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($admin) {
+                return [
+                    'id' => $admin->id,
+                    'name' => $admin->name,
+                    'email' => $admin->email,
+                    'role' => $admin->role,
+                    'status' => $admin->is_active ? 'active' : 'suspended',
+                    'last_login_at' => $admin->last_login_at,
+                    'created_at' => $admin->created_at,
+                ];
+            });
 
         return response()->json($admins);
     }
@@ -40,23 +51,30 @@ class AdminManagementController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email|unique:admins,email',
             'password' => 'required|string|min:8',
-            'role' => ['required', Rule::in([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])],
+            'role' => ['required', Rule::in([Admin::ROLE_ADMIN, Admin::ROLE_SUPER_ADMIN])],
         ]);
 
-        $admin = User::create([
+        $admin = Admin::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
-            'email_verified_at' => now(),
-            'status' => 'active',
+            'is_active' => true,
         ]);
 
         return response()->json([
             'message' => 'Admin created successfully',
-            'admin' => $admin
+            'admin' => [
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role' => $admin->role,
+                'status' => $admin->is_active ? 'active' : 'suspended',
+                'last_login_at' => $admin->last_login_at,
+                'created_at' => $admin->created_at,
+            ]
         ], 201);
     }
 
@@ -70,25 +88,26 @@ class AdminManagementController extends Controller
             return response()->json(['message' => 'Unauthorized. Super Admin access required.'], 403);
         }
 
-        $admin = User::findOrFail($id);
+        $admin = Admin::findOrFail($id);
 
         // Prevent modifying own account through this endpoint
         if ($admin->id === $request->user()->id) {
             return response()->json(['message' => 'Cannot modify your own account through this endpoint'], 400);
         }
 
-        // Ensure the user is an admin
-        if (!in_array($admin->role, [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])) {
-            return response()->json(['message' => 'User is not an admin'], 400);
-        }
-
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'email' => ['sometimes', 'required', 'email', Rule::unique('users')->ignore($id)],
+            'email' => ['sometimes', 'required', 'email', Rule::unique('admins')->ignore($id)],
             'password' => 'sometimes|nullable|string|min:8',
-            'role' => ['sometimes', 'required', Rule::in([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])],
+            'role' => ['sometimes', 'required', Rule::in([Admin::ROLE_ADMIN, Admin::ROLE_SUPER_ADMIN])],
             'status' => ['sometimes', 'required', Rule::in(['active', 'suspended'])],
         ]);
+
+        // Convert status to is_active
+        if (isset($validated['status'])) {
+            $validated['is_active'] = $validated['status'] === 'active';
+            unset($validated['status']);
+        }
 
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
@@ -100,7 +119,15 @@ class AdminManagementController extends Controller
 
         return response()->json([
             'message' => 'Admin updated successfully',
-            'admin' => $admin
+            'admin' => [
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role' => $admin->role,
+                'status' => $admin->is_active ? 'active' : 'suspended',
+                'last_login_at' => $admin->last_login_at,
+                'created_at' => $admin->created_at,
+            ]
         ]);
     }
 
@@ -114,21 +141,16 @@ class AdminManagementController extends Controller
             return response()->json(['message' => 'Unauthorized. Super Admin access required.'], 403);
         }
 
-        $admin = User::findOrFail($id);
+        $admin = Admin::findOrFail($id);
 
         // Prevent deleting own account
         if ($admin->id === $request->user()->id) {
             return response()->json(['message' => 'Cannot delete your own account'], 400);
         }
 
-        // Ensure the user is an admin
-        if (!in_array($admin->role, [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])) {
-            return response()->json(['message' => 'User is not an admin'], 400);
-        }
-
         // Check if this is the last super admin
         if ($admin->isSuperAdmin()) {
-            $superAdminCount = User::where('role', User::ROLE_SUPER_ADMIN)->count();
+            $superAdminCount = Admin::where('role', Admin::ROLE_SUPER_ADMIN)->count();
             if ($superAdminCount <= 1) {
                 return response()->json(['message' => 'Cannot delete the last super admin'], 400);
             }
@@ -152,13 +174,13 @@ class AdminManagementController extends Controller
         }
 
         $stats = [
-            'total_admins' => User::where('role', User::ROLE_ADMIN)->count(),
-            'total_super_admins' => User::where('role', User::ROLE_SUPER_ADMIN)->count(),
-            'active_admins' => User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])
-                ->where('status', 'active')
+            'total_admins' => Admin::where('role', Admin::ROLE_ADMIN)->count(),
+            'total_super_admins' => Admin::where('role', Admin::ROLE_SUPER_ADMIN)->count(),
+            'active_admins' => Admin::whereIn('role', [Admin::ROLE_ADMIN, Admin::ROLE_SUPER_ADMIN])
+                ->where('is_active', true)
                 ->count(),
-            'suspended_admins' => User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])
-                ->where('status', 'suspended')
+            'suspended_admins' => Admin::whereIn('role', [Admin::ROLE_ADMIN, Admin::ROLE_SUPER_ADMIN])
+                ->where('is_active', false)
                 ->count(),
         ];
 

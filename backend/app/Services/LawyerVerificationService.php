@@ -175,7 +175,7 @@ class LawyerVerificationService
                 $query->whereNotIn('role', ['admin', 'super_admin']);
             });
 
-        if ($status) {
+        if ($status && $status !== 'all') {
             $query->where('verification_status', $status);
         }
 

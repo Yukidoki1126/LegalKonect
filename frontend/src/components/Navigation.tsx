@@ -48,21 +48,21 @@ const Navigation: React.FC = () => {
 
   return (
     <nav className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12">
+        <div className="flex justify-between items-center h-20">
           {/* Logo - Clean and Professional */}
           <Link
             to="/"
             className="flex items-center space-x-3 group"
           >
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">LK</span>
+            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">LK</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-2xl font-bold text-gray-900">
                 LegalKonect
               </span>
-              <span className="text-xs text-gray-500 -mt-1">Legal Solutions</span>
+              <span className="text-sm text-gray-500 -mt-1">Legal Solutions</span>
             </div>
           </Link>
 

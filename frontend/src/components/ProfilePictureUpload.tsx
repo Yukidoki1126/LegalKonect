@@ -135,13 +135,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
   return (
     <>
-      <div className={`flex items-center gap-4 ${className}`}>
-        {/* Profile Picture Display - Compact */}
-        <div className="relative group flex-shrink-0">
+      <div className={`relative ${className}`}>
+        {/* Profile Picture Display - Circular with elegant styling */}
+        <div className="relative group">
           <div
             className={`
-              w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-100
-              ${dragActive ? 'ring-2 ring-blue-500' : ''}
+              w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-xl bg-gradient-to-br from-gray-100 to-gray-50
+              ${dragActive ? 'ring-4 ring-blue-400 ring-offset-2' : ''}
+              transition-all duration-300
             `}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -155,53 +156,34 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                <User className="w-10 h-10 text-gray-400" />
+              <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                <User className="w-12 h-12 text-blue-400" />
               </div>
             )}
           </div>
 
-          {/* Overlay on hover */}
-          <div className="absolute inset-0 rounded-lg bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="text-white hover:text-blue-300 transition-colors"
-              type="button"
-            >
-              <Camera className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Loading spinner */}
-          {isUploading && (
-            <div className="absolute inset-0 rounded-lg bg-black bg-opacity-50 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-            </div>
-          )}
-        </div>
-
-        {/* Upload/Delete Buttons - Vertical Stack */}
-        <div className="flex flex-col gap-2">
+          {/* Camera button - bottom right corner */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute bottom-1 right-1 w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-3 border-white"
             type="button"
           >
-            <Upload className="w-3.5 h-3.5" />
-            {displayImage ? 'Change' : 'Upload'}
+            {isUploading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+            ) : (
+              <Camera className="w-4 h-4" />
+            )}
           </button>
 
-          {displayImage && onDelete && (
+          {/* Delete button - only show when there's an image */}
+          {displayImage && onDelete && !isUploading && (
             <button
               onClick={handleDeleteClick}
-              disabled={isUploading}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-600 font-medium rounded-md hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute -top-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center text-red-500 shadow-md hover:shadow-lg hover:bg-red-50 hover:scale-110 transition-all border border-gray-100"
               type="button"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Remove
             </button>
           )}
         </div>
@@ -218,31 +200,31 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg border border-gray-200 max-w-sm w-full p-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-slideUp">
             <div className="text-center">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Trash2 className="w-5 h-5 text-red-600" />
+              <div className="w-14 h-14 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-7 h-7 text-red-600" />
               </div>
 
-              <h3 className="text-base font-semibold text-gray-900 mb-1">
-                Delete photo?
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Delete Profile Photo?
               </h3>
 
-              <p className="text-sm text-gray-600 mb-5">
-                This action cannot be undone.
+              <p className="text-sm text-gray-500 mb-6">
+                This action cannot be undone. Your profile will show a default avatar.
               </p>
 
               <div className="flex gap-3">
                 <button
                   onClick={handleDeleteCancel}
-                  className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
+                  className="flex-1 px-4 py-2.5 text-sm border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
-                  className="flex-1 px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                  className="flex-1 px-4 py-2.5 text-sm bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl hover:from-red-600 hover:to-rose-600 hover:shadow-lg transition-all font-semibold"
                 >
                   Delete
                 </button>

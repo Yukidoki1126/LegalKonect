@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { lawyerApi } from '../../services/lawyerApi';
 import LawyerCalendarView from '../../components/LawyerCalendarView';
+import { notificationService } from '../../services/notificationService';
 
 interface CalendarStatus {
   connected: boolean;
@@ -38,6 +39,19 @@ const LawyerGoogleCalendar: React.FC = () => {
       setError(`Failed to connect Google Calendar: ${errorParam}`);
       window.history.replaceState({}, '', '/lawyer/calendar');
     }
+  }, []);
+
+  // Subscribe to notifications for real-time calendar updates
+  useEffect(() => {
+    const unsubscribe = notificationService.onNewNotification((notification) => {
+      // Refresh calendar when appointment-related notifications arrive
+      if (['appointment_created', 'appointment_cancelled', 'reschedule_accepted', 'reschedule_declined', 'payment_received'].includes(notification.type)) {
+        console.log('[LawyerGoogleCalendar] Refreshing calendar due to:', notification.type);
+        setCalendarRefreshTrigger(prev => prev + 1);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const fetchStatus = async (showLoading = false) => {
@@ -120,101 +134,117 @@ const LawyerGoogleCalendar: React.FC = () => {
   // Show skeleton if loading OR if data hasn't loaded yet
   if (loading || !status) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header Skeleton */}
-          <div className="mb-8 animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
-            <div className="h-5 bg-gray-200 rounded w-72"></div>
+      <div className="max-w-full overflow-x-hidden animate-fadeIn">
+        {/* Header Skeleton - matching actual design */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="p-2.5 bg-blue-100 rounded-xl">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="h-8 bg-gray-200 rounded-lg w-28 animate-pulse"></div>
           </div>
+          <div className="h-4 bg-gray-200 rounded w-72 ml-14 animate-pulse"></div>
+        </div>
 
-          {/* Connection Status Skeleton */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 animate-pulse">
+        {/* Connection Status Card Skeleton */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 mb-6 animate-pulse">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gray-200 rounded-xl"></div>
+              <div>
+                <div className="h-5 bg-gray-200 rounded w-44 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-64"></div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="h-11 bg-gray-200 rounded-xl w-40"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Calendar Card Skeleton */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden animate-pulse">
+          {/* Card Header */}
+          <div className="p-5 border-b border-gray-100">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
-                <div>
-                  <div className="h-5 bg-gray-200 rounded w-40 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-56"></div>
-                </div>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gray-200 rounded-lg w-8 h-8"></div>
+                <div className="h-5 bg-gray-200 rounded w-36"></div>
               </div>
-              <div className="h-10 bg-gray-200 rounded-md w-40"></div>
+              <div className="flex gap-2">
+                <div className="h-9 bg-gray-200 rounded-xl w-28"></div>
+                <div className="h-9 bg-gray-200 rounded-xl w-28"></div>
+              </div>
             </div>
           </div>
 
-          {/* Main Card Skeleton */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            {/* Card Header Skeleton */}
-            <div className="p-5 border-b border-gray-200">
-              <div className="flex items-center justify-between animate-pulse">
-                <div className="h-6 bg-gray-200 rounded w-32"></div>
-                <div className="flex gap-2">
-                  <div className="h-9 bg-gray-200 rounded-md w-24"></div>
-                  <div className="h-9 bg-gray-200 rounded-md w-24"></div>
-                </div>
+          {/* Calendar Content */}
+          <div className="p-6">
+            {/* Calendar Controls */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 bg-gray-200 rounded-xl"></div>
+                <div className="h-6 bg-gray-200 rounded w-36"></div>
+                <div className="h-9 w-9 bg-gray-200 rounded-xl"></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-9 bg-gray-200 rounded-xl w-20"></div>
+                <div className="h-9 bg-gray-100 rounded-xl w-20"></div>
               </div>
             </div>
 
-            {/* Calendar Skeleton */}
-            <div className="p-6 animate-pulse">
-              {/* Calendar Controls */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 bg-gray-200 rounded-md"></div>
-                  <div className="h-6 bg-gray-200 rounded w-32"></div>
-                  <div className="h-8 w-8 bg-gray-200 rounded-md"></div>
-                </div>
-                <div className="flex gap-2">
-                  <div className="h-8 bg-gray-200 rounded-md w-20"></div>
-                  <div className="h-8 bg-gray-200 rounded-md w-20"></div>
-                </div>
+            {/* Week View */}
+            <div className="border-2 border-gray-100 rounded-xl overflow-hidden">
+              {/* Day Headers */}
+              <div className="grid grid-cols-8 border-b border-gray-100 bg-gray-50">
+                <div className="p-3 border-r border-gray-100"></div>
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((_, i) => (
+                  <div key={i} className="p-3 text-center border-r border-gray-100">
+                    <div className="h-3 bg-gray-200 rounded w-8 mx-auto mb-1"></div>
+                    <div className="h-6 bg-gray-200 rounded-full w-8 mx-auto"></div>
+                  </div>
+                ))}
               </div>
 
-              {/* Week View Skeleton */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                {/* Day Headers */}
-                <div className="grid grid-cols-8 border-b border-gray-200 bg-gray-50">
-                  <div className="p-3 border-r border-gray-200"></div>
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((_, i) => (
-                    <div key={i} className="p-3 text-center border-r border-gray-200">
-                      <div className="h-3 bg-gray-200 rounded w-8 mx-auto mb-1"></div>
-                      <div className="h-5 bg-gray-200 rounded w-6 mx-auto"></div>
+              {/* Time Slots */}
+              <div className="divide-y divide-gray-100">
+                {Array.from({ length: 6 }).map((_, hour) => (
+                  <div key={hour} className="grid grid-cols-8">
+                    <div className="p-2 border-r border-gray-100 bg-gray-50">
+                      <div className="h-4 bg-gray-200 rounded w-12"></div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Time Slots */}
-                <div className="divide-y divide-gray-200">
-                  {Array.from({ length: 8 }).map((_, hour) => (
-                    <div key={hour} className="grid grid-cols-8">
-                      <div className="p-2 border-r border-gray-200 bg-gray-50">
-                        <div className="h-4 bg-gray-200 rounded w-10"></div>
+                    {Array.from({ length: 7 }).map((_, day) => (
+                      <div key={day} className="p-1 min-h-[60px] border-r border-gray-100">
+                        {(hour + day) % 4 === 0 && (
+                          <div className="h-12 bg-blue-50 rounded-lg border-l-4 border-blue-400 p-2">
+                            <div className="h-3 bg-blue-200 rounded w-16"></div>
+                          </div>
+                        )}
                       </div>
-                      {Array.from({ length: 7 }).map((_, day) => (
-                        <div key={day} className="p-1 min-h-[50px] border-r border-gray-200">
-                          {(hour + day) % 4 === 0 && (
-                            <div className="h-10 bg-blue-50 rounded border-l-2 border-blue-400"></div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Help Section Skeleton */}
-          <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-gray-200 rounded-md"></div>
-              <div className="h-5 bg-gray-200 rounded w-28"></div>
-            </div>
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-full"></div>
-              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-              <div className="h-4 bg-gray-200 rounded w-4/6"></div>
-            </div>
+        {/* Help Section Skeleton */}
+        <div className="mt-6 bg-white rounded-2xl border-2 border-gray-100 p-6 animate-pulse">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-blue-50 rounded-lg w-8 h-8"></div>
+            <div className="h-5 bg-gray-200 rounded w-28"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-4 bg-gray-50 rounded-xl">
+                <div className="w-8 h-8 bg-gray-200 rounded-full mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                <div className="h-3 bg-gray-100 rounded w-full"></div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -222,15 +252,19 @@ const LawyerGoogleCalendar: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 animate-fadeIn">
-      <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Calendar</h1>
-          <p className="text-gray-600 mt-1">
-            View your appointments and sync with Google Calendar
-          </p>
+    <div className="max-w-full overflow-x-hidden animate-fadeIn">
+      {/* Header - Clean transparent style */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="p-2.5 bg-blue-100 rounded-xl">
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Calendar</h1>
         </div>
+        <p className="text-gray-500 ml-14">View your appointments and sync with Google Calendar</p>
+      </div>
 
         {/* Alert Messages */}
         {error && (
@@ -569,7 +603,6 @@ const LawyerGoogleCalendar: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 };

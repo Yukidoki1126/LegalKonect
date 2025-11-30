@@ -13,17 +13,21 @@ use Carbon\Carbon;
 use App\Mail\AppointmentBooked;
 use App\Mail\RescheduleRequest;
 use App\Mail\RefundProcessed;
+use App\Mail\RefundInitiated;
 use Illuminate\Support\Facades\Mail;
 use App\Services\GoogleCalendarService;
 use App\Services\PaymongoService;
+use App\Services\NotificationService;
 
 class AppointmentController extends Controller
 {
     private GoogleCalendarService $googleCalendarService;
+    private NotificationService $notificationService;
 
-    public function __construct(GoogleCalendarService $googleCalendarService)
+    public function __construct(GoogleCalendarService $googleCalendarService, NotificationService $notificationService)
     {
         $this->googleCalendarService = $googleCalendarService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -170,17 +174,18 @@ class AppointmentController extends Controller
                     'is_booked' => $isBooked,
                     'is_past' => $isPast,
                     'slot_exists' => $slotExists,
-                    'will_add' => !$isBooked && !$isPast && !$slotExists
+                    'will_add' => !$isPast && !$slotExists
                 ]);
 
-                if (!$isBooked && !$isPast && !$slotExists) {
+                // Add all slots (not past, not duplicate) - mark booked ones as unavailable
+                if (!$isPast && !$slotExists) {
                     $endSlotTime = $startTime->copy()->addHour();
                     $slots[] = [
                         'time' => $slotTime,
                         'formatted_time' => $startTime->format('g:i A') . ' - ' . $endSlotTime->format('g:i A'),
-                        'available' => true
+                        'available' => !$isBooked  // false if booked, true if available
                     ];
-                    Log::info('Slot added', ['slot_time' => $slotTime, 'formatted' => $startTime->format('g:i A') . ' - ' . $endSlotTime->format('g:i A')]);
+                    Log::info('Slot added', ['slot_time' => $slotTime, 'formatted' => $startTime->format('g:i A') . ' - ' . $endSlotTime->format('g:i A'), 'available' => !$isBooked]);
                 }
 
                 $startTime->addHour();
@@ -198,8 +203,11 @@ class AppointmentController extends Controller
             return strcmp($a['time'], $b['time']);
         });
 
+        // Check if any slots are available (not booked)
+        $hasAvailableSlots = collect($slots)->contains('available', true);
+
         return response()->json([
-            'available' => count($slots) > 0,
+            'available' => $hasAvailableSlots,
             'date' => $date->format('Y-m-d'),
             'day_of_week' => $date->format('l'),
             'slots' => $slots,
@@ -218,6 +226,7 @@ class AppointmentController extends Controller
         'appointment_time' => 'required|date_format:H:i',
         'client_notes' => 'nullable|string|max:1000',
         'meeting_type' => 'nullable|in:in-person,video,phone',
+        'specialization_id' => 'nullable|exists:specializations,id',
     ]);
 
     $lawyer = Lawyer::findOrFail($request->lawyer_id);
@@ -254,6 +263,7 @@ class AppointmentController extends Controller
             $appointment = Appointment::create([
                 'user_id' => $user->id,
                 'lawyer_id' => $request->lawyer_id,
+                'specialization_id' => $request->specialization_id,
                 'appointment_date' => $request->appointment_date,
                 'appointment_time' => $request->appointment_time,
                 'duration_minutes' => 60,
@@ -297,6 +307,13 @@ class AppointmentController extends Controller
             \Log::error('Failed to send appointment confirmation email: ' . $e->getMessage());
         }
 
+        // Create notification for the lawyer about new appointment
+        try {
+            $this->notificationService->appointmentCreated($appointment);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create appointment notification: ' . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'Appointment booked successfully!',
             'appointment' => $appointment
@@ -327,25 +344,37 @@ class AppointmentController extends Controller
         ->select('appointments.*') // Explicitly select only appointment columns first
         ->with([
             'lawyer:id,first_name,last_name,office_address,reservation_fee', // Only load needed lawyer fields
-            'lawyer.specializations:id,name' // Only load needed specialization fields
+            'lawyer.specializations:id,name', // Only load needed specialization fields
+            'specialization:id,name', // Load the selected specialization for this appointment
+            'confirmedSpecialization:id,name' // Load the lawyer-confirmed specialization
         ])
         ->where('user_id', auth()->id());
 
     // Apply filters and ordering based on type (uses indexes created in migration)
     if ($type === 'upcoming') {
         $query->whereIn('status', ['pending', 'confirmed'])
-              ->orderBy('created_at', 'desc'); // Uses idx_appointments_user_created
+              ->where(function($q) {
+                  // Include appointments with no reschedule status OR accepted reschedule status
+                  $q->whereNull('reschedule_status')
+                    ->orWhere('reschedule_status', 'accepted');
+              })
+              ->orderBy('created_at', 'desc');
+    } elseif ($type === 'reschedule') {
+        $query->where('reschedule_status', 'pending')
+              ->whereIn('status', ['pending', 'confirmed'])
+              ->orderBy('reschedule_requested_at', 'desc');
     } elseif ($type === 'cancelled') {
         $query->where('status', 'cancelled')
-              ->orderBy('updated_at', 'desc'); // Uses idx_appointments_user_updated
+              ->orderBy('updated_at', 'desc');
     } else {
-        $query->whereIn('status', ['completed', 'cancelled', 'no_show'])
+        // Past/Completed tab - only show completed and no_show, NOT cancelled (has its own tab)
+        $query->whereIn('status', ['completed', 'no_show'])
               ->orderBy('appointment_date', 'desc')
-              ->orderBy('appointment_time', 'desc'); // Uses idx_appointments_user_date_time
+              ->orderBy('appointment_time', 'desc');
     }
 
     // Only load reviews for past appointments (completed/cancelled/no_show)
-    if ($type !== 'upcoming') {
+    if ($type !== 'upcoming' && $type !== 'reschedule') {
         $query->with('review:id,appointment_id,rating,comment,is_approved,created_at');
     }
 
@@ -497,65 +526,132 @@ class AppointmentController extends Controller
         if ($appointment->payment_status === 'paid' && $appointment->payment_reference) {
             $refundAmount = $appointment->lawyer->reservation_fee ?? 100;
 
-            try {
-                $paymongoService = app(PaymongoService::class);
+            // Calculate hours until appointment
+            // Handle case where appointment_date might include time component
+            $dateOnly = Carbon::parse($appointment->appointment_date)->format('Y-m-d');
+            $appointmentDateTime = Carbon::parse($dateOnly . ' ' . $appointment->appointment_time);
+            $hoursUntilAppointment = now()->diffInHours($appointmentDateTime, false);
 
-                // Mark refund as pending
-                $appointment->refund_status = 'pending';
+            Log::info('Cancellation time check', [
+                'appointment_id' => $appointment->id,
+                'appointment_datetime' => $appointmentDateTime,
+                'hours_until' => $hoursUntilAppointment,
+            ]);
+
+            // Cancellation Policy:
+            // - 24+ hours before: Auto refund
+            // - Less than 24 hours: Admin must review and approve
+            $isAutoRefund = $hoursUntilAppointment >= 24;
+
+            if ($isAutoRefund) {
+                // Auto-process refund for cancellations 24+ hours before
+                try {
+                    $paymongoService = app(PaymongoService::class);
+
+                    // Mark refund as pending
+                    $appointment->refund_status = 'pending';
+                    $appointment->refund_amount = $refundAmount;
+                    $appointment->refund_requested_at = now();
+                    $appointment->refund_reason = 'Appointment cancelled by client (24+ hours notice): ' . $request->cancellation_reason;
+                    $appointment->save();
+
+                    // Create refund via PayMongo
+                    $refundResult = $paymongoService->createRefund(
+                        $appointment->payment_reference,
+                        $refundAmount,
+                        'requested_by_customer',
+                        'Appointment cancelled by client (auto-approved)'
+                    );
+
+                    // Update appointment with refund details
+                    $appointment->refund_id = $refundResult['data']['id'] ?? null;
+                    $appointment->refund_status = 'completed';
+                    $appointment->refund_completed_at = now();
+                    $appointment->refund_notes = 'Auto-processed (cancelled 24+ hours before appointment)';
+                    $appointment->payment_details = json_encode($refundResult['payment_details'] ?? []);
+                    $appointment->save();
+
+                    $refundMessage = 'Your refund of ₱' . number_format($refundAmount, 2) . ' has been processed. Amount will be returned within 5-7 business days for cards, or 1-3 business days for GCash/PayMaya.';
+
+                    Log::info('Auto-refund processed for cancelled appointment', [
+                        'appointment_id' => $appointment->id,
+                        'refund_id' => $appointment->refund_id,
+                        'amount' => $refundAmount,
+                    ]);
+
+                    // Send refund confirmation email
+                    try {
+                        Mail::to($appointment->user->email)->send(new RefundProcessed($appointment));
+                    } catch (\Exception $emailError) {
+                        Log::error('Failed to send refund confirmation email', [
+                            'appointment_id' => $appointment->id,
+                            'error' => $emailError->getMessage()
+                        ]);
+                    }
+
+                } catch (\Exception $e) {
+                    Log::error('Auto-refund processing failed', [
+                        'appointment_id' => $appointment->id,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    // Mark for admin review if auto-refund fails
+                    $appointment->refund_status = 'pending_review';
+                    $appointment->refund_amount = $refundAmount;
+                    $appointment->refund_requested_at = now();
+                    $appointment->refund_reason = 'Appointment cancelled by client: ' . $request->cancellation_reason;
+                    $appointment->refund_notes = 'Auto-refund failed: ' . $e->getMessage() . '. Requires admin review.';
+                    $appointment->save();
+
+                    // Send refund initiated email
+                    try {
+                        Mail::to($appointment->user->email)->send(new RefundInitiated($appointment));
+                    } catch (\Exception $emailError) {
+                        Log::error('Failed to send refund initiated email', [
+                            'appointment_id' => $appointment->id,
+                            'error' => $emailError->getMessage()
+                        ]);
+                    }
+
+                    $refundMessage = 'Your refund request of ₱' . number_format($refundAmount, 2) . ' has been submitted. Our admin will process it within 3-5 business days.';
+                }
+            } else {
+                // Less than 24 hours - requires admin review
+                $appointment->refund_status = 'pending_review';
                 $appointment->refund_amount = $refundAmount;
                 $appointment->refund_requested_at = now();
-                $appointment->refund_reason = 'Appointment cancelled by client: ' . $request->cancellation_reason;
+                $appointment->refund_reason = 'Appointment cancelled by client (less than 24 hours notice): ' . $request->cancellation_reason;
+                $appointment->refund_notes = 'Requires admin review (cancelled less than 24 hours before appointment)';
                 $appointment->save();
 
-                // Create refund via PayMongo
-                $refundResult = $paymongoService->createRefund(
-                    $appointment->payment_reference,
-                    $refundAmount,
-                    'requested_by_customer',
-                    'Appointment cancelled by client'
-                );
+                $refundMessage = 'Your refund request of ₱' . number_format($refundAmount, 2) . ' has been submitted for review. Since you cancelled less than 24 hours before the appointment, our admin will review and process your refund within 3-5 business days.';
 
-                // Update appointment with refund details
-                $appointment->refund_id = $refundResult['data']['id'] ?? null;
-                $appointment->refund_status = 'completed';
-                $appointment->refund_completed_at = now();
-                $appointment->refund_notes = 'Processed via PayMongo API';
-                $appointment->payment_details = json_encode($refundResult['payment_details'] ?? []);
-                $appointment->save();
-
-                $refundMessage = 'Refund of ₱' . number_format($refundAmount, 2) . ' has been processed. Amount will be returned within 5-10 business days for cards, or 1-3 business days for GCash/PayMaya.';
-
-                Log::info('Refund processed for cancelled appointment', [
-                    'appointment_id' => $appointment->id,
-                    'refund_id' => $appointment->refund_id,
-                    'amount' => $refundAmount,
-                ]);
-
-                // Send refund confirmation email
+                // Send refund initiated email for pending review
                 try {
-                    Mail::to($appointment->user->email)->send(new RefundProcessed($appointment));
+                    Mail::to($appointment->user->email)->send(new RefundInitiated($appointment));
                 } catch (\Exception $emailError) {
-                    Log::error('Failed to send refund confirmation email', [
+                    Log::error('Failed to send refund initiated email', [
                         'appointment_id' => $appointment->id,
                         'error' => $emailError->getMessage()
                     ]);
                 }
 
-            } catch (\Exception $e) {
-                Log::error('Refund processing failed for cancellation', [
+                Log::info('Refund pending admin review', [
                     'appointment_id' => $appointment->id,
-                    'error' => $e->getMessage(),
+                    'amount' => $refundAmount,
+                    'hours_until_appointment' => $hoursUntilAppointment,
                 ]);
-
-                // Mark refund as failed
-                $appointment->refund_status = 'failed';
-                $appointment->refund_notes = 'Auto-refund failed: ' . $e->getMessage() . '. Requires manual processing.';
-                $appointment->save();
-
-                $refundMessage = 'Refund request submitted. Our admin will process your ₱' . number_format($refundAmount, 2) . ' refund manually within 3-5 business days.';
             }
         } else {
             $refundMessage = 'No refund needed as payment was not processed.';
+        }
+
+        // Create notification for the lawyer about cancellation
+        try {
+            $appointment->load(['user', 'lawyer']);
+            $this->notificationService->appointmentCancelled($appointment, 'client');
+        } catch (\Exception $e) {
+            Log::error('Failed to create cancellation notification: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -707,6 +803,13 @@ class AppointmentController extends Controller
             ]);
         }
 
+        // Create notification for the client about reschedule request
+        try {
+            $this->notificationService->rescheduleRequested($appointment);
+        } catch (\Exception $e) {
+            Log::error('Failed to create reschedule notification: ' . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'Reschedule request sent to client',
             'appointment' => $appointment,
@@ -731,7 +834,7 @@ class AppointmentController extends Controller
 
         // Update appointment fields
         $appointment->appointment_date = $appointment->proposed_date;
-        $appointment->reschedule_status = 'accepted';
+        $appointment->reschedule_status = null; // Clear reschedule status so it shows in Upcoming again
         $appointment->reschedule_responded_at = now();
         $updated = $appointment->save();
 
@@ -750,6 +853,14 @@ class AppointmentController extends Controller
             'new_date' => $appointment->appointment_date,
             'reschedule_status' => $appointment->reschedule_status,
         ]);
+
+        // Create notification for the lawyer about reschedule acceptance
+        try {
+            $appointment->load(['user', 'lawyer']);
+            $this->notificationService->rescheduleResponded($appointment, 'accepted');
+        } catch (\Exception $e) {
+            Log::error('Failed to create reschedule acceptance notification: ' . $e->getMessage());
+        }
 
         // TODO: Send confirmation email to both parties
 
@@ -871,6 +982,14 @@ class AppointmentController extends Controller
             ]);
         }
 
+        // Create notification for the lawyer about reschedule decline
+        try {
+            $appointment->load(['user', 'lawyer']);
+            $this->notificationService->rescheduleResponded($appointment, 'declined');
+        } catch (\Exception $e) {
+            Log::error('Failed to create reschedule decline notification: ' . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'Appointment cancelled successfully',
             'refund_message' => $refundMessage,
@@ -914,20 +1033,23 @@ class AppointmentController extends Controller
 
         foreach ($appointments as $appointment) {
             try {
-                // Store original date if not already stored
-                if (!$appointment->original_date) {
-                    $appointment->original_date = $appointment->appointment_date;
-                }
-
                 // Combine proposed date and time into a proper datetime
                 $proposedDateTime = Carbon::parse($validated['proposed_date'] . ' ' . $validated['proposed_time'])->format('Y-m-d H:i:s');
 
-                $appointment->update([
+                // Build update data
+                $updateData = [
                     'reschedule_status' => 'pending',
                     'reschedule_reason' => $validated['reason'],
                     'proposed_date' => $proposedDateTime,
                     'reschedule_requested_at' => now(),
-                ]);
+                ];
+
+                // Store original date if not already stored
+                if (!$appointment->original_date) {
+                    $updateData['original_date'] = $appointment->appointment_date;
+                }
+
+                $appointment->update($updateData);
 
                 $rescheduledCount++;
 

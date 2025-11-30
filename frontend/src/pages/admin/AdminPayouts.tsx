@@ -217,8 +217,67 @@ export default function AdminPayouts() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="space-y-6 animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="h-9 bg-gray-200 rounded w-56"></div>
+          <div className="flex items-center gap-3">
+            <div className="h-10 bg-gray-200 rounded-lg w-36"></div>
+            <div className="h-10 bg-gray-200 rounded-lg w-10"></div>
+          </div>
+        </div>
+
+        {/* Stats Skeleton - 4 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {['pending', 'approved', 'paid', 'rejected'].map((status, i) => (
+            <div key={status} className="bg-white rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="h-4 bg-gray-200 rounded w-20"></div>
+                <div className={`h-6 rounded-full w-16 ${
+                  i === 0 ? 'bg-yellow-100' :
+                  i === 1 ? 'bg-blue-100' :
+                  i === 2 ? 'bg-green-100' : 'bg-red-100'
+                }`}></div>
+              </div>
+              <div className="h-8 bg-gray-200 rounded w-12 mb-1"></div>
+              <div className="h-4 bg-gray-100 rounded w-24"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          {/* Table Header */}
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center gap-8">
+              <div className="h-4 bg-gray-200 rounded w-24"></div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+              <div className="h-4 bg-gray-200 rounded w-28"></div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+            </div>
+          </div>
+          {/* Table Rows */}
+          <div className="divide-y divide-gray-200">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="px-6 py-4 flex items-center gap-8">
+                <div className="flex items-center gap-3 w-40">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                  <div>
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                    <div className="h-3 bg-gray-100 rounded w-20"></div>
+                  </div>
+                </div>
+                <div className="h-5 bg-gray-200 rounded w-20"></div>
+                <div className="h-5 bg-gray-200 rounded w-16"></div>
+                <div className="h-3 bg-gray-100 rounded w-32"></div>
+                <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                <div className="h-8 bg-gray-200 rounded w-24"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -234,48 +293,82 @@ export default function AdminPayouts() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Payout Management</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Payout Management</h1>
+          <p className="text-gray-600 mt-1">Review and process lawyer payout requests</p>
+        </div>
         <div className="flex items-center gap-3">
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all min-w-[160px]"
             >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
-              <option value="processing">Processing</option>
               <option value="paid">Paid</option>
               <option value="rejected">Rejected</option>
             </select>
           </div>
           <button
             onClick={fetchPayouts}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="p-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-500/25"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {['pending', 'approved', 'processing', 'paid', 'rejected'].map((status) => {
-          const count = payouts.filter((p) => p.status === status).length;
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        {['pending', 'approved', 'paid', 'rejected'].map((status) => {
+          // Combine pending and processing counts for the "pending" card
+          const statusesToCount = status === 'pending' ? ['pending', 'processing'] : [status];
+          const count = payouts.filter((p) => statusesToCount.includes(p.status)).length;
           const total = payouts
-            .filter((p) => p.status === status)
+            .filter((p) => statusesToCount.includes(p.status))
             .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
 
+          const gradients: Record<string, string> = {
+            pending: 'bg-white border border-gray-200 shadow-sm',
+            approved: 'bg-white border border-gray-200 shadow-sm',
+            paid: 'bg-white border border-gray-200 shadow-sm',
+            rejected: 'bg-white border border-gray-200 shadow-sm',
+          };
+
+          const textColors: Record<string, string> = {
+            pending: 'text-gray-500',
+            approved: 'text-gray-500',
+            paid: 'text-gray-500',
+            rejected: 'text-gray-500',
+          };
+
+          const iconBgs: Record<string, string> = {
+            pending: 'bg-amber-50',
+            approved: 'bg-blue-50',
+            paid: 'bg-green-50',
+            rejected: 'bg-red-50',
+          };
+
+          const iconColors: Record<string, string> = {
+            pending: 'text-amber-500',
+            approved: 'text-blue-500',
+            paid: 'text-green-500',
+            rejected: 'text-red-500',
+          };
+
           return (
-            <div key={status} className="bg-white rounded-lg shadow p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-gray-600 capitalize">{status}</p>
-                {getStatusBadge(status)}
+            <div key={status} className={`${gradients[status]} rounded-xl p-5`}>
+              <div className="flex items-center justify-between mb-3">
+                <p className={`text-sm font-medium ${textColors[status]} capitalize`}>{status}</p>
+                <span className={`px-2.5 py-1 ${iconBgs[status]} rounded-lg ${iconColors[status]} text-xs font-bold`}>
+                  {count}
+                </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{count}</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-3xl font-bold text-gray-900">{count}</p>
+              <p className={`text-sm ${textColors[status]} mt-1 font-medium`}>
                 ₱{total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
               </p>
             </div>
@@ -284,54 +377,73 @@ export default function AdminPayouts() {
       </div>
 
       {/* Payouts Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50/80">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Lawyer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Method & Account
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Requested
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Reference
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {payouts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                    No payout requests found
+                  <td colSpan={7} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-500 font-medium">No payout requests found</p>
+                      <p className="text-gray-400 text-sm mt-1">Payout requests will appear here</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 payouts.map((payout) => (
-                  <tr key={payout.id} className="hover:bg-gray-50">
+                  <tr key={payout.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {payout.lawyer.name || `${payout.lawyer.first_name || ''} ${payout.lawyer.last_name || ''}`}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {payout.lawyer.email || payout.lawyer.user?.email || 'N/A'}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                          <span className="text-white font-semibold text-sm">
+                            {(payout.lawyer.name || payout.lawyer.first_name || 'L').charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {payout.lawyer.name || `${payout.lawyer.first_name || ''} ${payout.lawyer.last_name || ''}`}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {payout.lawyer.email || payout.lawyer.user?.email || 'N/A'}
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ₱{payout.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-base font-bold text-gray-900">
+                        ₱{payout.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900 uppercase font-medium">

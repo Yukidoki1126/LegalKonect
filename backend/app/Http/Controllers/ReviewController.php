@@ -5,9 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Review;
 use App\Models\Appointment;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class ReviewController extends Controller
 {
+    private NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     // Get all approved reviews (for homepage)
     public function index()
     {
@@ -119,6 +126,13 @@ class ReviewController extends Controller
 
     // Update lawyer's rating and review count
     $this->updateLawyerRating($appointment->lawyer_id);
+
+    // Create notification for the lawyer about new review
+    try {
+        $this->notificationService->newReview($review);
+    } catch (\Exception $e) {
+        \Log::error('Failed to create review notification: ' . $e->getMessage());
+    }
 
     return response()->json([
         'message' => 'Review submitted successfully!',

@@ -1,7 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { lawyerApi } from '../../services/lawyerApi';
 import { useSearchParams } from 'react-router-dom';
 import { cacheService } from '../../services/cacheService';
+import { notificationService } from '../../services/notificationService';
+import {
+  Calendar,
+  Clock,
+  RefreshCw,
+  User,
+  Filter,
+  ArrowUpDown,
+  Search,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  CalendarClock,
+  FileText
+} from 'lucide-react';
 
 interface User {
   id: number;
@@ -32,6 +47,8 @@ interface Appointment {
   original_date?: string | null;
   proposed_date?: string | null;
   user: User;
+  specialization?: { id: number; name: string } | null;
+  confirmed_specialization?: { id: number; name: string } | null;
 }
 
 const LawyerAppointments: React.FC = () => {
@@ -46,6 +63,9 @@ const LawyerAppointments: React.FC = () => {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showBulkRescheduleModal, setShowBulkRescheduleModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showCaseTypeModal, setShowCaseTypeModal] = useState(false);
+  const [lawyerSpecializations, setLawyerSpecializations] = useState<Array<{ id: number; name: string }>>([]);
+  const [selectedCaseTypeId, setSelectedCaseTypeId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [notes, setNotes] = useState('');
   const [declineReason, setDeclineReason] = useState('');
@@ -59,6 +79,24 @@ const LawyerAppointments: React.FC = () => {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date>(new Date());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isTabSwitching, setIsTabSwitching] = useState(false);
+  
+  // Sorting and filtering
+  const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Default: Latest First
+  const [filterClient, setFilterClient] = useState('');
+
+  // Fetch lawyer's specializations on mount
+  useEffect(() => {
+    const fetchSpecializations = async () => {
+      try {
+        const specs = await lawyerApi.getSpecializations();
+        setLawyerSpecializations(specs);
+      } catch (error) {
+        console.error('Failed to fetch specializations:', error);
+      }
+    };
+    fetchSpecializations();
+  }, []);
 
   useEffect(() => {
     // Clear appointments immediately when tab changes to prevent showing wrong data
@@ -74,13 +112,27 @@ const LawyerAppointments: React.FC = () => {
     });
   }, [activeTab]);
 
-  // Auto-refresh appointments every 10 seconds for real-time updates
+  // Auto-refresh appointments every 5 seconds for real-time updates
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchAppointments(false); // Silent refresh
-    }, 10000); // 10 seconds (faster refresh)
+    }, 5000); // 5 seconds (fast refresh)
 
     return () => clearInterval(intervalId);
+  }, [activeTab]);
+
+  // Subscribe to notifications for immediate refresh
+  useEffect(() => {
+    const unsubscribe = notificationService.onNewNotification((notification) => {
+      // Immediately refresh when appointment-related notifications arrive
+      if (['appointment_created', 'appointment_cancelled', 'reschedule_accepted', 'reschedule_declined', 'payment_received'].includes(notification.type)) {
+        console.log('[LawyerAppointments] Refreshing due to:', notification.type);
+        cacheService.invalidatePattern('/lawyer/appointments');
+        fetchAppointments(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, [activeTab]);
 
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
@@ -90,16 +142,19 @@ const LawyerAppointments: React.FC = () => {
       if (showLoading) setLoading(true);
       if (!showLoading) setIsRefreshing(true);
 
-      const status = activeTab === 'all' ? undefined : activeTab;
-      const data = await lawyerApi.getAppointments(status);
-      setAppointments(data);
+      // Always fetch all appointments first to ensure accurate badge counts
+      const allData = await lawyerApi.getAppointments(undefined);
+      setAllAppointments(allData);
 
-      // Fetch all appointments for badge counts
+      // Then filter for display based on active tab
       if (activeTab === 'all') {
-        setAllAppointments(data);
+        setAppointments(allData);
+      } else if (activeTab === 'reschedule') {
+        const filteredData = allData.filter((a: Appointment) => a.reschedule_status === 'pending');
+        setAppointments(filteredData);
       } else {
-        const allData = await lawyerApi.getAppointments(undefined);
-        setAllAppointments(allData);
+        const filteredData = allData.filter((a: Appointment) => a.status === activeTab);
+        setAppointments(filteredData);
       }
 
       setLastRefreshTime(new Date());
@@ -129,6 +184,42 @@ const LawyerAppointments: React.FC = () => {
       setSearchParams({ status: tab });
     }
   };
+
+  // Sort and filter appointments using useMemo for proper reactivity
+  const sortedAppointments = useMemo(() => {
+    let filtered = [...appointments];
+    
+    // Filter by client name
+    if (filterClient.trim()) {
+      filtered = filtered.filter(apt => 
+        apt.user?.name?.toLowerCase().includes(filterClient.toLowerCase())
+      );
+    }
+    
+    // Sort appointments
+    filtered.sort((a, b) => {
+      if (sortBy === 'date') {
+        // Parse dates properly - handle both ISO format and simple date strings
+        const dateStrA = a.appointment_date.split('T')[0];
+        const dateStrB = b.appointment_date.split('T')[0];
+        const timeStrA = a.appointment_time || '00:00:00';
+        const timeStrB = b.appointment_time || '00:00:00';
+        
+        const dateA = new Date(`${dateStrA}T${timeStrA}`);
+        const dateB = new Date(`${dateStrB}T${timeStrB}`);
+        
+        return sortOrder === 'asc' 
+          ? dateA.getTime() - dateB.getTime() 
+          : dateB.getTime() - dateA.getTime();
+      } else if (sortBy === 'name') {
+        const compare = (a.user?.name || '').localeCompare(b.user?.name || '');
+        return sortOrder === 'asc' ? compare : -compare;
+      }
+      return 0;
+    });
+    
+    return filtered;
+  }, [appointments, filterClient, sortBy, sortOrder]);
 
   const handleDeclineClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
@@ -308,6 +399,31 @@ const LawyerAppointments: React.FC = () => {
     }
   };
 
+  const handleCaseTypeClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setSelectedCaseTypeId(appointment.confirmed_specialization?.id || appointment.specialization?.id || null);
+    setShowCaseTypeModal(true);
+  };
+
+  const handleCaseTypeSave = async () => {
+    if (!selectedAppointment || !selectedCaseTypeId) return;
+
+    try {
+      setActionLoading(true);
+      await lawyerApi.confirmSpecialization(selectedAppointment.id, selectedCaseTypeId);
+      setShowCaseTypeModal(false);
+      setSuccessMessage('Case type confirmed successfully!');
+      setShowSuccessModal(true);
+      fetchAppointments();
+    } catch (err: any) {
+      console.error('Error confirming case type:', err);
+      setSuccessMessage(err.response?.data?.error || 'Failed to confirm case type');
+      setShowSuccessModal(true);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const styles = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -341,112 +457,134 @@ const LawyerAppointments: React.FC = () => {
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  if (loading) {
-    // Show skeleton loading on initial page load (from sidebar)
-    // Only show simple spinner when explicitly switching tabs
-    if (!isTabSwitching) {
-      return (
-        <div className="max-w-full overflow-x-hidden animate-fadeIn">
-          {/* Header Skeleton */}
-          <div className="mb-6 animate-pulse">
-            <div className="h-9 bg-gray-200 rounded-lg w-64 mb-2"></div>
-            <div className="h-5 bg-gray-200 rounded-lg w-96"></div>
-          </div>
-
-          {/* Tabs Skeleton */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-2 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-10 bg-gray-200 rounded-lg w-32"></div>
-            ))}
-          </div>
-
-          {/* Appointments Grid Skeleton */}
-          <div className="space-y-3 sm:space-y-4 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="h-6 bg-gray-200 rounded w-32 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-48"></div>
-                  </div>
-                  <div className="h-6 w-20 bg-gray-200 rounded-full"></div>
-                </div>
-
-                {/* Client Info */}
-                <div className="mb-4 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-40"></div>
-                  <div className="h-4 bg-gray-200 rounded w-36"></div>
-                  <div className="h-4 bg-gray-200 rounded w-32"></div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-4 border-t">
-                  <div className="h-9 bg-gray-200 rounded-lg flex-1"></div>
-                  <div className="h-9 bg-gray-200 rounded-lg flex-1"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // Show simple spinner when switching tabs
-    return (
-      <div className="max-w-full overflow-x-hidden">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6 lg:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Appointments</h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your consultation schedule</p>
-            </div>
-
-            {/* Manual refresh button */}
+  // Skeleton component for appointment cards
+  const AppointmentSkeleton = () => (
+    <div className="bg-white rounded-2xl border-2 border-gray-100 p-5 animate-pulse">
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        {/* Left Side - Appointment Details */}
+        <div className="flex-1 min-w-0">
+          {/* Name and badges row */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <div className="flex items-center gap-2">
-              <button
-                disabled
-                className="p-2 text-gray-400 rounded-full cursor-not-allowed"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+              <div className="h-6 bg-gray-200 rounded-lg w-32"></div>
+            </div>
+            <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+            <div className="h-6 w-14 bg-gray-200 rounded-full"></div>
+          </div>
+
+          {/* Date/Time info grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div className="flex items-center bg-gray-50 px-3 py-2 rounded-xl">
+              <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-28"></div>
+            </div>
+            <div className="flex items-center bg-gray-50 px-3 py-2 rounded-xl">
+              <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-32"></div>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-40"></div>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-28"></div>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-4 sm:mb-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-          <nav className="flex space-x-3 sm:space-x-6 md:space-x-8 min-w-max pb-px">
-            {['all', 'completed', 'cancelled'].map((tab) => (
-              <button
-                key={tab}
-                disabled
-                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap transition-colors ${
-                  activeTab === tab
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-400'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                <span className="ml-1 sm:ml-2 py-0.5 px-1.5 sm:px-2 rounded-full bg-gray-100 text-xs">
-                  {tab === 'all'
-                    ? allAppointments.length
-                    : allAppointments.filter(a => a.status === tab).length}
-                </span>
-              </button>
-            ))}
+        {/* Right Side - Price & Actions */}
+        <div className="flex flex-col items-end gap-3">
+          <div className="text-right">
+            <div className="h-7 bg-gray-200 rounded w-24 mb-1"></div>
+            <div className="h-3 bg-gray-200 rounded w-32"></div>
+          </div>
+          <div className="flex gap-2">
+            <div className="h-9 bg-gray-200 rounded-xl w-24"></div>
+            <div className="h-9 bg-gray-200 rounded-xl w-20"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="max-w-full overflow-x-hidden animate-fadeIn">
+        {/* Header - Clean transparent style matching actual design */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2.5 bg-blue-100 rounded-xl">
+                  <Calendar className="w-6 h-6 text-blue-600" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Appointments</h1>
+              </div>
+              <p className="text-gray-500 ml-14">Manage your consultation schedule</p>
+            </div>
+
+            {/* Refresh button skeleton */}
+            <div className="h-11 bg-gray-100 rounded-xl w-28 animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Tabs - Enhanced matching actual design */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 p-2 mb-6">
+          <nav className="flex gap-2 overflow-x-auto">
+            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm ${
+              activeTab === 'all' ? 'bg-blue-600 text-white' : 'text-gray-400 bg-gray-50'
+            }`}>
+              <FileText className="w-4 h-4" />
+              All
+              <span className={`py-0.5 px-2 rounded-full text-xs ${
+                activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}>
+                {allAppointments.length}
+              </span>
+            </div>
+            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm ${
+              activeTab === 'reschedule' ? 'bg-orange-500 text-white' : 'text-gray-400 bg-gray-50'
+            }`}>
+              <CalendarClock className="w-4 h-4" />
+              Reschedule
+              <span className={`py-0.5 px-2 rounded-full text-xs ${
+                activeTab === 'reschedule' ? 'bg-orange-400 text-white' : 'bg-gray-200'
+              }`}>
+                {allAppointments.filter(a => a.reschedule_status === 'pending').length}
+              </span>
+            </div>
+            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm ${
+              activeTab === 'completed' ? 'bg-green-500 text-white' : 'text-gray-400 bg-gray-50'
+            }`}>
+              <CheckCircle2 className="w-4 h-4" />
+              Completed
+              <span className={`py-0.5 px-2 rounded-full text-xs ${
+                activeTab === 'completed' ? 'bg-green-400 text-white' : 'bg-gray-200'
+              }`}>
+                {allAppointments.filter(a => a.status === 'completed').length}
+              </span>
+            </div>
+            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm ${
+              activeTab === 'cancelled' ? 'bg-red-500 text-white' : 'text-gray-400 bg-gray-50'
+            }`}>
+              <XCircle className="w-4 h-4" />
+              Cancelled
+              <span className={`py-0.5 px-2 rounded-full text-xs ${
+                activeTab === 'cancelled' ? 'bg-red-400 text-white' : 'bg-gray-200'
+              }`}>
+                {allAppointments.filter(a => a.status === 'cancelled').length}
+              </span>
+            </div>
           </nav>
         </div>
 
-        {/* Simple loading indicator */}
-        <div className="flex items-center justify-center py-16">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mb-4"></div>
-            <p className="text-gray-600 font-medium">Loading appointments...</p>
-          </div>
+        {/* Appointment Cards Skeleton */}
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <AppointmentSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
@@ -465,53 +603,158 @@ const LawyerAppointments: React.FC = () => {
 
   return (
     <div className={`max-w-full overflow-x-hidden ${!isTabSwitching ? 'animate-fadeIn' : ''}`}>
-      {/* Header */}
-      <div className="mb-4 sm:mb-6 lg:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* Header - Clean transparent style */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Appointments</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your consultation schedule</p>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2.5 bg-blue-100 rounded-xl">
+                <Calendar className="w-6 h-6 text-blue-600" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Appointments</h1>
+            </div>
+            <p className="text-gray-500 ml-14">Manage your consultation schedule</p>
           </div>
 
-          {/* Manual refresh button */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => fetchAppointments(true)}
-              disabled={loading || isRefreshing}
-              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Refresh now"
-            >
-              <svg className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          </div>
+          {/* Manual refresh button - Enhanced */}
+          <button
+            onClick={() => fetchAppointments(true)}
+            disabled={loading || isRefreshing}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 border-2 border-blue-200 rounded-xl hover:bg-blue-100 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-4 sm:mb-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-        <nav className="flex space-x-3 sm:space-x-6 md:space-x-8 min-w-max pb-px">
-          {['all', 'completed', 'cancelled'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap transition-colors ${
-                activeTab === tab
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              <span className="ml-1 sm:ml-2 py-0.5 px-1.5 sm:px-2 rounded-full bg-gray-100 text-xs">
-                {tab === 'all'
-                  ? allAppointments.length
-                  : allAppointments.filter(a => a.status === tab).length}
-              </span>
-            </button>
-          ))}
+      {/* Tabs - Enhanced */}
+      <div className="bg-white rounded-2xl border-2 border-gray-100 p-2 mb-6">
+        <nav className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+          <button
+            onClick={() => handleTabChange('all')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+              activeTab === 'all'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200/50'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            All
+            <span className={`py-0.5 px-2 rounded-full text-xs ${
+              activeTab === 'all' ? 'bg-white/20' : 'bg-gray-100'
+            }`}>
+              {allAppointments.length}
+            </span>
+          </button>
+          <button
+            onClick={() => handleTabChange('reschedule')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+              activeTab === 'reschedule'
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-200/50'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <CalendarClock className="w-4 h-4" />
+            Reschedule
+            <span className={`py-0.5 px-2 rounded-full text-xs ${
+              activeTab === 'reschedule' ? 'bg-white/20' : allAppointments.filter(a => a.reschedule_status === 'pending').length > 0 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100'
+            }`}>
+              {allAppointments.filter(a => a.reschedule_status === 'pending').length}
+            </span>
+          </button>
+          <button
+            onClick={() => handleTabChange('completed')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+              activeTab === 'completed'
+                ? 'bg-green-600 text-white shadow-lg shadow-green-200/50'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Completed
+            <span className={`py-0.5 px-2 rounded-full text-xs ${
+              activeTab === 'completed' ? 'bg-white/20' : 'bg-gray-100'
+            }`}>
+              {allAppointments.filter(a => a.status === 'completed').length}
+            </span>
+          </button>
+          <button
+            onClick={() => handleTabChange('cancelled')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+              activeTab === 'cancelled'
+                ? 'bg-red-600 text-white shadow-lg shadow-red-200/50'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <XCircle className="w-4 h-4" />
+            Cancelled
+            <span className={`py-0.5 px-2 rounded-full text-xs ${
+              activeTab === 'cancelled' ? 'bg-white/20' : 'bg-gray-100'
+            }`}>
+              {allAppointments.filter(a => a.status === 'cancelled').length}
+            </span>
+          </button>
         </nav>
       </div>
+
+      {/* Filter and Sort Controls - Enhanced */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6 bg-white p-4 rounded-2xl border-2 border-gray-100">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by client name..."
+              value={filterClient}
+              onChange={(e) => setFilterClient(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-gray-400" />
+          <label className="text-sm text-gray-600 whitespace-nowrap font-medium">Sort by:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'date' | 'name')}
+            className="px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+          >
+            <option value="date">Date</option>
+            <option value="name">Client Name</option>
+          </select>
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-2 transition-all"
+            title={sortOrder === 'asc' ? 'Ascending (click to change)' : 'Descending (click to change)'}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+            {sortOrder === 'asc' ? (
+              <span className="hidden sm:inline">{sortBy === 'date' ? 'Earliest' : 'A-Z'}</span>
+            ) : (
+              <span className="hidden sm:inline">{sortBy === 'date' ? 'Latest' : 'Z-A'}</span>
+            )}
+          </button>
+        </div>
+        {filterClient && (
+          <button
+            onClick={() => setFilterClient('')}
+            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors flex items-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Results info */}
+      {filterClient && (
+        <p className="text-sm text-gray-500 mb-3">
+          Showing {sortedAppointments.length} of {appointments.length} appointments
+        </p>
+      )}
 
       {/* Bulk Reschedule Helper */}
       {(activeTab === 'all' || activeTab === 'confirmed') && appointments.length > 0 && (() => {
@@ -564,61 +807,94 @@ const LawyerAppointments: React.FC = () => {
       })()}
 
       {/* Appointments List */}
-      {appointments.length === 0 ? (
-        <div className="text-center py-8 sm:py-12 bg-white rounded-lg border border-gray-200">
-          <svg className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No appointments</h3>
-          <p className="mt-1 text-xs sm:text-sm text-gray-500">
-            {activeTab === 'all' ? 'No appointments yet' : `No ${activeTab} appointments`}
+      {sortedAppointments.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-2xl border-2 border-gray-100">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-8 h-8 text-gray-300" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {filterClient ? 'No matching appointments' : 'No appointments'}
+          </h3>
+          <p className="mt-2 text-sm text-gray-500 max-w-sm mx-auto">
+            {filterClient 
+              ? `No appointments found for "${filterClient}"`
+              : activeTab === 'all' 
+              ? 'No appointments yet. They will appear here when clients book consultations.' 
+              : activeTab === 'reschedule'
+              ? 'No pending reschedule requests at the moment.'
+              : `No ${activeTab} appointments to display.`}
           </p>
+          {filterClient && (
+            <button
+              onClick={() => setFilterClient('')}
+              className="mt-3 text-sm text-blue-600 hover:text-blue-700"
+            >
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
-        <div className="space-y-3 sm:space-y-4">
-          {appointments.map((appointment) => (
+        <div className="space-y-4">
+          {sortedAppointments.map((appointment) => (
             <div
               key={appointment.id}
-              className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow overflow-hidden"
+              className="bg-white rounded-2xl border-2 border-gray-100 p-5 hover:shadow-lg hover:border-blue-200 transition-all duration-300"
             >
               <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 {/* Left Side - Appointment Details */}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-                      {appointment.user.name}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-white">
+                          {appointment.user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {appointment.user.name}
+                      </h3>
+                    </div>
                     {/* Show reschedule status badge if pending */}
                     {appointment.reschedule_status === 'pending' && (
-                      <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-300">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1">
+                        <CalendarClock className="w-3 h-3" />
                         Reschedule Pending
                       </span>
                     )}
                     {/* Only show status badge if not confirmed (since all appointments are auto-confirmed) */}
                     {appointment.status !== 'confirmed' && (
-                      <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getStatusBadge(appointment.status)}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(appointment.status)}`}>
                         {appointment.status}
                       </span>
                     )}
-                    <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getPaymentBadge(appointment.payment_status)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPaymentBadge(appointment.payment_status)}`}>
                       {appointment.payment_status}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm mb-3 sm:mb-4">
-                    <div className="flex items-center text-gray-600 min-w-0">
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                  {/* Show selected case type / specialization */}
+                  {(appointment.specialization || appointment.confirmed_specialization) && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm text-purple-700 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200 flex items-center gap-1.5 font-medium">
+                        <FileText className="w-4 h-4" />
+                        Case Type: {appointment.confirmed_specialization?.name || appointment.specialization?.name}
+                        {appointment.confirmed_specialization && (
+                          <CheckCircle2 className="w-4 h-4 text-green-600 ml-1" />
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
+                    <div className="flex items-center text-gray-600 min-w-0 bg-gray-50 px-3 py-2 rounded-xl">
+                      <Calendar className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
                       <span className="font-medium truncate">{formatDate(appointment.appointment_date)}</span>
                     </div>
 
-                    <div className="flex items-center text-gray-600 min-w-0">
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                    <div className="flex items-center text-gray-600 min-w-0 bg-gray-50 px-3 py-2 rounded-xl">
+                      <Clock className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
                       <span className="font-medium truncate">{formatTime(appointment.appointment_time)}</span>
-                      <span className="ml-1 sm:ml-2 text-gray-500 flex-shrink-0">({appointment.duration_minutes} mins)</span>
+                      <span className="ml-2 text-gray-500 flex-shrink-0">({appointment.duration_minutes} mins)</span>
                     </div>
 
                     <div className="flex items-center text-gray-600 min-w-0">
@@ -724,49 +1000,77 @@ const LawyerAppointments: React.FC = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[160px]">
+                  <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[150px]">
                     {appointment.status === 'confirmed' && !appointment.reschedule_status && (
                       <>
                         <button
                           onClick={() => handleCompleteClick(appointment)}
                           disabled={actionLoading}
-                          className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="w-full bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
                         >
-                          ✓ Mark Complete
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Complete
                         </button>
-                        <button
-                          onClick={() => handleRescheduleClick(appointment)}
-                          disabled={actionLoading}
-                          className="w-full bg-yellow-600 text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          🔄 Reschedule
-                        </button>
-                        <button
-                          onClick={() => handleDeclineClick(appointment)}
-                          disabled={actionLoading}
-                          className="w-full bg-red-600 text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          ✕ Decline
-                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => handleRescheduleClick(appointment)}
+                            disabled={actionLoading}
+                            className="bg-yellow-500 text-white px-2 py-1.5 rounded-md text-xs font-medium hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Resched
+                          </button>
+                          <button
+                            onClick={() => handleDeclineClick(appointment)}
+                            disabled={actionLoading}
+                            className="bg-red-500 text-white px-2 py-1.5 rounded-md text-xs font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Decline
+                          </button>
+                        </div>
                       </>
                     )}
 
                     {/* Show reschedule status */}
                     {appointment.reschedule_status === 'pending' && (
-                      <div className="w-full bg-yellow-50 border border-yellow-300 px-4 py-2.5 rounded-md text-sm">
-                        <p className="font-medium text-yellow-900">Awaiting Client Response</p>
-                        <p className="text-xs text-yellow-700 mt-1">Reschedule request sent</p>
+                      <div className="w-full bg-yellow-50 border border-yellow-300 px-3 py-2 rounded-md text-xs">
+                        <p className="font-medium text-yellow-900">Awaiting Response</p>
                       </div>
                     )}
 
-                    {/* Add/Edit Notes Button */}
+                    {/* Secondary action buttons */}
                     {appointment.status !== 'cancelled' && (
-                      <button
-                        onClick={() => handleNotesClick(appointment)}
-                        className="w-full bg-gray-100 text-gray-700 px-4 py-2.5 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors border border-gray-300"
-                      >
-                        📝 {appointment.lawyer_notes ? 'Edit Notes' : 'Add Notes'}
-                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handleNotesClick(appointment)}
+                          className="bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors border border-gray-300 flex items-center justify-center gap-1"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Notes
+                        </button>
+                        {appointment.status !== 'completed' ? (
+                          <button
+                            onClick={() => handleCaseTypeClick(appointment)}
+                            className="bg-purple-100 text-purple-700 px-2 py-1.5 rounded-md text-xs font-medium hover:bg-purple-200 transition-colors border border-purple-300 flex items-center justify-center gap-1"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Case
+                          </button>
+                        ) : (
+                          <div></div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -803,6 +1107,62 @@ const LawyerAppointments: React.FC = () => {
                 className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
                 {actionLoading ? 'Saving...' : 'Save Notes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Case Type Modal */}
+      {showCaseTypeModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
+              Set Case Type - {selectedAppointment.user.name}
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 mb-4">
+              {selectedAppointment.specialization 
+                ? `Client selected: ${selectedAppointment.specialization.name}`
+                : 'Client did not select a case type. Please determine the appropriate legal matter.'}
+            </p>
+            <div className="space-y-2 mb-4">
+              {lawyerSpecializations.map((spec) => (
+                <label
+                  key={spec.id}
+                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                    selectedCaseTypeId === spec.id
+                      ? 'border-purple-500 bg-purple-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="caseType"
+                    value={spec.id}
+                    checked={selectedCaseTypeId === spec.id}
+                    onChange={() => setSelectedCaseTypeId(spec.id)}
+                    className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                  />
+                  <span className="ml-3 text-sm font-medium text-gray-900">{spec.name}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowCaseTypeModal(false);
+                  setSelectedCaseTypeId(null);
+                }}
+                className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCaseTypeSave}
+                disabled={actionLoading || !selectedCaseTypeId}
+                className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+              >
+                {actionLoading ? 'Saving...' : 'Confirm Case Type'}
               </button>
             </div>
           </div>

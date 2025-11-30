@@ -40,17 +40,16 @@ class LawyerDashboardController extends Controller
                 ->where('status', 'completed')
                 ->count(),
 
-            'total_earnings' => $lawyer->appointments()
-                ->where('payment_status', 'paid')
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->sum('consultation_fee'),
+            // Use net_amount from lawyer_earnings table (after platform fees)
+            'total_earnings' => $lawyer->earnings()
+                ->where('status', 'completed')
+                ->sum('net_amount'),
 
-            'this_month_earnings' => $lawyer->appointments()
-                ->where('payment_status', 'paid')
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->whereMonth('appointment_date', now()->month)
-                ->whereYear('appointment_date', now()->year)
-                ->sum('consultation_fee'),
+            'this_month_earnings' => $lawyer->earnings()
+                ->where('status', 'completed')
+                ->whereMonth('completed_at', now()->month)
+                ->whereYear('completed_at', now()->year)
+                ->sum('net_amount'),
 
             // Review stats
             'average_rating' => $lawyer->rating ?? 0,
@@ -138,10 +137,18 @@ class LawyerDashboardController extends Controller
         $status = $request->query('status');
 
         $query = $lawyer->appointments()
-            ->with('user:id,name,email,phone')
+            ->with([
+                'user:id,name,email,phone',
+                'specialization:id,name', // Load the client-selected specialization
+                'confirmedSpecialization:id,name' // Load the lawyer-confirmed specialization
+            ])
             ->orderBy('appointments.created_at', 'desc'); // Sort by booking time only (most recent bookings first)
 
-        if ($status) {
+        if ($status === 'reschedule') {
+            // Filter by pending reschedule status
+            $query->where('reschedule_status', 'pending')
+                  ->whereIn('status', ['pending', 'confirmed']);
+        } elseif ($status) {
             $query->where('status', $status);
         }
 
@@ -152,19 +159,6 @@ class LawyerDashboardController extends Controller
             $appointment->reservation_fee = $lawyer->reservation_fee ?? 100.00;
             return $appointment;
         });
-
-        // Debug log to check Google Calendar sync status
-        foreach ($appointments as $appointment) {
-            Log::info('Appointment Google Calendar sync status', [
-                'appointment_id' => $appointment->id,
-                'client_name' => $appointment->user->name,
-                'date' => $appointment->appointment_date,
-                'time' => $appointment->appointment_time,
-                'status' => $appointment->status,
-                'has_google_event_id' => !empty($appointment->google_event_id),
-                'google_event_id' => $appointment->google_event_id
-            ]);
-        }
 
         return response()->json($appointments);
     }
@@ -307,6 +301,52 @@ class LawyerDashboardController extends Controller
 
         return response()->json([
             'message' => 'Notes saved successfully',
+            'appointment' => $appointment
+        ]);
+    }
+
+    /**
+     * Confirm/Set the specialization for an appointment
+     */
+    public function confirmSpecialization(Request $request, $appointmentId)
+    {
+        $request->validate([
+            'specialization_id' => 'required|exists:specializations,id'
+        ]);
+
+        $lawyer = $request->user()->lawyer;
+
+        $appointment = Appointment::where('id', $appointmentId)
+            ->where('lawyer_id', $lawyer->id)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->first();
+
+        if (!$appointment) {
+            return response()->json([
+                'error' => 'Appointment not found or cannot be updated'
+            ], 404);
+        }
+
+        // Verify the lawyer has this specialization
+        $hasSpecialization = $lawyer->specializations()
+            ->where('specializations.id', $request->specialization_id)
+            ->exists();
+
+        if (!$hasSpecialization) {
+            return response()->json([
+                'error' => 'You do not have this specialization'
+            ], 403);
+        }
+
+        $appointment->confirmed_specialization_id = $request->specialization_id;
+        $appointment->specialization_confirmed_at = now();
+        $appointment->save();
+
+        // Load the confirmed specialization relationship
+        $appointment->load('confirmedSpecialization:id,name');
+
+        return response()->json([
+            'message' => 'Case type confirmed successfully',
             'appointment' => $appointment
         ]);
     }
@@ -684,12 +724,12 @@ class LawyerDashboardController extends Controller
             ], 404);
         }
 
-        // Get appointments within the date range
+        // Get appointments within the date range (include cancelled)
         $appointments = $lawyer->appointments()
             ->with('user')
             ->where('appointment_date', '>=', $request->start_date)
             ->where('appointment_date', '<=', $request->end_date)
-            ->whereIn('status', ['pending', 'confirmed', 'completed'])
+            ->whereIn('status', ['pending', 'confirmed', 'completed', 'cancelled'])
             ->orderBy('appointment_date')
             ->orderBy('appointment_time')
             ->get();
@@ -719,6 +759,7 @@ class LawyerDashboardController extends Controller
                 'pending' => '5',     // Yellow
                 'confirmed' => '10',  // Emerald Green
                 'completed' => '8',   // Teal
+                'cancelled' => '4',   // Red
             ];
 
             return [

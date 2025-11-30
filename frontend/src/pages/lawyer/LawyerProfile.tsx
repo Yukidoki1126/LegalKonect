@@ -2,6 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { lawyerApi } from '../../services/lawyerApi';
 import LocationPickerWithMap from '../../components/LocationPickerWithMap';
 import ProfilePictureUpload from '../../components/ProfilePictureUpload';
+import { 
+  User, 
+  Shield, 
+  BadgeCheck, 
+  Clock, 
+  AlertCircle, 
+  Save,
+  Briefcase,
+  MapPin,
+  Phone,
+  FileText,
+  DollarSign
+} from 'lucide-react';
 
 interface LawyerProfile {
   id: number;
@@ -207,88 +220,144 @@ const LawyerProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto">
-        {/* Header Skeleton */}
-        <div className="mb-6 animate-pulse">
-          <div className="h-9 bg-gray-200 rounded-lg w-48 mb-2"></div>
-          <div className="h-5 bg-gray-200 rounded-lg w-96"></div>
+      <div className="max-w-full overflow-x-hidden animate-fadeIn">
+        {/* Header Skeleton - matching actual design */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="p-2.5 bg-slate-100 rounded-xl">
+              <User className="w-6 h-6 text-slate-600" />
+            </div>
+            <div className="h-8 bg-gray-200 rounded-lg w-44 animate-pulse"></div>
+          </div>
+          <div className="h-4 bg-gray-200 rounded w-64 ml-14 animate-pulse"></div>
         </div>
 
-        {/* Profile Card Skeleton */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
-          {/* Profile Photo Section */}
-          <div className="flex items-center gap-6 mb-6 pb-6 border-b">
-            <div className="w-24 h-24 bg-gray-200 rounded-full"></div>
-            <div className="flex-1">
-              <div className="h-6 bg-gray-200 rounded w-48 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-64"></div>
+        {/* Profile Photo and Verification Status Section - Two Columns */}
+        <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse">
+          {/* Profile Photo Card */}
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <User className="w-4 h-4 text-blue-300" />
+              </div>
+              <div className="h-5 bg-gray-200 rounded w-28"></div>
+            </div>
+            <div className="flex justify-center">
+              <div className="w-32 h-32 bg-gray-200 rounded-full"></div>
+            </div>
+            <div className="flex justify-center gap-2 mt-4">
+              <div className="h-9 bg-gray-200 rounded-lg w-24"></div>
+              <div className="h-9 bg-gray-100 rounded-lg w-20"></div>
             </div>
           </div>
 
-          {/* Form Fields Skeleton */}
-          <div className="space-y-6">
-            {/* Name Fields */}
+          {/* Verification Status Card */}
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-purple-50 rounded-lg">
+                <Shield className="w-4 h-4 text-purple-300" />
+              </div>
+              <div className="h-5 bg-gray-200 rounded w-36"></div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <div className="h-4 bg-gray-200 rounded w-16"></div>
+                <div className="h-7 bg-gray-200 rounded-full w-24"></div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-gray-200 rounded-lg w-8 h-8"></div>
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-40 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-full"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Section Skeleton */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 animate-pulse">
+          {/* Personal Information */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-blue-50 rounded-lg w-8 h-8"></div>
+              <div className="h-5 bg-gray-200 rounded w-40"></div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
+                <div className="h-11 bg-gray-100 rounded-xl"></div>
               </div>
               <div>
                 <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
+                <div className="h-11 bg-gray-100 rounded-xl"></div>
               </div>
             </div>
+          </div>
 
-            {/* Bio Field */}
-            <div>
-              <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-              <div className="h-24 bg-gray-200 rounded"></div>
+          {/* Bio */}
+          <div className="mb-6">
+            <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+            <div className="h-28 bg-gray-100 rounded-xl"></div>
+          </div>
+
+          {/* Professional Details */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-purple-50 rounded-lg w-8 h-8"></div>
+              <div className="h-5 bg-gray-200 rounded w-44"></div>
             </div>
-
-            {/* License and Experience */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-28 mb-2"></div>
+                <div className="h-11 bg-gray-100 rounded-xl"></div>
               </div>
               <div>
                 <div className="h-4 bg-gray-200 rounded w-36 mb-2"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
+                <div className="h-11 bg-gray-100 rounded-xl"></div>
               </div>
             </div>
+          </div>
 
-            {/* Specializations */}
-            <div>
-              <div className="h-4 bg-gray-200 rounded w-32 mb-3"></div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-10 bg-gray-200 rounded"></div>
-                ))}
-              </div>
+          {/* Specializations */}
+          <div className="mb-6">
+            <div className="h-4 bg-gray-200 rounded w-32 mb-3"></div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-11 bg-gray-100 rounded-xl"></div>
+              ))}
             </div>
+          </div>
 
-            {/* Office Details */}
+          {/* Office Details */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-green-50 rounded-lg w-8 h-8"></div>
+              <div className="h-5 bg-gray-200 rounded w-32"></div>
+            </div>
             <div className="space-y-4">
               <div>
-                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-28 mb-2"></div>
+                <div className="h-11 bg-gray-100 rounded-xl"></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="h-4 bg-gray-200 rounded w-28 mb-2"></div>
-                  <div className="h-10 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                  <div className="h-11 bg-gray-100 rounded-xl"></div>
                 </div>
                 <div>
-                  <div className="h-4 bg-gray-200 rounded w-28 mb-2"></div>
-                  <div className="h-10 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                  <div className="h-11 bg-gray-100 rounded-xl"></div>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <div className="h-11 bg-gray-200 rounded-lg flex-1"></div>
-            </div>
+          {/* Save Button */}
+          <div className="flex justify-end pt-4 border-t border-gray-100">
+            <div className="h-11 bg-gray-200 rounded-xl w-32"></div>
           </div>
         </div>
       </div>
@@ -297,40 +366,46 @@ const LawyerProfile: React.FC = () => {
 
   return (
     <div className="max-w-full overflow-x-hidden animate-fadeIn">
-      {/* Header */}
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Profile Settings</h1>
-        <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your professional information</p>
+      {/* Header - Clean transparent style */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="p-2.5 bg-slate-100 rounded-xl">
+            <User className="w-6 h-6 text-slate-600" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Profile Settings</h1>
+        </div>
+        <p className="text-gray-500 ml-14">Manage your professional information</p>
       </div>
 
-      {/* Alerts */}
+      {/* Alerts - Enhanced */}
       {error && (
-        <div className="mb-3 sm:mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
-          <div className="flex items-center">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <p className="text-xs sm:text-sm text-red-800 break-words">{error}</p>
+        <div className="mb-4 bg-red-50 border-2 border-red-200 rounded-2xl p-4 flex items-center gap-3">
+          <div className="p-2 bg-red-100 rounded-lg flex-shrink-0">
+            <AlertCircle className="w-5 h-5 text-red-600" />
           </div>
+          <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="mb-3 sm:mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
-          <div className="flex items-center">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <p className="text-xs sm:text-sm text-green-800 break-words">{success}</p>
+        <div className="mb-4 bg-green-50 border-2 border-green-200 rounded-2xl p-4 flex items-center gap-3">
+          <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+            <BadgeCheck className="w-5 h-5 text-green-600" />
           </div>
+          <p className="text-sm text-green-800">{success}</p>
         </div>
       )}
 
       {/* Profile Photo and Verification Status Section */}
-      <div className="mb-4 sm:mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Profile Photo */}
-        <div className="bg-white rounded-lg shadow p-4 sm:p-5 md:p-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Profile Photo</h2>
+      <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Profile Photo - Enhanced */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <User className="w-4 h-4 text-blue-600" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Profile Photo</h2>
+          </div>
           <div className="flex justify-center">
             <ProfilePictureUpload
               currentPicture={currentProfilePhoto}
@@ -341,35 +416,42 @@ const LawyerProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Verification Status */}
+        {/* Verification Status - Enhanced */}
         {verificationStatus && (
-          <div className="bg-white rounded-lg shadow p-4 sm:p-5 md:p-6">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Verification Status</h2>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Status:</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-purple-50 rounded-lg">
+                <Shield className="w-4 h-4 text-purple-600" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900">Verification Status</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <span className="text-sm font-medium text-gray-600">Status:</span>
+                <span className={`px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 ${
                   verificationStatus === 'verified' ? 'bg-green-100 text-green-700' :
                   verificationStatus === 'rejected' ? 'bg-red-100 text-red-700' :
                   'bg-yellow-100 text-yellow-700'
                 }`}>
+                  {verificationStatus === 'verified' && <BadgeCheck className="w-4 h-4" />}
+                  {verificationStatus === 'rejected' && <AlertCircle className="w-4 h-4" />}
+                  {verificationStatus === 'pending' && <Clock className="w-4 h-4" />}
                   {verificationStatus === 'verified' ? 'Verified' :
                    verificationStatus === 'rejected' ? 'Rejected' :
-                   'Pending Verification'}
+                   'Pending'}
                 </span>
               </div>
 
               {verificationStatus === 'pending' && (
-                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-start">
-                    <svg className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-yellow-800">Verification In Progress</h3>
+                <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
+                      <Clock className="w-4 h-4 text-yellow-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-yellow-800">Verification In Progress</h3>
                       <p className="text-xs text-yellow-700 mt-1">
-                        Your credentials and documents are currently being reviewed by our admin team.
-                        You will be notified once the verification process is complete.
+                        Your credentials are being reviewed. You'll be notified once complete.
                       </p>
                     </div>
                   </div>
@@ -377,13 +459,13 @@ const LawyerProfile: React.FC = () => {
               )}
 
               {verificationStatus === 'verified' && verifiedAt && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-start">
-                    <svg className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-green-800">Verified Lawyer</h3>
+                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                      <BadgeCheck className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-green-800">Verified Lawyer</h3>
                       <p className="text-xs text-green-700 mt-1">
                         Your credentials have been verified on {new Date(verifiedAt).toLocaleDateString()}
                       </p>
@@ -424,17 +506,22 @@ const LawyerProfile: React.FC = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
      
-          <div className="space-y-4 sm:space-y-6">
-            {/* Personal Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Personal Information</h2>
+          <div className="space-y-4">
+            {/* Personal Information - Enhanced */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <User className="w-4 h-4 text-blue-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
+              </div>
 
-              <div className="space-y-3 sm:space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       First Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -443,12 +530,12 @@ const LawyerProfile: React.FC = () => {
                       value={formData.first_name}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Last Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -457,13 +544,13 @@ const LawyerProfile: React.FC = () => {
                       value={formData.last_name}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Professional Bio <span className="text-red-500">*</span>
                   </label>
                   <textarea
@@ -473,20 +560,25 @@ const LawyerProfile: React.FC = () => {
                     required
                     rows={3}
                     placeholder="Tell clients about your expertise..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Minimum 50 characters</p>
+                  <p className="text-xs text-gray-500 mt-1.5">Minimum 50 characters</p>
                 </div>
               </div>
             </div>
 
-            {/* Professional Details */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Professional Details</h2>
+            {/* Professional Details - Enhanced */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-purple-50 rounded-lg">
+                  <Briefcase className="w-4 h-4 text-purple-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Professional Details</h2>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     License Number <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -495,12 +587,12 @@ const LawyerProfile: React.FC = () => {
                     value={formData.license_number}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Years of Experience <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -510,12 +602,12 @@ const LawyerProfile: React.FC = () => {
                     onChange={handleInputChange}
                     required
                     min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Consultation Fee (₱) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -526,12 +618,12 @@ const LawyerProfile: React.FC = () => {
                     required
                     min="0"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Reservation Fee (₱) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -542,15 +634,15 @@ const LawyerProfile: React.FC = () => {
                     required
                     min="0"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
                   />
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1.5 text-xs text-gray-500">
                     Clients pay this amount to reserve an appointment. Default is ₱100.00
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Office Phone <span className="text-gray-400">(Optional)</span>
                   </label>
                   <input
@@ -558,24 +650,33 @@ const LawyerProfile: React.FC = () => {
                     name="office_phone"
                     value={formData.office_phone}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Specializations */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                Specializations <span className="text-red-500">*</span>
-              </h2>
-              <p className="text-xs text-gray-600 mb-3">Select at least one area of practice</p>
+            {/* Specializations - Enhanced */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <FileText className="w-4 h-4 text-orange-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Specializations <span className="text-red-500">*</span>
+                </h2>
+              </div>
+              <p className="text-xs text-gray-600 mb-4 ml-10">Select at least one area of practice</p>
 
               <div className="grid grid-cols-2 gap-2">
                 {specializations.map((spec) => (
                   <label
                     key={spec.id}
-                    className="flex items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    className={`flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                      formData.specialization_ids.includes(spec.id)
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50'
+                    }`}
                   >
                     <input
                       type="checkbox"
@@ -583,17 +684,22 @@ const LawyerProfile: React.FC = () => {
                       onChange={() => handleSpecializationToggle(spec.id)}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-700">{spec.name}</span>
+                    <span className="ml-2 text-sm text-gray-700 font-medium">{spec.name}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Availability */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Availability</h2>
+            {/* Availability - Enhanced */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <Clock className="w-4 h-4 text-green-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Availability</h2>
+              </div>
 
-              <label className="flex items-center cursor-pointer">
+              <label className="flex items-center cursor-pointer p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                 <input
                   type="checkbox"
                   checked={formData.is_available}
@@ -601,8 +707,8 @@ const LawyerProfile: React.FC = () => {
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <div className="ml-3">
-                  <span className="text-sm font-medium text-gray-700">Available for new clients</span>
-                  <p className="text-xs text-gray-500">
+                  <span className="text-sm font-semibold text-gray-700">Available for new clients</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
                     When unchecked, your profile will be hidden from client searches
                   </p>
                 </div>
@@ -612,9 +718,14 @@ const LawyerProfile: React.FC = () => {
 
         
           <div>
-            {/* Office Location */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Office Location</h2>
+            {/* Office Location - Enhanced */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-red-50 rounded-lg">
+                  <MapPin className="w-4 h-4 text-red-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Office Location</h2>
+              </div>
 
               <LocationPickerWithMap
                 initialLat={formData.office_latitude || undefined}
@@ -633,19 +744,19 @@ const LawyerProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-5 flex justify-end space-x-3">
+        {/* Actions - Enhanced */}
+        <div className="mt-6 bg-white rounded-2xl border-2 border-gray-100 p-5 flex justify-end gap-3">
           <button
             type="button"
             onClick={fetchProfile}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            className="px-6 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-100 transition-all"
           >
             Reset
           </button>
           <button
             type="submit"
             disabled={saving || formData.specialization_ids.length === 0}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg shadow-blue-200/50"
           >
             {saving ? (
               <span className="flex items-center">
@@ -656,7 +767,10 @@ const LawyerProfile: React.FC = () => {
                 Saving...
               </span>
             ) : (
-              'Save Changes'
+              <>
+                <Save className="w-4 h-4" />
+                Save Changes
+              </>
             )}
           </button>
         </div>

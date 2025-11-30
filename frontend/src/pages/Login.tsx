@@ -29,16 +29,6 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      if (email.toLowerCase().includes('admin')) {
-        try {
-          await adminAuthService.login(email, password);
-          navigate('/admin/dashboard');
-          return;
-        } catch (adminError) {
-          console.log('Admin login failed, trying regular user login');
-        }
-      }
-
       const redirectPath = await login(email, password);
       navigate(redirectPath);
     } catch (err: any) {
@@ -192,9 +182,9 @@ const Login: React.FC = () => {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                <Link to="/forgot-password" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                   Forgot password?
-                </a>
+                </Link>
               </div>
             </div>
 

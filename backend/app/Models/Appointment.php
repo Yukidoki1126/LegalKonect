@@ -12,6 +12,9 @@ class Appointment extends Model
     protected $fillable = [
         'user_id',
         'lawyer_id',
+        'specialization_id',
+        'confirmed_specialization_id',
+        'specialization_confirmed_at',
         'appointment_date',
         'appointment_time',
         'duration_minutes',
@@ -28,13 +31,41 @@ class Appointment extends Model
         'meeting_type',
         'meeting_link',
         'google_event_id',
+        'reschedule_status',
+        'reschedule_reason',
+        'original_date',
+        'proposed_date',
+        'reschedule_requested_at',
+        'reschedule_responded_at',
     ];
 
     protected $casts = [
         'appointment_date' => 'date',
         'appointment_time' => 'string',
         'cancelled_at' => 'datetime',
+        'specialization_confirmed_at' => 'datetime',
+        'original_date' => 'date',
+        'proposed_date' => 'datetime',
+        'reschedule_requested_at' => 'datetime',
+        'reschedule_responded_at' => 'datetime',
     ];
+
+    
+    /**
+     * Get the client-selected specialization
+     */
+    public function specialization()
+    {
+        return $this->belongsTo(Specialization::class, 'specialization_id');
+    }
+
+    /**
+     * Get the lawyer-confirmed specialization
+     */
+    public function confirmedSpecialization()
+    {
+        return $this->belongsTo(Specialization::class, 'confirmed_specialization_id');
+    }
 
     /**
      * Get the user (client) who made the appointment

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\Earning;
 use App\Services\PaymongoService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -15,10 +16,12 @@ use Illuminate\Support\Facades\Cache;
 class PaymentController extends Controller
 {
     protected $paymongo;
+    protected $notificationService;
 
-    public function __construct(PaymongoService $paymongo)
+    public function __construct(PaymongoService $paymongo, NotificationService $notificationService)
     {
         $this->paymongo = $paymongo;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -249,6 +252,13 @@ class PaymentController extends Controller
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Failed to send payment receipt: ' . $e->getMessage());
+                }
+
+                // Create notification for lawyer about payment received
+                try {
+                    $this->notificationService->paymentReceived($appointment);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create payment notification: ' . $e->getMessage());
                 }
 
                 return response()->json([

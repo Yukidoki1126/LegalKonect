@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { lawyerApi } from '../services/lawyerApi';
 
 interface CalendarEvent {
@@ -18,77 +18,29 @@ interface LawyerCalendarViewProps {
   refreshTrigger?: number;
 }
 
+// Cache for calendar events - persists between renders
+const eventCache = new Map<string, { events: CalendarEvent[]; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
 const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refreshTrigger }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<'week' | 'day'>('week');
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRefreshTrigger = useRef(refreshTrigger);
 
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-  useEffect(() => {
-    // Debounce API calls to prevent excessive requests
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-    }
-
-    fetchTimeoutRef.current = setTimeout(() => {
-      fetchEvents();
-    }, 300);
-
-    return () => {
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-      }
-    };
-  }, [currentDate, view, refreshTrigger]);
-
-  const fetchEvents = async () => {
-    try {
-      setLoading(true);
-      const { startDate, endDate } = getDateRange();
-
-      // Fetch both database appointments and Google Calendar events in parallel
-      const [dbResponse, googleResponse] = await Promise.allSettled([
-        lawyerApi.getCalendarAppointments(startDate, endDate),
-        lawyerApi.getGoogleCalendarEvents(startDate, endDate),
-      ]);
-
-      let allEvents: CalendarEvent[] = [];
-
-      // Process database appointments
-      if (dbResponse.status === 'fulfilled') {
-        allEvents = [...dbResponse.value.events];
-      } else {
-        console.error('Failed to fetch database appointments:', dbResponse.reason);
-      }
-
-      // Process Google Calendar events - DISABLED for now to show only database events
-      // if (googleResponse.status === 'fulfilled') {
-      //   // Filter out consultation events from Google Calendar since we have them from database
-      //   const googleEvents = googleResponse.value.events.filter((e: CalendarEvent) => {
-      //     const summary = e.summary?.toLowerCase() || '';
-      //     return !summary.includes('consultation');
-      //   });
-      //   allEvents = [...allEvents, ...googleEvents];
-      // }
-
-      setEvents(allEvents);
-    } catch (err: any) {
-      console.error('Failed to fetch events:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to load calendar events';
-
-      if (onError) {
-        onError(errorMessage);
-      }
-    } finally {
-      setLoading(false);
-    }
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
-  const getDateRange = () => {
+  const getDateRange = useCallback(() => {
     if (view === 'week') {
       const startOfWeek = new Date(currentDate);
       startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -106,14 +58,146 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
         endDate: formatDate(currentDate),
       };
     }
-  };
+  }, [currentDate, view]);
 
-  const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const getCacheKey = useCallback(() => {
+    const { startDate, endDate } = getDateRange();
+    return `${startDate}_${endDate}_${view}`;
+  }, [getDateRange, view]);
+
+  const fetchEvents = useCallback(async (forceRefresh = false) => {
+    const cacheKey = getCacheKey();
+    const cached = eventCache.get(cacheKey);
+    const now = Date.now();
+
+    // Use cache if valid and not forcing refresh
+    if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_DURATION) {
+      setEvents(cached.events);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { startDate, endDate } = getDateRange();
+
+      // Fetch both database appointments and Google Calendar events in parallel
+      const [dbResponse] = await Promise.allSettled([
+        lawyerApi.getCalendarAppointments(startDate, endDate),
+      ]);
+
+      let allEvents: CalendarEvent[] = [];
+
+      // Process database appointments
+      if (dbResponse.status === 'fulfilled') {
+        allEvents = [...dbResponse.value.events];
+      } else {
+        console.error('Failed to fetch database appointments:', dbResponse.reason);
+      }
+
+      // Store in cache
+      eventCache.set(cacheKey, { events: allEvents, timestamp: now });
+      setEvents(allEvents);
+
+      // Pre-fetch adjacent weeks/days for smoother navigation
+      prefetchAdjacentData();
+    } catch (err: any) {
+      console.error('Failed to fetch events:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load calendar events';
+
+      if (onError) {
+        onError(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [getCacheKey, getDateRange, onError]);
+
+  // Pre-fetch adjacent weeks/days in the background
+  const prefetchAdjacentData = useCallback(async () => {
+    const prefetchDates: { start: Date; end: Date }[] = [];
+
+    if (view === 'week') {
+      // Prefetch previous and next week
+      const prevWeekStart = new Date(currentDate);
+      prevWeekStart.setDate(currentDate.getDate() - currentDate.getDay() - 7);
+      const prevWeekEnd = new Date(prevWeekStart);
+      prevWeekEnd.setDate(prevWeekStart.getDate() + 6);
+
+      const nextWeekStart = new Date(currentDate);
+      nextWeekStart.setDate(currentDate.getDate() - currentDate.getDay() + 7);
+      const nextWeekEnd = new Date(nextWeekStart);
+      nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
+
+      prefetchDates.push(
+        { start: prevWeekStart, end: prevWeekEnd },
+        { start: nextWeekStart, end: nextWeekEnd }
+      );
+    } else {
+      // Prefetch previous and next day
+      const prevDay = new Date(currentDate);
+      prevDay.setDate(currentDate.getDate() - 1);
+
+      const nextDay = new Date(currentDate);
+      nextDay.setDate(currentDate.getDate() + 1);
+
+      prefetchDates.push(
+        { start: prevDay, end: prevDay },
+        { start: nextDay, end: nextDay }
+      );
+    }
+
+    // Prefetch in background without blocking UI
+    for (const { start, end } of prefetchDates) {
+      const cacheKey = `${formatDate(start)}_${formatDate(end)}_${view}`;
+      if (!eventCache.has(cacheKey)) {
+        try {
+          const response = await lawyerApi.getCalendarAppointments(formatDate(start), formatDate(end));
+          eventCache.set(cacheKey, { events: response.events, timestamp: Date.now() });
+        } catch (err) {
+          // Silently ignore prefetch errors
+        }
+      }
+    }
+  }, [currentDate, view]);
+
+  useEffect(() => {
+    // Check if this is a refresh trigger change (force refresh)
+    const isForceRefresh = refreshTrigger !== lastRefreshTrigger.current;
+    lastRefreshTrigger.current = refreshTrigger;
+
+    if (isForceRefresh) {
+      // Clear ALL cache on force refresh to ensure fresh data
+      eventCache.clear();
+      console.log('[LawyerCalendarView] Cache cleared due to refresh trigger');
+    }
+
+    // Debounce API calls to prevent excessive requests
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+
+    // Check cache first for instant display (only if not force refreshing)
+    if (!isForceRefresh) {
+      const cacheKey = getCacheKey();
+      const cached = eventCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        setEvents(cached.events);
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Fetch fresh data
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchEvents(isForceRefresh);
+    }, 100); // Reduced debounce for faster response
+
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+    };
+  }, [currentDate, view, refreshTrigger, fetchEvents, getCacheKey]);
 
   const getWeekDays = (): Date[] => {
     const startOfWeek = new Date(currentDate);
@@ -171,33 +255,37 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
   };
 
   const getEventColor = (event: CalendarEvent): string => {
-    const colors: Record<string, string> = {
-      '1': 'bg-blue-100 border-blue-400 text-blue-800',
-      '2': 'bg-green-100 border-green-400 text-green-800',
-      '3': 'bg-purple-100 border-purple-400 text-purple-800',
-      '4': 'bg-red-100 border-red-400 text-red-800',
-      '5': 'bg-yellow-100 border-yellow-400 text-yellow-800',
-      '6': 'bg-orange-100 border-orange-400 text-orange-800',
-      '7': 'bg-cyan-100 border-cyan-400 text-cyan-800',
-      '8': 'bg-teal-100 border-teal-400 text-teal-800',
-      '9': 'bg-indigo-100 border-indigo-400 text-indigo-800',
-      '10': 'bg-emerald-100 border-emerald-400 text-emerald-800',
-      '11': 'bg-rose-100 border-rose-400 text-rose-800',
-    };
-
-    const baseColor = event.color ? (colors[event.color] || 'bg-blue-100 border-blue-400 text-blue-800') : 'bg-blue-100 border-blue-400 text-blue-800';
-
-    // Add opacity and styling for completed appointments
-    if (event.status === 'completed') {
-      return baseColor + ' opacity-60';
+    // Cancelled appointments - show in red
+    if (event.status === 'cancelled') {
+      return 'bg-red-100 border-red-500 text-red-800 opacity-70';
     }
 
-    return baseColor;
+    // Completed appointments - show with reduced opacity
+    if (event.status === 'completed') {
+      return 'bg-gray-100 border-gray-400 text-gray-600 opacity-60';
+    }
+
+    // Pending payment - show in yellow/amber
+    if (event.payment_status === 'unpaid' || event.payment_status === 'pending') {
+      return 'bg-amber-100 border-amber-400 text-amber-800';
+    }
+
+    // Default - confirmed/paid appointments in green
+    return 'bg-green-100 border-green-400 text-green-800';
   };
 
   const getEventTextStyle = (event: CalendarEvent): string => {
-    // Add strikethrough for completed appointments
-    return event.status === 'completed' ? 'line-through' : '';
+    // Add strikethrough for cancelled or completed appointments
+    if (event.status === 'cancelled') return 'line-through';
+    if (event.status === 'completed') return 'line-through opacity-70';
+    return '';
+  };
+
+  const getStatusBadge = (event: CalendarEvent): string | null => {
+    if (event.status === 'cancelled') return '✗ Cancelled';
+    if (event.status === 'completed') return '✓ Completed';
+    if (event.payment_status === 'unpaid') return '⏳ Unpaid';
+    return null;
   };
 
   const weekDays = getWeekDays();
@@ -307,21 +395,27 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
                           formatDate(date) === formatDate(new Date()) ? 'bg-blue-50/30' : ''
                         }`}
                       >
-                        {dayEvents.map(event => (
-                          <div
-                            key={event.id}
-                            className={`text-xs p-1.5 mb-1 rounded border-l-2 ${getEventColor(event)}`}
-                            title={event.description || ''}
-                          >
-                            <div className={`font-medium truncate ${getEventTextStyle(event)}`}>{event.summary}</div>
-                            <div className={`text-[10px] opacity-75 ${getEventTextStyle(event)}`}>
-                              {formatTime(event.start)} - {formatTime(event.end)}
+                        {dayEvents.map(event => {
+                          const statusBadge = getStatusBadge(event);
+                          return (
+                            <div
+                              key={event.id}
+                              className={`text-xs p-1.5 mb-1 rounded border-l-2 ${getEventColor(event)}`}
+                              title={event.description || ''}
+                            >
+                              <div className={`font-medium truncate ${getEventTextStyle(event)}`}>{event.summary}</div>
+                              <div className={`text-[10px] opacity-75 ${getEventTextStyle(event)}`}>
+                                {formatTime(event.start)} - {formatTime(event.end)}
+                              </div>
+                              {statusBadge && (
+                                <div className={`text-[10px] mt-0.5 font-medium ${
+                                  event.status === 'cancelled' ? 'text-red-700' : 
+                                  event.status === 'completed' ? 'text-gray-600' : 'text-amber-700'
+                                }`}>{statusBadge}</div>
+                              )}
                             </div>
-                            {event.status === 'completed' && (
-                              <div className="text-[10px] mt-0.5 font-medium text-green-700">✓ Completed</div>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     );
                   })}
@@ -347,23 +441,29 @@ const LawyerCalendarView: React.FC<LawyerCalendarViewProps> = ({ onError, refres
                     {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
                   </div>
                   <div className="flex-1 min-h-[40px]">
-                    {hourEvents.map(event => (
-                      <div
-                        key={event.id}
-                        className={`p-2 mb-2 rounded-md border-l-2 ${getEventColor(event)}`}
-                      >
-                        <div className={`text-sm font-medium ${getEventTextStyle(event)}`}>{event.summary}</div>
-                        <div className={`text-xs mt-0.5 opacity-75 ${getEventTextStyle(event)}`}>
-                          {formatTime(event.start)} - {formatTime(event.end)}
+                    {hourEvents.map(event => {
+                      const statusBadge = getStatusBadge(event);
+                      return (
+                        <div
+                          key={event.id}
+                          className={`p-2 mb-2 rounded-md border-l-2 ${getEventColor(event)}`}
+                        >
+                          <div className={`text-sm font-medium ${getEventTextStyle(event)}`}>{event.summary}</div>
+                          <div className={`text-xs mt-0.5 opacity-75 ${getEventTextStyle(event)}`}>
+                            {formatTime(event.start)} - {formatTime(event.end)}
+                          </div>
+                          {statusBadge && (
+                            <div className={`text-xs mt-1 font-medium ${
+                              event.status === 'cancelled' ? 'text-red-700' : 
+                              event.status === 'completed' ? 'text-gray-600' : 'text-amber-700'
+                            }`}>{statusBadge}</div>
+                          )}
+                          {event.description && (
+                            <div className="text-xs mt-1 text-gray-600">{event.description}</div>
+                          )}
                         </div>
-                        {event.status === 'completed' && (
-                          <div className="text-xs mt-1 font-medium text-green-700">✓ Completed</div>
-                        )}
-                        {event.description && (
-                          <div className="text-xs mt-1 text-gray-600">{event.description}</div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );

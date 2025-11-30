@@ -10,29 +10,29 @@ import { Search, AlertCircle } from 'lucide-react';
 
 // Skeleton Loading Component - Redesigned
 const LawyerCardSkeleton: React.FC = () => (
-  <div className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse">
+  <div className="bg-white border border-gray-100 rounded-2xl p-6 animate-pulse shadow-soft">
     <div className="flex items-start gap-4 mb-4">
-      <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+      <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-100 rounded-xl"></div>
       <div className="flex-1">
-        <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
+        <div className="h-5 bg-gradient-to-r from-gray-200 to-gray-100 rounded-lg w-3/4 mb-2"></div>
         <div className="flex gap-2">
-          <div className="h-5 bg-gray-100 rounded w-20"></div>
-          <div className="h-5 bg-gray-100 rounded w-24"></div>
+          <div className="h-5 bg-gray-100 rounded-full w-20"></div>
+          <div className="h-5 bg-gray-100 rounded-full w-24"></div>
         </div>
       </div>
     </div>
-    <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-200">
-      <div>
+    <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-100">
+      <div className="bg-gray-50 rounded-xl p-3">
         <div className="h-3 bg-gray-100 rounded w-16 mb-2"></div>
         <div className="h-4 bg-gray-200 rounded w-12"></div>
       </div>
-      <div>
+      <div className="bg-gray-50 rounded-xl p-3">
         <div className="h-3 bg-gray-100 rounded w-16 mb-2"></div>
         <div className="h-4 bg-gray-200 rounded w-20"></div>
       </div>
     </div>
-    <div className="h-4 bg-gray-100 rounded w-full mb-4"></div>
-    <div className="h-10 bg-gray-200 rounded"></div>
+    <div className="h-4 bg-gray-100 rounded-lg w-full mb-4"></div>
+    <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-100 rounded-xl"></div>
   </div>
 );
 
@@ -285,31 +285,38 @@ const LawyerSearch: React.FC = () => {
     });
 
   return (
-    <div className="min-h-screen bg-gray-50 animate-fadeIn">
-      <div className="max-w-screen-xl mx-auto px-6 lg:px-10 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 animate-fadeIn pt-16">
+      <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 py-6">
         {/* Header - Clean and Professional */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Find a Lawyer</h1>
-          <p className="text-sm text-gray-600">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+              <Search className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Find a Lawyer</h1>
+          </div>
+          <p className="text-sm text-gray-600 ml-13">
             Connect with experienced legal professionals
           </p>
         </div>
 
         {/* Location Warning - Clean Design */}
         {!user?.latitude && (
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="mb-6 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-5 shadow-soft">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-yellow-900 mb-1">
+                <p className="text-sm font-semibold text-amber-900 mb-1">
                   Set your location to see distances
                 </p>
-                <p className="text-sm text-yellow-800">
+                <p className="text-sm text-amber-800">
                   Go to{' '}
-                  <a href="/profile" className="underline font-semibold hover:text-yellow-900">
+                  <a href="/profile" className="underline font-semibold hover:text-amber-900 transition-colors">
                     Profile Settings
                   </a>{' '}
-                  to add your location.
+                  to add your location for better recommendations.
                 </p>
               </div>
             </div>
@@ -317,36 +324,39 @@ const LawyerSearch: React.FC = () => {
         )}
 
         {/* Search and Filters - Professional Card */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-200/80 rounded-2xl p-6 mb-8 shadow-soft">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Search */}
-            <div>
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="group">
+              <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-2">
                 Search by name
               </label>
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                </div>
                 <input
                   id="search"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search lawyers..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 text-gray-900 transition-all duration-200 hover:border-gray-300"
                 />
               </div>
             </div>
 
             {/* Specialization Filter */}
-            <div>
-              <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="group">
+              <label htmlFor="specialization" className="block text-sm font-semibold text-gray-700 mb-2">
                 Specialization
               </label>
               <select
                 id="specialization"
                 value={selectedSpecialization}
                 onChange={(e) => setSelectedSpecialization(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 text-gray-900 transition-all duration-200 hover:border-gray-300 bg-white appearance-none cursor-pointer"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
               >
                 <option value="">All Specializations</option>
                 {specializations.map((spec) => (
@@ -358,15 +368,16 @@ const LawyerSearch: React.FC = () => {
             </div>
 
             {/* Sort By */}
-            <div>
-              <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="group">
+              <label htmlFor="sortBy" className="block text-sm font-semibold text-gray-700 mb-2">
                 Sort by
               </label>
               <select
                 id="sortBy"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 text-gray-900 transition-all duration-200 hover:border-gray-300 bg-white appearance-none cursor-pointer"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
               >
                 <option value="rating">Rating (highest first)</option>
                 <option value="distance">Distance (nearest first)</option>
@@ -378,27 +389,32 @@ const LawyerSearch: React.FC = () => {
 
           {/* Active Filters Display */}
           {(searchQuery || selectedSpecialization) && (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-sm text-gray-600">Active filters:</span>
+            <div className="mt-5 pt-5 border-t border-gray-100 flex flex-wrap items-center gap-3">
+              <span className="text-sm font-medium text-gray-600">Active filters:</span>
               {searchQuery && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-md border border-blue-200">
-                  Search: "{searchQuery}"
+                <span className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 text-sm font-medium rounded-full border border-blue-200 shadow-sm">
+                  <Search className="w-3.5 h-3.5" />
+                  "{searchQuery}"
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="hover:text-blue-900"
+                    className="ml-1 hover:text-blue-900 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
                   >
-                    ✕
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </span>
               )}
               {selectedSpecialization && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-md border border-blue-200">
+                <span className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 text-sm font-medium rounded-full border border-purple-200 shadow-sm">
                   {specializations.find(s => s.id === parseInt(selectedSpecialization))?.name}
                   <button
                     onClick={() => setSelectedSpecialization('')}
-                    className="hover:text-blue-900"
+                    className="ml-1 hover:text-purple-900 hover:bg-purple-100 rounded-full p-0.5 transition-colors"
                   >
-                    ✕
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </span>
               )}
@@ -407,8 +423,11 @@ const LawyerSearch: React.FC = () => {
                   setSearchQuery('');
                   setSelectedSpecialization('');
                 }}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="text-sm text-gray-500 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
                 Clear all
               </button>
             </div>
@@ -428,29 +447,36 @@ const LawyerSearch: React.FC = () => {
             </div>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-2xl p-8 shadow-soft">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
               <div>
-                <h3 className="text-sm font-medium text-red-900 mb-1">Error loading lawyers</h3>
-                <p className="text-sm text-red-700 mb-3">{error}</p>
+                <h3 className="text-base font-semibold text-red-900 mb-2">Error loading lawyers</h3>
+                <p className="text-sm text-red-700 mb-4">{error}</p>
                 <button
                   onClick={() => window.location.reload()}
-                  className="text-sm font-medium text-red-800 hover:text-red-900 underline"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
                   Try again
                 </button>
               </div>
             </div>
           </div>
         ) : filteredLawyers.length === 0 ? (
-          <div className="text-center py-16 bg-white border border-gray-200 rounded-lg">
-            <Search className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No lawyers found</h3>
-            <p className="text-gray-600 mb-4 max-w-md mx-auto">
+          <div className="text-center py-20 bg-white border border-gray-100 rounded-2xl shadow-soft">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl flex items-center justify-center">
+              <Search className="h-10 w-10 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No lawyers found</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
               {searchQuery || selectedSpecialization
-                ? 'Try adjusting your search or filters.'
-                : 'No lawyers are currently available.'}
+                ? 'Try adjusting your search criteria or clearing the filters.'
+                : 'No lawyers are currently available on the platform.'}
             </p>
             {(searchQuery || selectedSpecialization) && (
               <button
@@ -458,7 +484,7 @@ const LawyerSearch: React.FC = () => {
                   setSearchQuery('');
                   setSelectedSpecialization('');
                 }}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold shadow-button hover:shadow-button-hover"
               >
                 Clear filters
               </button>
@@ -467,14 +493,18 @@ const LawyerSearch: React.FC = () => {
         ) : (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <p className="text-sm text-gray-600 font-medium">
-                Showing{' '}
-                <span className="text-blue-600 font-semibold">{filteredLawyers.length}</span>{' '}
-                {filteredLawyers.length === 1 ? 'lawyer' : 'lawyers'}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-gray-600 font-medium">
+                  Showing{' '}
+                  <span className="text-lg font-bold text-blue-600">{filteredLawyers.length}</span>{' '}
+                  {filteredLawyers.length === 1 ? 'lawyer' : 'lawyers'}
+                </p>
+                <div className="h-4 w-px bg-gray-300"></div>
+                <p className="text-sm text-gray-500">Sorted by {sortBy}</p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
               {filteredLawyers.map((lawyer, index) => (
                 <div
                   key={lawyer.id}

@@ -6,7 +6,13 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  RefreshCw
+  RefreshCw,
+  Wallet,
+  DollarSign,
+  CreditCard,
+  ArrowUpRight,
+  Settings,
+  Banknote
 } from 'lucide-react';
 
 interface EarningsSummary {
@@ -228,8 +234,124 @@ export default function LawyerEarnings() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="space-y-6 animate-fadeIn">
+        {/* Header Skeleton - matching actual design */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2.5 bg-emerald-100 rounded-xl">
+                  <Wallet className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+              </div>
+              <div className="h-4 bg-gray-200 rounded w-56 ml-14 animate-pulse"></div>
+            </div>
+            <div className="h-11 bg-gray-200 rounded-xl w-40 animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Summary Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+          {/* Available Balance - Gradient Card */}
+          <div className="relative bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-4 bg-white/30 rounded w-28"></div>
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-white/50" />
+                </div>
+              </div>
+              <div className="h-9 bg-white/30 rounded w-32 mb-4"></div>
+              <div className="h-11 bg-white/40 rounded-xl w-full"></div>
+            </div>
+          </div>
+
+          {/* Total Earnings */}
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-4 bg-gray-200 rounded w-24"></div>
+              <div className="p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-lg shadow-blue-200/50">
+                <TrendingUp className="w-5 h-5 text-white/50" />
+              </div>
+            </div>
+            <div className="h-9 bg-gray-200 rounded w-28 mb-2"></div>
+            <div className="h-4 bg-gray-100 rounded w-20"></div>
+          </div>
+
+          {/* Platform Fees */}
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-4 bg-gray-200 rounded w-24"></div>
+              <div className="p-2.5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl shadow-lg shadow-amber-200/50">
+                <CreditCard className="w-5 h-5 text-white/50" />
+              </div>
+            </div>
+            <div className="h-9 bg-gray-200 rounded w-28 mb-2"></div>
+            <div className="h-4 bg-gray-100 rounded w-16"></div>
+          </div>
+
+          {/* Pending Payouts */}
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-4 bg-gray-200 rounded w-28"></div>
+              <div className="p-2.5 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl shadow-lg shadow-purple-200/50">
+                <Clock className="w-5 h-5 text-white/50" />
+              </div>
+            </div>
+            <div className="h-9 bg-gray-200 rounded w-28 mb-2"></div>
+            <div className="h-4 bg-gray-100 rounded w-24"></div>
+          </div>
+        </div>
+
+        {/* Recent Earnings Table Skeleton */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden animate-pulse">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <div className="h-6 bg-gray-200 rounded w-36"></div>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                  <div>
+                    <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-24"></div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="h-5 bg-gray-200 rounded w-20 mb-1"></div>
+                  <div className="h-3 bg-gray-100 rounded w-16"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Payout History Table Skeleton */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden animate-pulse">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <div className="h-6 bg-gray-200 rounded w-32"></div>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {[1, 2].map((i) => (
+              <div key={i} className="px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
+                  <div>
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-32"></div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                  <div className="h-5 bg-gray-200 rounded w-20"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -244,96 +366,113 @@ export default function LawyerEarnings() {
 
   return (
     <>
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Earnings & Payouts</h1>
-        <button
-          onClick={() => setShowPayoutInfoModal(true)}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:bg-gray-100 transition-all"
-        >
-          Payout Settings
-        </button>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Available Balance</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                ₱{earnings.availableBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-              </p>
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header - Clean transparent style */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2.5 bg-emerald-100 rounded-xl">
+                <Wallet className="w-6 h-6 text-emerald-600" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Earnings & Payouts</h1>
             </div>
-              <div className="p-3 bg-green-100 rounded-full">
-              <span className="w-6 h-6 text-green-600 flex items-center justify-center text-base">₱</span>
-            </div>
+            <p className="text-gray-500 ml-14">Track your revenue and manage payouts</p>
           </div>
           <button
-            onClick={() => setShowPayoutModal(true)}
-            disabled={earnings.availableBalance <= 0}
-            className="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            onClick={() => setShowPayoutInfoModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-700 border-2 border-emerald-200 rounded-xl hover:bg-emerald-100 transition-all font-medium"
           >
-            Request Payout
+            <Settings className="w-4 h-4" />
+            Payout Settings
           </button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                ₱{earnings.totalEarnings.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Platform Fees</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                ₱{earnings.totalPlatformFees.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <AlertCircle className="w-6 h-6 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Pending Payouts</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                ₱{earnings.pendingPayouts.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <Clock className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Payout Info Alert */}
+      {/* Summary Cards - Enhanced */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Available Balance - Primary Card */}
+        <div className="relative bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-green-100 uppercase tracking-wide">Available Balance</p>
+              <div className="p-2 bg-white/20 rounded-lg">
+                <DollarSign className="w-5 h-5 text-white" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-white mb-4">
+              ₱{earnings.availableBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+            </p>
+            <button
+              onClick={() => setShowPayoutModal(true)}
+              disabled={earnings.availableBalance <= 0}
+              className="w-full px-4 py-2.5 bg-white text-green-700 rounded-xl font-semibold hover:bg-green-50 disabled:bg-white/50 disabled:text-green-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            >
+              <ArrowUpRight className="w-4 h-4" />
+              Request Payout
+            </button>
+          </div>
+        </div>
+
+        {/* Total Earnings */}
+        <div className="group bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Total Earnings</p>
+            <div className="p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-lg shadow-blue-200/50">
+              <TrendingUp className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-gray-900">
+            ₱{earnings.totalEarnings.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">Net after fees</p>
+        </div>
+
+        {/* Platform Fees */}
+        <div className="group bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg hover:border-amber-200 transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Platform Fees</p>
+            <div className="p-2.5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl shadow-lg shadow-amber-200/50">
+              <Banknote className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-gray-900">
+            ₱{earnings.totalPlatformFees.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">20% of gross</p>
+        </div>
+
+        {/* Pending Payouts */}
+        <div className="group bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg hover:border-purple-200 transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Pending Payouts</p>
+            <div className="p-2.5 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl shadow-lg shadow-purple-200/50">
+              <Clock className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-gray-900">
+            ₱{earnings.pendingPayouts.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">Being processed</p>
+        </div>
+      </div>
+
+      {/* Payout Info Alert - Enhanced */}
       {(!earnings.payoutInfo.gcash_number && !earnings.payoutInfo.bank_account_number) && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-yellow-900">Payout Information Required</h3>
-              <p className="text-sm text-yellow-700 mt-1">
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="p-2.5 bg-amber-100 rounded-xl">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900">Payout Information Required</h3>
+              <p className="text-sm text-amber-700 mt-1">
                 Please set up your GCash or bank account information to receive payouts.
               </p>
               <button
                 onClick={() => setShowPayoutInfoModal(true)}
-                className="mt-2 text-sm font-medium text-yellow-900 underline hover:text-yellow-800"
+                className="mt-3 px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors text-sm"
               >
                 Set Up Now
               </button>
@@ -342,56 +481,69 @@ export default function LawyerEarnings() {
         </div>
       )}
 
-      {/* Recent Earnings */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Recent Earnings</h2>
+      {/* Recent Earnings - Enhanced */}
+      <div className="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Recent Earnings</h2>
+          </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-100">
+            <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Client
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Gross Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Platform Fee (20%)
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Net Amount
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {!earnings.recentEarnings || earnings.recentEarnings.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    No earnings yet
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <DollarSign className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-gray-500">No earnings yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Complete consultations to start earning</p>
                   </td>
                 </tr>
               ) : (
                 earnings.recentEarnings.map((earning) => (
-                  <tr key={earning.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <tr key={earning.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                       {new Date(earning.completed_at).toLocaleDateString('en-PH')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       {earning.client_name || earning.appointment?.client_name || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ₱{earning.gross_amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                      -₱{earning.platform_fee.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className="text-red-600 bg-red-50 px-2 py-1 rounded-lg font-medium">
+                        -₱{earning.platform_fee.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                      ₱{earning.net_amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className="text-green-700 bg-green-50 px-2 py-1 rounded-lg font-semibold">
+                        ₱{earning.net_amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </span>
                     </td>
                   </tr>
                 ))
@@ -402,54 +554,65 @@ export default function LawyerEarnings() {
       </div>
 
       {/* Payout History */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Payout History</h2>
+      <div className="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <CreditCard className="w-4 h-4 text-purple-600" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Payout History</h2>
+          </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-100">
+            <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Requested
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Method
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Account
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Reference
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {payouts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                    No payout requests yet
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CreditCard className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-gray-500">No payout requests yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Request a payout when you have available balance</p>
                   </td>
                 </tr>
               ) : (
                 payouts.map((payout) => (
-                  <tr key={payout.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <tr key={payout.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                       {new Date(payout.requested_at).toLocaleDateString('en-PH')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                       ₱{payout.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 uppercase">
-                      {payout.method}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className="px-2 py-1 bg-gray-100 rounded-lg text-gray-700 uppercase font-medium text-xs">
+                        {payout.method}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       {payout.method === 'gcash'
                         ? payout.account_number
                         : `${payout.bank_name} - ${payout.account_number}`

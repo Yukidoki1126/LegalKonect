@@ -61,10 +61,11 @@
             font-size: 14px;
         }
         .timeline-box {
-            background-color: #fef3c7;
+            background-color: #d1fae5;
             padding: 15px;
             border-radius: 4px;
             margin: 20px 0;
+            border-left: 4px solid #10b981;
         }
         ul {
             padding-left: 20px;
@@ -76,13 +77,13 @@
 </head>
 <body>
     <div class="header">
-        <h1>✅ Refund Processed Successfully</h1>
+        <h1>✅ Refund Completed!</h1>
     </div>
 
     <div class="content">
         <p>Hello {{ $appointment->user->name }},</p>
 
-        <p>Your refund has been successfully processed for the cancelled appointment with <strong>{{ $appointment->lawyer->first_name }} {{ $appointment->lawyer->last_name }}</strong>.</p>
+        <p>Great news! Your refund has been <strong>successfully completed</strong> for the cancelled appointment with <strong>{{ $appointment->lawyer->first_name }} {{ $appointment->lawyer->last_name }}</strong>.</p>
 
         <div class="amount">
             ₱{{ number_format($appointment->refund_amount, 2) }}
@@ -128,42 +129,40 @@
         </div>
 
         <div class="timeline-box">
-            <strong style="color: #92400e;">When will I receive my refund?</strong>
-            <p style="margin: 10px 0 0 0; color: #78350f;">
+            <strong style="color: #065f46;">💰 Your money is on its way!</strong>
+            <p style="margin: 10px 0 0 0; color: #047857;">
+                The refund has been processed by PayMongo and is now being transferred to your account.
                 @php
                     $paymentDetails = json_decode($appointment->payment_details ?? '{}', true);
                     $paymentType = $paymentDetails['type'] ?? $appointment->payment_method;
                 @endphp
                 @if($paymentType === 'card')
-                    Your refund will be credited to your
+                    <br><br>Your
                     @if(!empty($paymentDetails['brand']) && !empty($paymentDetails['last4']))
                         <strong>{{ ucfirst($paymentDetails['brand']) }} card ending in {{ $paymentDetails['last4'] }}</strong>
                     @else
                         <strong>card</strong>
                     @endif
-                    within <strong>5-10 business days</strong>.
+                    will be credited within <strong>5-10 business days</strong>, depending on your bank.
                 @elseif($paymentType === 'gcash')
-                    Your refund will be credited to your <strong>GCash account</strong> within <strong>1-3 business days</strong>.
+                    <br><br>Your <strong>GCash account</strong> will be credited within <strong>1-3 business days</strong>.
                 @elseif($paymentType === 'paymaya')
-                    Your refund will be credited to your <strong>PayMaya account</strong> within <strong>1-3 business days</strong>.
+                    <br><br>Your <strong>PayMaya account</strong> will be credited within <strong>1-3 business days</strong>.
                 @elseif($paymentType === 'grab_pay')
-                    Your refund will be credited to your <strong>GrabPay account</strong> within <strong>1-3 business days</strong>.
+                    <br><br>Your <strong>GrabPay account</strong> will be credited within <strong>1-3 business days</strong>.
                 @else
-                    Your refund will be processed within <strong>3-5 business days</strong>.
+                    <br><br>Your account will be credited within <strong>3-5 business days</strong>.
                 @endif
             </p>
         </div>
 
         <div class="info-box">
-            <strong style="color: #1e40af;">Important Information:</strong>
+            <strong style="color: #1e40af;">Summary:</strong>
             <ul style="margin: 10px 0; color: #1e3a8a;">
-                <li>The refund has been initiated by PayMongo</li>
-                <li>You will see the credit in your original payment method</li>
-                <li>Processing time depends on your bank/payment provider</li>
-                <li>You may book a new appointment anytime</li>
-                @if($appointment->refund_reason)
-                <li><strong>Reason:</strong> {{ $appointment->refund_reason }}</li>
-                @endif
+                <li>✅ Refund approved and processed by PayMongo</li>
+                <li>✅ Funds are being transferred to your original payment method</li>
+                <li>📅 Processing time depends on your bank/payment provider</li>
+                <li>💼 You may book a new appointment anytime</li>
             </ul>
         </div>
 

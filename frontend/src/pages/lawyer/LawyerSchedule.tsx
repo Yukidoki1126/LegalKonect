@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { lawyerApi } from '../../services/lawyerApi';
+import { 
+  Calendar, 
+  Clock, 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  X, 
+  Check,
+  AlertCircle
+} from 'lucide-react';
 
 interface Schedule {
   id: number;
@@ -162,50 +172,55 @@ const LawyerSchedule: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-full overflow-x-hidden">
-        {/* Header Skeleton */}
-        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 animate-pulse">
-          <div>
-            <div className="h-8 sm:h-9 bg-gray-200 rounded-lg w-48 sm:w-56 mb-2"></div>
-            <div className="h-5 bg-gray-200 rounded-lg w-64 sm:w-80"></div>
+      <div className="max-w-full overflow-x-hidden animate-fadeIn">
+        {/* Header Skeleton - matching actual design */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2.5 bg-indigo-100 rounded-xl">
+                  <Calendar className="w-6 h-6 text-indigo-600" />
+                </div>
+                <div className="h-8 bg-gray-200 rounded-lg w-44 animate-pulse"></div>
+              </div>
+              <div className="h-4 bg-gray-200 rounded w-64 ml-14 animate-pulse"></div>
+            </div>
+            <div className="h-11 bg-gray-200 rounded-xl w-36 animate-pulse"></div>
           </div>
-          <div className="h-10 bg-gray-200 rounded-lg w-full sm:w-40"></div>
         </div>
 
         {/* Weekly Schedule Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 animate-pulse">
-          {DAYS_OF_WEEK.map((day) => (
-            <div key={day} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+          {DAYS_OF_WEEK.map((day, index) => (
+            <div key={day} className="bg-white rounded-2xl border-2 border-gray-100 p-5">
               {/* Day Header */}
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <div className="h-6 bg-gray-200 rounded w-24"></div>
-                <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <Calendar className="w-4 h-4 text-indigo-300" />
+                </div>
+                <div className="h-5 bg-gray-200 rounded w-24"></div>
               </div>
 
               {/* Time Slots */}
-              <div className="space-y-2 sm:space-y-3">
+              <div className="space-y-3">
                 {[1, 2].map((i) => (
-                  <div key={i} className="p-2 sm:p-3 rounded-lg border bg-gray-50 border-gray-200">
+                  <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <div className="flex items-center justify-between mb-2">
                       <div className="h-4 bg-gray-200 rounded w-28"></div>
-                      <div className="h-6 bg-gray-200 rounded w-16"></div>
+                      <div className="h-6 bg-green-100 rounded-full w-14"></div>
                     </div>
-                    <div className="flex gap-1 sm:gap-2">
-                      <div className="h-7 w-7 bg-gray-200 rounded"></div>
-                      <div className="h-7 w-7 bg-gray-200 rounded"></div>
+                    <div className="flex items-center justify-between">
+                      <div className="h-3 bg-gray-100 rounded w-20"></div>
+                      <div className="flex gap-2">
+                        <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Empty State Skeleton */}
-        <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center animate-pulse">
-          <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
-          <div className="h-6 bg-gray-200 rounded w-48 mx-auto mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-80 mx-auto"></div>
         </div>
       </div>
     );
@@ -245,22 +260,27 @@ const LawyerSchedule: React.FC = () => {
       `}</style>
 
       <div className="max-w-full overflow-x-hidden animate-fadeIn">
-        {/* Header */}
-      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Weekly Schedule</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your available consultation hours</p>
+        {/* Header - Clean transparent style */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2.5 bg-indigo-100 rounded-xl">
+                  <Calendar className="w-6 h-6 text-indigo-600" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Weekly Schedule</h1>
+              </div>
+              <p className="text-gray-500 ml-14">Manage your available consultation hours</p>
+            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold shadow-lg shadow-indigo-200"
+            >
+              <Plus className="w-5 h-5" />
+              Add Time Slot
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base font-medium"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Time Slot
-        </button>
-      </div>
 
       {/* Toast Notifications - Fixed Position */}
       {error && (
@@ -309,20 +329,30 @@ const LawyerSchedule: React.FC = () => {
         </div>
       )}
 
-      {/* Schedule Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+      {/* Schedule Grid - Enhanced */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {DAYS_OF_WEEK.map(day => (
-          <div key={day} className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3 border-b pb-2">{day}</h3>
+          <div key={day} className="bg-white rounded-2xl border-2 border-gray-100 p-4 hover:shadow-lg hover:border-indigo-200 transition-all duration-300">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-1.5 bg-indigo-50 rounded-lg">
+                <Calendar className="w-4 h-4 text-indigo-600" />
+              </div>
+              <h3 className="text-base font-semibold text-gray-900">{day}</h3>
+            </div>
 
             {groupedSchedules[day].length === 0 ? (
-              <p className="text-xs sm:text-sm text-gray-500 italic">No schedules</p>
+              <div className="text-center py-6">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Clock className="w-6 h-6 text-gray-300" />
+                </div>
+                <p className="text-sm text-gray-500">No schedules</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {groupedSchedules[day].map(schedule => (
                   <div
                     key={schedule.id}
-                    className={`p-2 sm:p-3 rounded-lg border ${
+                    className={`p-3 rounded-xl border-2 transition-all ${
                       schedule.is_active
                         ? 'bg-green-50 border-green-200'
                         : 'bg-gray-50 border-gray-200'

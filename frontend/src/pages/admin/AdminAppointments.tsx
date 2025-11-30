@@ -120,26 +120,36 @@ const AdminAppointments: React.FC = () => {
       <div className="space-y-6 animate-pulse">
         {/* Header Skeleton */}
         <div>
-          <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-48"></div>
+          <div className="h-9 bg-gray-200 rounded w-60 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-72"></div>
         </div>
 
         {/* Stats Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-              <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-16"></div>
-            </div>
-          ))}
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+            <div className="h-8 bg-gray-200 rounded w-16"></div>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+            <div className="h-8 bg-yellow-100 rounded w-16"></div>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+            <div className="h-8 bg-green-100 rounded w-16"></div>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+            <div className="h-8 bg-blue-100 rounded w-16"></div>
+          </div>
         </div>
 
         {/* Filters Skeleton */}
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-          <div className="flex gap-4">
-            <div className="flex-1 h-10 bg-gray-200 rounded"></div>
-            <div className="w-40 h-10 bg-gray-200 rounded"></div>
-            <div className="w-40 h-10 bg-gray-200 rounded"></div>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 h-10 bg-gray-200 rounded-lg"></div>
+            <div className="w-40 h-10 bg-gray-200 rounded-lg"></div>
+            <div className="w-40 h-10 bg-gray-200 rounded-lg"></div>
           </div>
         </div>
 
@@ -147,13 +157,20 @@ const AdminAppointments: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+              <div key={i} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                  <div className="space-y-2">
+                    <div className="h-5 bg-gray-200 rounded w-36"></div>
+                    <div className="h-3 bg-gray-100 rounded w-24"></div>
+                  </div>
                 </div>
-                <div className="h-8 bg-gray-200 rounded w-24"></div>
+                <div className="flex items-center gap-4">
+                  <div className="h-4 bg-gray-100 rounded w-28"></div>
+                  <div className="h-4 bg-gray-100 rounded w-20"></div>
+                  <div className="h-6 bg-yellow-100 rounded-full w-20"></div>
+                  <div className="h-6 bg-green-100 rounded-full w-16"></div>
+                </div>
               </div>
             ))}
           </div>
@@ -172,36 +189,75 @@ const AdminAppointments: React.FC = () => {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-          <p className="text-gray-600 text-sm">Total Appointments</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Total Appointments</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+            </div>
+            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-          <p className="text-gray-600 text-sm">Pending</p>
-          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Pending</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.pending}</p>
+            </div>
+            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-          <p className="text-gray-600 text-sm">Confirmed</p>
-          <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Confirmed</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.confirmed}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-          <p className="text-gray-600 text-sm">Completed</p>
-          <p className="text-2xl font-bold text-blue-600">{stats.completed}</p>
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Completed</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.completed}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
-          <div className="flex-1">
+          <div className="flex-1 relative">
+            <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             <input
               type="text"
               placeholder="Search by client, lawyer, or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
             />
           </div>
 
@@ -209,7 +265,7 @@ const AdminAppointments: React.FC = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all min-w-[150px]"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -222,7 +278,7 @@ const AdminAppointments: React.FC = () => {
           <select
             value={filterPayment}
             onChange={(e) => setFilterPayment(e.target.value)}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all min-w-[150px]"
           >
             <option value="all">All Payments</option>
             <option value="paid">Paid</option>

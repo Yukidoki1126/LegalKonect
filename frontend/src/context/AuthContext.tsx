@@ -140,9 +140,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string): Promise<string> => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      const { token: newToken, user: newUser } = response.data;
+      const { token: newToken, user: newUser, redirect } = response.data;
 
-      // Set token and store user data immediately for fast login
+      // Check if this is an admin login
+      if (newUser.is_admin) {
+        // Store admin data in sessionStorage (admin uses separate storage)
+        sessionStorage.setItem('admin_token', newToken);
+        sessionStorage.setItem('admin', JSON.stringify({
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+        }));
+        return redirect || '/admin';
+      }
+
+      // Regular user login
       setToken(newToken);
       setUser(newUser);
       localStorage.setItem('token', newToken);
@@ -150,13 +163,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
       // Determine redirect path based on user type
-      let redirectPath = '/lawyers'; // Default for regular clients
+      let redirectPath = redirect || '/lawyers'; // Use backend redirect or default
 
       if (newUser.lawyer) {
         if (newUser.lawyer.status === 'pending') {
           redirectPath = '/pending-approval';
         } else if (newUser.lawyer.status === 'approved') {
-          redirectPath = '/lawyer/dashboard';
+          redirectPath = redirect || '/lawyer/dashboard';
         }
       }
 

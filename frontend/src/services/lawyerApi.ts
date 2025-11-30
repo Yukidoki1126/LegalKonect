@@ -118,6 +118,18 @@ export const lawyerApi = {
     return response.data;
   },
 
+  // Confirm/Set specialization for an appointment
+  confirmSpecialization: async (appointmentId: number, specializationId: number) => {
+    const response = await axios.post(
+      `${API_URL}/lawyer/appointments/${appointmentId}/confirm-specialization`,
+      { specialization_id: specializationId },
+      { headers: getAuthHeader() }
+    );
+    // Invalidate cache after mutation
+    cacheService.invalidatePattern('/lawyer/appointments');
+    return response.data;
+  },
+
   // Get earnings - cached for 60 seconds
   getEarnings: async () => {
     return cachedGet(`${API_URL}/lawyer/earnings`, 60000);
@@ -139,6 +151,14 @@ export const lawyerApi = {
   // Get lawyer profile - cached for 60 seconds
   getProfile: async () => {
     return cachedGet(`${API_URL}/lawyer/profile`, 60000);
+  },
+
+  // Get lawyer profile without cache (for verification status checks)
+  getProfileFresh: async () => {
+    const response = await axios.get(`${API_URL}/lawyer/profile`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
   },
 
   // Update lawyer profile

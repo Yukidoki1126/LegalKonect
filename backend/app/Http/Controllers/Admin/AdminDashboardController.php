@@ -23,11 +23,19 @@ class AdminDashboardController extends Controller
         $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
         $pendingAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'pending')->count();
 
-        $totalRevenue = Appointment::where('payment_status', 'paid')->where('created_at', '>=', $startDate)->sum('consultation_fee');
-        $monthlyRevenue = Appointment::where('payment_status', 'paid')
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->sum('consultation_fee');
+        // Calculate revenue based on reservation fees from lawyers
+        $totalRevenue = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+            ->where('appointments.payment_status', 'paid')
+            ->where('appointments.created_at', '>=', $startDate)
+            ->selectRaw('SUM(COALESCE(lawyers.reservation_fee, 100)) as total')
+            ->value('total') ?? 0;
+
+        $monthlyRevenue = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+            ->where('appointments.payment_status', 'paid')
+            ->whereMonth('appointments.created_at', now()->month)
+            ->whereYear('appointments.created_at', now()->year)
+            ->selectRaw('SUM(COALESCE(lawyers.reservation_fee, 100)) as total')
+            ->value('total') ?? 0;
 
         // Get recent appointments
         $recentAppointments = Appointment::with(['user', 'lawyer'])
@@ -48,6 +56,18 @@ class AdminDashboardController extends Controller
 
         // debug log removed
 
+        // Get additional system overview metrics
+        $activeLawyers = Lawyer::where('is_available', true)
+            ->where('status', 'approved')
+            ->count();
+        
+        $activeUsers = User::whereHas('appointments')->count();
+        
+        // Calculate average lawyer rating from reviews
+        $averageRating = DB::table('reviews')
+            ->whereNotNull('rating')
+            ->avg('rating') ?? 0;
+
         return response()->json([
             'total_users' => $totalUsers,
             'total_lawyers' => $totalLawyers,
@@ -57,6 +77,9 @@ class AdminDashboardController extends Controller
             'monthly_revenue' => $monthlyRevenue,
             'period_days' => $days,
             'recent_appointments' => $recentAppointments,
+            'active_lawyers' => $activeLawyers,
+            'active_users' => $activeUsers,
+            'average_rating' => round($averageRating, 1),
         ]);
     }
 
@@ -133,10 +156,17 @@ class AdminDashboardController extends Controller
     public function users(Request $request)
     {
         $users = User::with('lawyer')
+            ->withCount('appointments')
             ->where('id', '!=', $request->user()->id) // Exclude currently logged-in admin
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($user) {
+                // Also count appointments via lawyer if user is a lawyer
+                $lawyerAppointments = 0;
+                if ($user->lawyer) {
+                    $lawyerAppointments = Appointment::where('lawyer_id', $user->lawyer->id)->count();
+                }
+                
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -145,6 +175,7 @@ class AdminDashboardController extends Controller
                     'status' => $user->status,
                     'is_lawyer' => $user->lawyer !== null,
                     'lawyer_id' => $user->lawyer ? $user->lawyer->id : null,
+                    'total_appointments' => $user->lawyer ? $lawyerAppointments : $user->appointments_count,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ];
@@ -194,7 +225,8 @@ class AdminDashboardController extends Controller
                 'lawyer_name' => $appointment->lawyer
                     ? $appointment->lawyer->first_name . ' ' . $appointment->lawyer->last_name
                     : 'Unknown',
-                'amount' => $platformFee,
+                'amount' => $reservationFee,
+                'platform_fee' => $platformFee,
                 'payment_method' => $appointment->payment_method,
                 'payment_reference' => $appointment->payment_reference,
                 'payment_date' => $appointment->created_at,
@@ -215,6 +247,8 @@ class AdminDashboardController extends Controller
             'summary' => [
                 'total_payments' => $totalPayments,
                 'total_amount' => $totalAmount,
+                'total_revenue' => $totalReservationFees,
+                'platform_fees' => $totalAmount,
                 'card_payments' => $cardPayments,
                 'gcash_payments' => $gcashPayments
             ]
@@ -355,12 +389,14 @@ class AdminDashboardController extends Controller
         $days = $request->input('days', 30);
         $startDate = now()->subDays($days);
         
-        // Most requested legal expertise (by primary specialization only)
-        // Use a subquery to get only the first specialization per lawyer to avoid double counting
+        // Most requested legal expertise (by confirmed case type)
+        // Uses the specialization confirmed by the lawyer for each appointment
+        // Falls back to lawyer's primary specialization if not confirmed
         $topSpecializations = DB::table('appointments')
             ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
-            ->joinSub(
-                // Subquery: Get the first specialization for each lawyer
+            ->leftJoin('specializations as confirmed_spec', 'appointments.confirmed_specialization_id', '=', 'confirmed_spec.id')
+            ->leftJoinSub(
+                // Subquery: Get the first specialization for each lawyer (fallback)
                 DB::table('lawyer_specializations as ls1')
                     ->select('ls1.lawyer_id', 'ls1.specialization_id')
                     ->whereNotExists(function ($query) {
@@ -374,10 +410,15 @@ class AdminDashboardController extends Controller
                 '=',
                 'primary_spec.lawyer_id'
             )
-            ->join('specializations', 'primary_spec.specialization_id', '=', 'specializations.id')
-            ->select('specializations.id', 'specializations.name', DB::raw('COUNT(*) as appointment_count'))
+            ->leftJoin('specializations as fallback_spec', 'primary_spec.specialization_id', '=', 'fallback_spec.id')
+            ->select(
+                DB::raw('COALESCE(confirmed_spec.id, fallback_spec.id) as id'),
+                DB::raw('COALESCE(confirmed_spec.name, fallback_spec.name) as name'),
+                DB::raw('COUNT(*) as appointment_count')
+            )
             ->where('appointments.created_at', '>=', $startDate)
-            ->groupBy('specializations.id', 'specializations.name')
+            ->whereRaw('COALESCE(confirmed_spec.id, fallback_spec.id) IS NOT NULL')
+            ->groupBy(DB::raw('COALESCE(confirmed_spec.id, fallback_spec.id)'), DB::raw('COALESCE(confirmed_spec.name, fallback_spec.name)'))
             ->orderBy('appointment_count', 'desc')
             ->limit(10)
             ->get();
@@ -514,6 +555,213 @@ class AdminDashboardController extends Controller
             'period_days' => $days,
             'total_appointments' => $totalAppointments,
         ]);
+    }
+
+    /**
+     * Get pending refund requests that need admin review
+     */
+    public function pendingRefunds()
+    {
+        $refunds = Appointment::with(['user', 'lawyer'])
+            ->where('refund_status', 'pending_review')
+            ->orderBy('refund_requested_at', 'asc')
+            ->get()
+            ->map(function ($appointment) {
+                return [
+                    'id' => $appointment->id,
+                    'client_name' => $appointment->user->name ?? 'Unknown',
+                    'client_email' => $appointment->user->email ?? 'Unknown',
+                    'lawyer_name' => $appointment->lawyer
+                        ? $appointment->lawyer->first_name . ' ' . $appointment->lawyer->last_name
+                        : 'Unknown',
+                    'appointment_date' => $appointment->appointment_date,
+                    'appointment_time' => $appointment->appointment_time,
+                    'refund_amount' => $appointment->refund_amount ?? ($appointment->lawyer->reservation_fee ?? 100),
+                    'refund_reason' => $appointment->refund_reason,
+                    'refund_notes' => $appointment->refund_notes,
+                    'refund_requested_at' => $appointment->refund_requested_at,
+                    'payment_reference' => $appointment->payment_reference,
+                    'payment_method' => $appointment->payment_method,
+                    'cancelled_at' => $appointment->updated_at,
+                ];
+            });
+
+        return response()->json([
+            'refunds' => $refunds,
+            'count' => $refunds->count()
+        ]);
+    }
+
+    /**
+     * Approve a refund request
+     */
+    public function approveRefund(Request $request, $appointmentId)
+    {
+        $appointment = Appointment::with(['user', 'lawyer'])->findOrFail($appointmentId);
+
+        if ($appointment->refund_status !== 'pending_review') {
+            return response()->json([
+                'message' => 'This refund request cannot be approved. Current status: ' . $appointment->refund_status
+            ], 400);
+        }
+
+        // Process the refund through PayMongo
+        try {
+            $refundAmount = $appointment->refund_amount ?? ($appointment->lawyer->reservation_fee ?? 100);
+            
+            // Create refund via PayMongo API
+            $paymongoSecretKey = config('services.paymongo.secret_key');
+            
+            if ($appointment->payment_id) {
+                $response = \Http::withBasicAuth($paymongoSecretKey, '')
+                    ->post('https://api.paymongo.com/v1/refunds', [
+                        'data' => [
+                            'attributes' => [
+                                'amount' => (int)($refundAmount * 100), // PayMongo expects amount in cents
+                                'payment_id' => $appointment->payment_id,
+                                'reason' => 'requested_by_customer',
+                                'notes' => 'Refund approved by admin for cancelled appointment #' . $appointment->id
+                            ]
+                        ]
+                    ]);
+
+                if ($response->successful()) {
+                    $refundData = $response->json();
+                    $appointment->refund_id = $refundData['data']['id'] ?? null;
+                    $appointment->refund_status = 'approved';
+                    $appointment->refund_completed_at = now();
+                    $appointment->save();
+
+                    // Send notification to client
+                    $this->sendRefundApprovedNotification($appointment);
+
+                    return response()->json([
+                        'message' => 'Refund approved and processed successfully',
+                        'refund_id' => $appointment->refund_id
+                    ]);
+                } else {
+                    \Log::error('PayMongo refund failed', [
+                        'appointment_id' => $appointmentId,
+                        'response' => $response->json()
+                    ]);
+                    
+                    // Mark as approved anyway since we'll manually process
+                    $appointment->refund_status = 'approved';
+                    $appointment->refund_notes = ($appointment->refund_notes ?? '') . ' [PayMongo refund failed - manual processing required]';
+                    $appointment->save();
+
+                    return response()->json([
+                        'message' => 'Refund approved but PayMongo processing failed. Manual refund may be required.',
+                        'warning' => true
+                    ]);
+                }
+            } else {
+                // No payment_id, mark as approved for manual processing
+                $appointment->refund_status = 'approved';
+                $appointment->refund_completed_at = now();
+                $appointment->save();
+
+                $this->sendRefundApprovedNotification($appointment);
+
+                return response()->json([
+                    'message' => 'Refund approved. No payment ID found - manual refund may be required.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error processing refund', [
+                'appointment_id' => $appointmentId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'message' => 'Error processing refund: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject a refund request
+     */
+    public function rejectRefund(Request $request, $appointmentId)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500'
+        ]);
+
+        $appointment = Appointment::with(['user', 'lawyer'])->findOrFail($appointmentId);
+
+        if ($appointment->refund_status !== 'pending_review') {
+            return response()->json([
+                'message' => 'This refund request cannot be rejected. Current status: ' . $appointment->refund_status
+            ], 400);
+        }
+
+        $appointment->refund_status = 'rejected';
+        $appointment->refund_notes = ($appointment->refund_notes ?? '') . ' [Rejected: ' . $request->reason . ']';
+        $appointment->save();
+
+        // Send notification to client
+        $this->sendRefundRejectedNotification($appointment, $request->reason);
+
+        return response()->json([
+            'message' => 'Refund request has been rejected'
+        ]);
+    }
+
+    /**
+     * Send notification when refund is approved
+     */
+    private function sendRefundApprovedNotification($appointment)
+    {
+        try {
+            if ($appointment->user) {
+                // Create database notification
+                DB::table('notifications')->insert([
+                    'id' => \Str::uuid(),
+                    'type' => 'App\Notifications\RefundApproved',
+                    'notifiable_type' => 'App\Models\User',
+                    'notifiable_id' => $appointment->user->id,
+                    'data' => json_encode([
+                        'title' => 'Refund Approved',
+                        'message' => 'Your refund of ₱' . number_format($appointment->refund_amount ?? 100, 2) . ' has been approved. The amount will be credited within 5-10 business days.',
+                        'appointment_id' => $appointment->id,
+                        'amount' => $appointment->refund_amount ?? 100
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send refund approved notification', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Send notification when refund is rejected
+     */
+    private function sendRefundRejectedNotification($appointment, $reason)
+    {
+        try {
+            if ($appointment->user) {
+                // Create database notification
+                DB::table('notifications')->insert([
+                    'id' => \Str::uuid(),
+                    'type' => 'App\Notifications\RefundRejected',
+                    'notifiable_type' => 'App\Models\User',
+                    'notifiable_id' => $appointment->user->id,
+                    'data' => json_encode([
+                        'title' => 'Refund Request Declined',
+                        'message' => 'Your refund request has been declined. Reason: ' . $reason,
+                        'appointment_id' => $appointment->id,
+                        'reason' => $reason
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send refund rejected notification', ['error' => $e->getMessage()]);
+        }
     }
 
     // debug endpoint removed

@@ -15,6 +15,7 @@ use App\Http\Controllers\LawyerCaseController;
 use App\Http\Controllers\LawyerScheduleController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\AdminVerificationController;
+use App\Http\Controllers\PasswordResetController;
 
 // Public routes - No authentication required
 Route::prefix('auth')->group(function () {
@@ -28,6 +29,11 @@ Route::prefix('auth')->group(function () {
 
     // New Google Sign-In endpoint
     Route::post('/google', [GoogleAuthController::class, 'handleGoogleAuth']);
+
+    // Password Reset routes
+    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+    Route::post('/validate-reset-token', [PasswordResetController::class, 'validateToken']);
+    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 });
 
 // Authenticated cleanup route (for orphaned accounts)
@@ -147,6 +153,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [LawyerScheduleController::class, 'destroy']);
         Route::post('/{id}/toggle', [LawyerScheduleController::class, 'toggleActive']);
     });
+
+    // Notification routes - All authenticated users
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [App\Http\Controllers\NotificationController::class, 'index']);
+        Route::get('/count', [App\Http\Controllers\NotificationController::class, 'getCount']);
+        Route::post('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
+    });
 });
 
 // Dummy login route
@@ -162,6 +176,7 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
     Route::post('/appointments/{id}/decline', [LawyerDashboardController::class, 'declineAppointment']);
     Route::post('/appointments/{id}/complete', [LawyerDashboardController::class, 'completeAppointment']);
     Route::post('/appointments/{id}/notes', [LawyerDashboardController::class, 'addNotes']);
+    Route::post('/appointments/{id}/confirm-specialization', [LawyerDashboardController::class, 'confirmSpecialization']);
     Route::post('/appointments/{id}/reschedule', [AppointmentController::class, 'requestReschedule']);
     Route::post('/appointments/bulk-reschedule', [AppointmentController::class, 'bulkReschedule']);
     Route::get('/earnings', [LawyerDashboardController::class, 'earnings']);
@@ -228,6 +243,11 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/payments', [App\Http\Controllers\Admin\AdminDashboardController::class, 'payments']);
     Route::get('/analytics', [App\Http\Controllers\Admin\AdminDashboardController::class, 'analytics']);
         Route::get('/descriptive-analytics', [App\Http\Controllers\Admin\AdminDashboardController::class, 'descriptiveAnalytics']); 
+
+    // Refund Management
+    Route::get('/pending-refunds', [App\Http\Controllers\Admin\AdminDashboardController::class, 'pendingRefunds']);
+    Route::post('/refunds/{appointmentId}/approve', [App\Http\Controllers\Admin\AdminDashboardController::class, 'approveRefund']);
+    Route::post('/refunds/{appointmentId}/reject', [App\Http\Controllers\Admin\AdminDashboardController::class, 'rejectRefund']);
 
             // (debug route removed)
     

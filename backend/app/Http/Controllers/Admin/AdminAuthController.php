@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -20,10 +20,8 @@ class AdminAuthController extends Controller
             'password' => 'required',
         ]);
 
-        // Find user with admin or super_admin role
-        $admin = User::where('email', $request->email)
-            ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])
-            ->first();
+        // Find admin in admins table
+        $admin = Admin::where('email', $request->email)->first();
 
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             throw ValidationException::withMessages([
@@ -31,8 +29,8 @@ class AdminAuthController extends Controller
             ]);
         }
 
-        // Check if account is suspended
-        if ($admin->status === 'suspended') {
+        // Check if account is active
+        if (!$admin->is_active) {
             throw ValidationException::withMessages([
                 'email' => ['Your admin account has been suspended.'],
             ]);
@@ -50,7 +48,7 @@ class AdminAuthController extends Controller
                 'name' => $admin->name,
                 'email' => $admin->email,
                 'role' => $admin->role,
-                'status' => $admin->status,
+                'status' => $admin->is_active ? 'active' : 'suspended',
                 'last_login_at' => $admin->last_login_at,
             ],
             'token' => $token,
@@ -71,7 +69,7 @@ class AdminAuthController extends Controller
                 'name' => $admin->name,
                 'email' => $admin->email,
                 'role' => $admin->role,
-                'status' => $admin->status,
+                'status' => $admin->is_active ? 'active' : 'suspended',
                 'last_login_at' => $admin->last_login_at,
             ]
         ]);

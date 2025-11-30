@@ -46,7 +46,11 @@ class LawyerCaseController extends Controller
         $appointments = Appointment::where('lawyer_id', $lawyer->id)
             ->where('status', 'completed')
             ->whereDoesntHave('case') // Only show appointments without cases
-            ->with(['user:id,name,email'])
+            ->with([
+                'user:id,name,email',
+                'specialization:id,name', // Include client-selected specialization
+                'confirmedSpecialization:id,name' // Include lawyer-confirmed specialization
+            ])
             ->orderBy('appointment_date', 'desc')
             ->orderBy('appointment_time', 'desc')
             ->get();

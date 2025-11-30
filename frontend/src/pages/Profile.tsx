@@ -160,40 +160,51 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 animate-fadeIn">
-      <div className="max-w-screen-xl mx-auto px-6 lg:px-10 py-4">
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-semibold text-gray-900">Profile Settings</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage your account information and location</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 animate-fadeIn pt-16">
+      <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 py-8">
+        {/* Header - upper left with gradient accent */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
+          </div>
+          <p className="text-base text-gray-500 ml-13">Manage your account information and location</p>
         </div>
 
-        {/* Content wrapper - constrain form width for better UX */}
-        <div className="max-w-4xl mx-auto">
+        {/* Content wrapper - full width */}
+        <div>
           {/* Success Message */}
           {success && (
-            <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-3">
-              <div className="flex items-center gap-2">
-                <svg className="h-4 w-4 text-green-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <p className="text-sm text-green-800">{success}</p>
+            <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm animate-slideDown">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-green-800">{success}</p>
               </div>
             </div>
           )}
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
+            <div className="mb-6 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl p-4 shadow-sm animate-shake">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-red-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-sm text-red-800">{error}</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-red-800">{error}</p>
                 </div>
-                <button onClick={() => setError('')} className="text-red-400 hover:text-red-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onClick={() => setError('')} className="p-1 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-all">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -202,10 +213,10 @@ const Profile: React.FC = () => {
           )}
 
         {/* Main Card */}
-        <div className="bg-white border border-gray-200 rounded-lg">
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-soft overflow-hidden">
           {/* Profile Header Section */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center gap-5">
+          <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-purple-50/20">
+            <div className="flex items-center gap-6">
               <ProfilePictureUpload
                 currentPicture={user?.profile_picture}
                 onUpload={handleProfilePictureUpload}
@@ -213,15 +224,18 @@ const Profile: React.FC = () => {
                 isUploading={uploadingPicture}
               />
               <div className="flex-1">
-                <h2 className="text-lg font-semibold text-gray-900">{user?.name || 'Your Name'}</h2>
-                <p className="text-sm text-gray-500">{user?.email}</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                <h2 className="text-2xl font-bold text-gray-900">{user?.name || 'Your Name'}</h2>
+                <p className="text-base text-gray-500 mt-1">{user?.email}</p>
+                <div className="flex items-center gap-3 mt-4">
+                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                     Client
                   </span>
                   {user?.city && (
-                    <span className="flex items-center gap-1 text-xs text-gray-500">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full">
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       </svg>
                       {user.city}, {user.province}
@@ -233,122 +247,162 @@ const Profile: React.FC = () => {
           </div>
 
           {/* Form Section */}
-          <form onSubmit={handleBasicInfoSubmit} className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleBasicInfoSubmit} className="p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Name */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="group">
+                <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
                   Full Name
                 </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter your full name"
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-3.5 text-base border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-200 hover:border-gray-300"
+                    placeholder="Enter your full name"
+                  />
+                </div>
               </div>
 
               {/* Email */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="group">
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                   Email Address
                 </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="your.email@example.com"
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-3.5 text-base border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-200 hover:border-gray-300"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
               </div>
 
               {/* Phone */}
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="group">
+                <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
                   Phone Number
                 </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="+63 912 345 6789"
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-3.5 text-base border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-200 hover:border-gray-300"
+                    placeholder="+63 912 345 6789"
+                  />
+                </div>
               </div>
-
               {/* Location */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="group">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Location
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowLocationPicker(!showLocationPicker)}
-                  className={`w-full px-3 py-2 text-sm border rounded-md text-left flex items-center justify-between transition-colors ${
-                    showLocationPicker 
-                      ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                      : 'border-gray-200 hover:bg-gray-50 text-gray-900'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-full pl-12 pr-4 py-3.5 text-base border-2 border-gray-200 rounded-xl bg-gray-50/50 flex items-center gap-2 relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     </svg>
-                    <span className={user?.address ? '' : 'text-gray-400'}>
-                      {user?.address ? `${user.city}, ${user.province}` : 'Set location'}
-                    </span>
+                  </div>
+                  <span className={user?.city ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                    {user?.city ? `${user.city}, ${user.province}` : 'No location set'}
                   </span>
-                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${showLocationPicker ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+                </div>
               </div>
             </div>
 
-            {/* Location Picker - Expandable */}
-            {showLocationPicker && (
-              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md">
+            {/* Map Section - Always Visible */}
+            <div className="mt-8">
+              <div className="p-6 bg-gradient-to-br from-gray-50 to-blue-50/30 border-2 border-gray-200 rounded-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-900">Update Your Location</h3>
+                </div>
                 <LocationPickerWithMap
                   initialLat={user?.latitude}
                   initialLng={user?.longitude}
                   initialAddress={user?.address || ''}
                   onLocationChange={handleLocationChange}
                 />
-                <div className="mt-3 flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={handleCancelLocation}
-                    className="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
+                <div className="mt-4 flex gap-3 justify-end">
                   <button
                     type="button"
                     onClick={handleSaveLocation}
                     disabled={loading}
-                    className="px-3 py-1.5 text-sm bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-300"
+                    className="px-6 py-2.5 text-base bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 shadow-md hover:shadow-lg disabled:shadow-none transition-all duration-200 flex items-center gap-2"
                   >
-                    {loading ? 'Saving...' : 'Save Location'}
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                        Save Location
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Save Button */}
-            <div className="mt-6 pt-4 border-t border-gray-100">
+            <div className="mt-8 pt-6 border-t border-gray-100">
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 py-2 text-sm bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="px-8 py-3.5 text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed shadow-button hover:shadow-button-hover transition-all duration-200 flex items-center gap-2"
               >
-                {loading ? 'Saving...' : 'Save Changes'}
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving Changes...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Changes
+                  </>
+                )}
               </button>
             </div>
           </form>

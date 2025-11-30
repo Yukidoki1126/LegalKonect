@@ -29,7 +29,7 @@ class RefundProcessed extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Refund Processed - LegalKonect',
+            subject: 'Refund Completed - LegalKonect',
         );
     }
 

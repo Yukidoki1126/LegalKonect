@@ -30,8 +30,23 @@ const AdminManagement: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
-  // Form state
+  // Password validation helper
+  const validatePassword = (password: string): string => {
+    if (password.length < 8) return 'Password must be at least 8 characters';
+    if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return 'Password must contain at least one special character';
+    return '';
+  };
+
+  const getPasswordStrength = (password: string) => {
+    const hasMinLength = password.length >= 8;
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    return { hasMinLength, hasNumber, hasSpecial };
+  };
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -90,11 +105,21 @@ const AdminManagement: React.FC = () => {
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password
+    const error = validatePassword(formData.password);
+    if (error) {
+      setPasswordError(error);
+      return;
+    }
+    
     try {
       await adminManagementService.createAdmin(formData);
       showToast('Admin created successfully!', 'success');
       setShowCreateModal(false);
       setFormData({ name: '', email: '', password: '', role: 'admin' });
+      setPasswordError('');
+      setShowPassword(false);
       loadAdmins();
       loadStats();
     } catch (error: any) {
@@ -106,6 +131,15 @@ const AdminManagement: React.FC = () => {
   const handleUpdateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAdmin) return;
+
+    // Validate password if provided
+    if (formData.password) {
+      const error = validatePassword(formData.password);
+      if (error) {
+        setPasswordError(error);
+        return;
+      }
+    }
 
     try {
       const updateData: any = {
@@ -124,6 +158,8 @@ const AdminManagement: React.FC = () => {
       setShowEditModal(false);
       setSelectedAdmin(null);
       setFormData({ name: '', email: '', password: '', role: 'admin' });
+      setPasswordError('');
+      setShowPassword(false);
       loadAdmins();
     } catch (error: any) {
       console.error('Error updating admin:', error);
@@ -195,8 +231,66 @@ const AdminManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="p-6 space-y-6 animate-pulse">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 rounded w-52 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-48"></div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          {['Total Admins', 'Super Admins', 'Active', 'Suspended'].map((_, i) => (
+            <div key={i} className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-12"></div>
+                </div>
+                <div className={`p-3 rounded-full ${
+                  i === 0 ? 'bg-blue-100' :
+                  i === 1 ? 'bg-purple-100' :
+                  i === 2 ? 'bg-green-100' : 'bg-red-100'
+                }`}>
+                  <div className="w-6 h-6"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Search and Create Button Skeleton */}
+        <div className="bg-white rounded-lg shadow mb-6 p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex-1 h-10 bg-gray-200 rounded-lg"></div>
+            <div className="h-10 bg-blue-200 rounded-lg w-36"></div>
+          </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-6 space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                  <div>
+                    <div className="h-5 bg-gray-200 rounded w-36 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-48"></div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                  <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                  <div className="flex gap-2">
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -212,57 +306,57 @@ const AdminManagement: React.FC = () => {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div className="bg-white rounded-lg shadow p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Admins</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total_admins}</p>
+                  <p className="text-gray-500 text-sm font-medium">Total Admins</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total_admins}</p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Super Admins</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total_super_admins}</p>
+                  <p className="text-gray-500 text-sm font-medium">Super Admins</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total_super_admins}</p>
                 </div>
-                <div className="p-3 bg-purple-100 rounded-full">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.active_admins}</p>
+                  <p className="text-gray-500 text-sm font-medium">Active</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.active_admins}</p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Suspended</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.suspended_admins}</p>
+                  <p className="text-gray-500 text-sm font-medium">Suspended</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.suspended_admins}</p>
                 </div>
-                <div className="p-3 bg-red-100 rounded-full">
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                   </svg>
                 </div>
@@ -272,20 +366,23 @@ const AdminManagement: React.FC = () => {
         )}
 
         {/* Search and Create */}
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 p-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex-1">
+            <div className="flex-1 relative">
+              <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               <input
                 type="text"
                 placeholder="Search by name or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
               />
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all flex items-center gap-2 shadow-lg shadow-blue-500/25 font-medium"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -425,15 +522,57 @@ const AdminManagement: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Password
                     </label>
-                    <input
-                      type="password"
-                      required
-                      minLength={8}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={formData.password}
+                        onChange={(e) => {
+                          setFormData({ ...formData, password: e.target.value });
+                          setPasswordError('');
+                        }}
+                        className={`w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                          passwordError ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    {passwordError && (
+                      <p className="text-xs text-red-500 mt-1">{passwordError}</p>
+                    )}
+                    {formData.password && !passwordError && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-gray-500">Password requirements:</p>
+                        <div className="flex items-center gap-1">
+                          <span className={`w-3 h-3 rounded-full ${getPasswordStrength(formData.password).hasMinLength ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${getPasswordStrength(formData.password).hasMinLength ? 'text-green-600' : 'text-gray-500'}`}>At least 8 characters</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className={`w-3 h-3 rounded-full ${getPasswordStrength(formData.password).hasNumber ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${getPasswordStrength(formData.password).hasNumber ? 'text-green-600' : 'text-gray-500'}`}>Contains a number</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className={`w-3 h-3 rounded-full ${getPasswordStrength(formData.password).hasSpecial ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${getPasswordStrength(formData.password).hasSpecial ? 'text-green-600' : 'text-gray-500'}`}>Contains a special character</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -457,6 +596,8 @@ const AdminManagement: React.FC = () => {
                     onClick={() => {
                       setShowCreateModal(false);
                       setFormData({ name: '', email: '', password: '', role: 'admin' });
+                      setPasswordError('');
+                      setShowPassword(false);
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                   >
@@ -511,13 +652,56 @@ const AdminManagement: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Password (leave blank to keep unchanged)
                     </label>
-                    <input
-                      type="password"
-                      minLength={8}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => {
+                          setFormData({ ...formData, password: e.target.value });
+                          setPasswordError('');
+                        }}
+                        className={`w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                          passwordError ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    {passwordError && (
+                      <p className="text-xs text-red-500 mt-1">{passwordError}</p>
+                    )}
+                    {formData.password && !passwordError && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-gray-500">Password requirements:</p>
+                        <div className="flex items-center gap-1">
+                          <span className={`w-3 h-3 rounded-full ${getPasswordStrength(formData.password).hasMinLength ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${getPasswordStrength(formData.password).hasMinLength ? 'text-green-600' : 'text-gray-500'}`}>At least 8 characters</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className={`w-3 h-3 rounded-full ${getPasswordStrength(formData.password).hasNumber ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${getPasswordStrength(formData.password).hasNumber ? 'text-green-600' : 'text-gray-500'}`}>Contains a number</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className={`w-3 h-3 rounded-full ${getPasswordStrength(formData.password).hasSpecial ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${getPasswordStrength(formData.password).hasSpecial ? 'text-green-600' : 'text-gray-500'}`}>Contains a special character</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -542,6 +726,8 @@ const AdminManagement: React.FC = () => {
                       setShowEditModal(false);
                       setSelectedAdmin(null);
                       setFormData({ name: '', email: '', password: '', role: 'admin' });
+                      setPasswordError('');
+                      setShowPassword(false);
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                   >

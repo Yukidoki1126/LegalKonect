@@ -65,6 +65,37 @@ class AuthController extends Controller
         'password' => 'required',
     ]);
 
+    // First, check if it's an admin
+    $admin = \App\Models\Admin::where('email', $request->email)->first();
+    
+    if ($admin && Hash::check($request->password, $admin->password)) {
+        // Check if admin account is active
+        if (!$admin->is_active) {
+            throw ValidationException::withMessages([
+                'email' => ['Your admin account has been suspended.'],
+            ]);
+        }
+
+        // Update last login
+        $admin->update(['last_login_at' => now()]);
+
+        // Create token
+        $token = $admin->createToken('admin-token')->plainTextToken;
+
+        return response()->json([
+            'user' => [
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role' => $admin->role,
+                'is_admin' => true,
+            ],
+            'token' => $token,
+            'redirect' => '/admin',
+        ]);
+    }
+
+    // If not admin, check users table
     $user = User::where('email', $request->email)->first();
 
     if (!$user || !Hash::check($request->password, $user->password)) {
@@ -97,14 +128,16 @@ class AuthController extends Controller
             'latitude' => $user->latitude,
             'longitude' => $user->longitude,
             'profile_picture' => $user->profile_picture,
+            'is_admin' => false,
             'lawyer' => $user->lawyer ? [
                 'id' => $user->lawyer->id,
                 'first_name' => $user->lawyer->first_name,
                 'last_name' => $user->lawyer->last_name,
-                'status' => $user->lawyer->status, // CRITICAL: Include status
+                'status' => $user->lawyer->status,
             ] : null
         ],
         'token' => $token,
+        'redirect' => $user->lawyer ? '/lawyer/dashboard' : '/lawyers',
     ]);
 }
 

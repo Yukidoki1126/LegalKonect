@@ -2,13 +2,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { LawyersProvider } from './context/LawyersContext';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Profile from './pages/Profile';
@@ -22,6 +24,7 @@ import ClientOnlyRoute from './components/ClientOnlyRoute';
 import FAQChatbot from './components/FAQChatbot';
 import LawyerRegister from './pages/LawyerRegister';
 import PendingApproval from './pages/PendingApproval';
+import ToastNotification from './components/ToastNotification';
 
 // Lawyer Dashboard Imports
 import LawyerLayout from './pages/lawyer/LawyerLayout';
@@ -52,6 +55,8 @@ function AppContent() {
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isAuthRoute = location.pathname === '/login' ||
                       location.pathname === '/register' ||
+                      location.pathname === '/forgot-password' ||
+                      location.pathname === '/reset-password' ||
                       location.pathname === '/lawyer/register' ||
                       location.pathname === '/pending-approval' ||
                       location.pathname === '/terms' ||
@@ -67,6 +72,8 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/lawyer/register" element={<LawyerRegister />} />
@@ -164,6 +171,9 @@ function AppContent() {
 
       {/* FAQ Chatbot */}
       <FAQChatbot />
+      
+      {/* Real-time Toast Notifications */}
+      <ToastNotification />
       </div>
     </div>
   );

@@ -38,7 +38,6 @@ interface Lawyer {
 const AdminVerifications: React.FC = () => {
   const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<string>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLawyer, setSelectedLawyer] = useState<Lawyer | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -53,24 +52,21 @@ const AdminVerifications: React.FC = () => {
 
   useEffect(() => {
     loadLawyers();
-  }, [filterStatus]);
+  }, []);
 
-  const loadLawyers = async () => {
+  const loadLawyers = async (forceRefresh = false) => {
     try {
       setLoading(true);
 
-      // Clear cache to ensure fresh data
-      clearAdminCache();
-
-      let response;
-
-      if (filterStatus === 'pending') {
-        response = await adminApi.get('/verifications/pending');
-      } else {
-        response = await adminApi.get(`/verifications/lawyers?status=${filterStatus}`);
+      if (forceRefresh) {
+        clearAdminCache();
       }
 
-      setLawyers(response.data.lawyers || []);
+      // Load only pending verification lawyers
+      const response = await adminApi.get('/verifications/lawyers?status=pending');
+
+      const lawyersData = response.data.lawyers || [];
+      setLawyers(lawyersData);
     } catch (error) {
       console.error('Error loading lawyers:', error);
       setLawyers([]);
@@ -109,7 +105,7 @@ const AdminVerifications: React.FC = () => {
       setShowDetailModal(false);
       setShowNotificationModal(true);
       setSelectedLawyer(null);
-      loadLawyers();
+      loadLawyers(true);
     } catch (error) {
       console.error('Error approving lawyer:', error);
       setNotificationMessage('Failed to approve lawyer. Please try again.');
@@ -143,7 +139,7 @@ const AdminVerifications: React.FC = () => {
       setShowDetailModal(false);
       setShowNotificationModal(true);
       setSelectedLawyer(null);
-      loadLawyers();
+      loadLawyers(true);
     } catch (error) {
       console.error('Error rejecting lawyer:', error);
       setNotificationMessage('Failed to reject lawyer. Please try again.');
@@ -165,31 +161,48 @@ const AdminVerifications: React.FC = () => {
            lawyer.license_number?.toLowerCase().includes(query);
   });
 
-  const getVerificationStatusBadge = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>;
-      case 'rejected':
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Rejected</span>;
-      default:
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>;
-    }
-  };
-
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
+        {/* Header Skeleton */}
         <div>
-          <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-48"></div>
+          <div className="h-9 bg-gray-200 rounded w-56 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-72"></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-              <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-16"></div>
+
+        {/* Stats Skeleton */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="h-4 bg-gray-200 rounded w-28 mb-2"></div>
+              <div className="h-10 bg-amber-100 rounded w-16 mb-1"></div>
+              <div className="h-3 bg-gray-100 rounded w-36"></div>
             </div>
-          ))}
+            <div className="w-16 h-16 bg-amber-50 rounded-2xl"></div>
+          </div>
+        </div>
+
+        {/* Search Skeleton */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="h-12 bg-gray-100 rounded-xl"></div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-6 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                  <div>
+                    <div className="h-5 bg-gray-200 rounded w-40 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-48"></div>
+                  </div>
+                </div>
+                <div className="h-9 bg-blue-100 rounded-lg w-20"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -201,53 +214,39 @@ const AdminVerifications: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Lawyer Verifications</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Pending Verifications</h1>
           <p className="text-gray-600">Review and verify lawyer credentials and documents</p>
         </div>
 
-        {/* Stats Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-            <p className="text-gray-600 text-sm">Pending Verification</p>
-            <p className="text-2xl font-bold text-yellow-600">
-              {lawyers.filter(l => l.verification_status === 'pending').length}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-            <p className="text-gray-600 text-sm">Verified</p>
-            <p className="text-2xl font-bold text-green-600">
-              {lawyers.filter(l => l.verification_status === 'verified').length}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-            <p className="text-gray-600 text-sm">Rejected</p>
-            <p className="text-2xl font-bold text-red-600">
-              {lawyers.filter(l => l.verification_status === 'rejected').length}
-            </p>
+        {/* Pending Count Card */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Awaiting Review</p>
+              <p className="text-4xl font-bold text-gray-900 mt-1">{lawyers.length}</p>
+              <p className="text-sm text-gray-500 mt-1">lawyers need verification</p>
+            </div>
+            <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center">
+              <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search by name, email, IBP number, or license..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="pending">Pending Verification</option>
-              <option value="verified">Verified</option>
-              <option value="rejected">Rejected</option>
-            </select>
+        {/* Search Bar */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="relative">
+            <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search by name, email, IBP number, or license..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+            />
           </div>
         </div>
 
@@ -267,9 +266,6 @@ const AdminVerifications: React.FC = () => {
                     Specializations
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Submitted
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
@@ -280,8 +276,14 @@ const AdminVerifications: React.FC = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredLawyers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                      No lawyers found
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <svg className="w-12 h-12 text-green-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-gray-900 font-medium">All caught up!</p>
+                        <p className="text-gray-500 text-sm">No pending verifications at the moment.</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -295,39 +297,29 @@ const AdminVerifications: React.FC = () => {
                             </span>
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-semibold text-gray-900">
                               {lawyer.first_name} {lawyer.last_name}
                             </div>
-                            <div className="text-sm text-gray-600">
-                              {lawyer.user?.email || 'N/A'}
-                            </div>
+                            <div className="text-sm text-gray-500">{lawyer.user?.email || lawyer.email}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          <div>IBP: {lawyer.ibp_number}</div>
-                          <div className="text-gray-600">License: {lawyer.license_number}</div>
-                          {lawyer.prc_license_number && (
-                            <div className="text-gray-600">PRC: {lawyer.prc_license_number}</div>
-                          )}
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">IBP: {lawyer.ibp_number}</div>
+                        <div className="text-sm text-gray-500">License: {lawyer.license_number}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-700">
-                          {lawyer.specializations?.map(s => s.name).join(', ') || 'N/A'}
+                          {lawyer.specializations?.map(s => s.name).join(', ') || 'Not specified'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getVerificationStatusBadge(lawyer.verification_status)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(lawyer.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => viewLawyerDetails(lawyer)}
-                          className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition"
+                          className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
                         >
                           Review
                         </button>
@@ -338,11 +330,13 @@ const AdminVerifications: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* Results Count */}
-        <div className="text-center text-gray-600 text-sm">
-          Showing {filteredLawyers.length} of {lawyers.length} lawyers
+          {filteredLawyers.length > 0 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <p className="text-sm text-gray-600">
+                Showing {filteredLawyers.length} of {lawyers.length} pending verifications
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </PageTransition>
@@ -503,36 +497,7 @@ const AdminVerifications: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Verification Status */}
-                {selectedLawyer.verification_status !== 'pending' && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Verification Status</h3>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-600">Status:</span>
-                        {getVerificationStatusBadge(selectedLawyer.verification_status)}
-                      </div>
-                      {selectedLawyer.verified_by && (
-                        <div className="text-sm text-gray-600 mb-2">
-                          Verified by: {selectedLawyer.verified_by.name}
-                        </div>
-                      )}
-                      {selectedLawyer.verified_at && (
-                        <div className="text-sm text-gray-600 mb-2">
-                          Verified on: {new Date(selectedLawyer.verified_at).toLocaleString()}
-                        </div>
-                      )}
-                      {selectedLawyer.verification_notes && (
-                        <div className="mt-3">
-                          <label className="text-sm text-gray-600 font-medium">Notes:</label>
-                          <p className="text-gray-900 mt-1">{selectedLawyer.verification_notes}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons - Only show for pending */}
+                {/* Action Buttons */}
                 {selectedLawyer.verification_status === 'pending' && (
                   <div className="space-y-4">
                     <div>

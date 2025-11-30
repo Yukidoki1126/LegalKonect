@@ -48,6 +48,14 @@ interface Appointment {
     name: string;
     email: string;
   };
+  specialization?: {
+    id: number;
+    name: string;
+  };
+  confirmed_specialization?: {
+    id: number;
+    name: string;
+  };
 }
 
 interface Todo {
@@ -71,6 +79,7 @@ const LawyerCases: React.FC = () => {
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<number | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'ongoing' | 'closed'>('all');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -130,17 +139,22 @@ const LawyerCases: React.FC = () => {
     }
   }, [filter]);
 
-  // Prevent body scroll when modal is open
+  // Prevent body scroll when modal is open and compensate for scrollbar width
   useEffect(() => {
-    if (showNewCaseModal || showUpdateModal) {
+    if (showNewCaseModal || showUpdateModal || showDetailsModal) {
+      // Get scrollbar width before hiding it
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
     } else {
       document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '0px';
     }
     return () => {
       document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '0px';
     };
-  }, [showNewCaseModal, showUpdateModal]);
+  }, [showNewCaseModal, showUpdateModal, showDetailsModal]);
 
   const fetchCases = async (showLoading = false) => {
     try {
@@ -315,6 +329,12 @@ const LawyerCases: React.FC = () => {
     setShowUpdateModal(true);
   };
 
+  const openDetailsModal = (caseItem: Case) => {
+    setSelectedCase(caseItem);
+    fetchTodos(caseItem.id);
+    setShowDetailsModal(true);
+  };
+
   const filteredCases = cases.filter((c) =>
     filter === 'all' ? true : c.status === filter
   );
@@ -355,54 +375,124 @@ const LawyerCases: React.FC = () => {
 
   if (loading && !isTabSwitching) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header Skeleton */}
-          <div className="mb-6 animate-pulse">
-            <div className="h-7 bg-gray-200 rounded w-48 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-72"></div>
-          </div>
-
-          {/* Stats Skeleton */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="h-3 bg-gray-200 rounded w-16 mb-2"></div>
-                    <div className="h-6 bg-gray-200 rounded w-8"></div>
+      <div className="animate-fadeIn">
+        <div>
+          {/* Header Skeleton - matching actual design */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2.5 bg-slate-100 rounded-xl">
+                    <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </div>
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg"></div>
+                  <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
                 </div>
+                <div className="h-4 bg-gray-200 rounded w-64 ml-14 animate-pulse"></div>
               </div>
-            ))}
-          </div>
-
-          {/* Filter Tabs Skeleton */}
-          <div className="bg-white rounded-lg border border-gray-200 p-1 mb-6 animate-pulse">
-            <div className="flex gap-1">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex-1 h-9 bg-gray-100 rounded-md"></div>
-              ))}
+              <div className="h-11 bg-gray-200 rounded-xl w-40 animate-pulse"></div>
             </div>
           </div>
 
-          {/* Cases Skeleton */}
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-lg border border-gray-200 p-5 animate-pulse">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-5 bg-gray-200 rounded w-40"></div>
-                    <div className="h-5 bg-gray-100 rounded-full w-20"></div>
-                  </div>
-                  <div className="h-8 bg-gray-200 rounded-md w-20"></div>
+          {/* Stats Cards Skeleton - matching actual design */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-pulse">
+            {/* Total Cases */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="h-3 bg-gray-200 rounded w-20 mb-3"></div>
+                  <div className="h-8 bg-gray-200 rounded w-8"></div>
                 </div>
-                <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                <div className="flex gap-4">
-                  <div className="h-3 bg-gray-100 rounded w-24"></div>
-                  <div className="h-3 bg-gray-100 rounded w-32"></div>
+                <div className="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            {/* Pending */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="h-3 bg-gray-200 rounded w-24 mb-3"></div>
+                  <div className="h-8 bg-yellow-100 rounded w-8"></div>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            {/* In Progress */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="h-3 bg-gray-200 rounded w-20 mb-3"></div>
+                  <div className="h-8 bg-blue-100 rounded w-8"></div>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            {/* Resolved */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="h-3 bg-gray-200 rounded w-16 mb-3"></div>
+                  <div className="h-8 bg-green-100 rounded w-8"></div>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Tabs Skeleton */}
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-2 mb-6 animate-pulse">
+            <div className="flex gap-2">
+              <div className="flex-1 h-11 bg-blue-600 rounded-xl"></div>
+              <div className="flex-1 h-11 bg-gray-100 rounded-xl"></div>
+              <div className="flex-1 h-11 bg-gray-100 rounded-xl"></div>
+              <div className="flex-1 h-11 bg-gray-100 rounded-xl"></div>
+            </div>
+          </div>
+
+          {/* Cases List Skeleton */}
+          <div className="space-y-4 animate-pulse">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border-2 border-gray-100 p-5">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-5 bg-gray-200 rounded w-32"></div>
+                      <div className="h-5 bg-yellow-100 rounded-full w-16"></div>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded w-full mb-3"></div>
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      <div className="h-4 bg-gray-100 rounded w-24"></div>
+                      <div className="h-4 bg-gray-100 rounded w-20"></div>
+                      <div className="h-4 bg-gray-100 rounded w-28"></div>
+                    </div>
+                    {/* Progress bar skeleton */}
+                    <div className="mt-3">
+                      <div className="h-3 bg-gray-100 rounded w-16 mb-2"></div>
+                      <div className="h-2 bg-gray-200 rounded-full w-full">
+                        <div className="h-2 bg-blue-200 rounded-full w-1/3"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="h-9 bg-blue-200 rounded-lg w-20"></div>
+                    <div className="h-9 bg-gray-100 rounded-lg w-20"></div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -413,31 +503,27 @@ const LawyerCases: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 ${!isTabSwitching ? 'animate-fadeIn' : ''}`}>
-      <div className="max-w-7xl mx-auto">
-        {/* Spinner overlay for tab switching */}
-        {loading && isTabSwitching && (
-          <div className="fixed inset-0 bg-white/75 flex items-center justify-center z-50">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-gray-900 mx-auto"></div>
-              <p className="mt-3 text-sm text-gray-600">Loading cases...</p>
-            </div>
-          </div>
-        )}
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <div>
+        {/* Header - Clean transparent style */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">
-                Case Management
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Manage and track your legal cases efficiently
-              </p>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2.5 bg-slate-100 rounded-xl">
+                  <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  Case Management
+                </h1>
+              </div>
+              <p className="text-gray-500 ml-14">Manage and track your legal cases efficiently</p>
             </div>
             <button
               onClick={openNewCaseModal}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm font-medium"
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-200"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -447,58 +533,58 @@ const LawyerCases: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Enhanced */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">Total Cases</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{stats.total}</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Cases</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
               </div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center shadow-sm">
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">Pending Review</p>
-                <p className="text-2xl font-semibold text-yellow-600 mt-1">{stats.pending}</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pending Review</p>
+                <p className="text-3xl font-bold text-yellow-600 mt-2">{stats.pending}</p>
               </div>
-              <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl flex items-center justify-center shadow-sm">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">In Progress</p>
-                <p className="text-2xl font-semibold text-blue-600 mt-1">{stats.ongoing}</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">In Progress</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">{stats.ongoing}</p>
               </div>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center shadow-sm">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">Resolved</p>
-                <p className="text-2xl font-semibold text-green-600 mt-1">{stats.closed}</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Resolved</p>
+                <p className="text-3xl font-bold text-green-600 mt-2">{stats.closed}</p>
               </div>
-              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center shadow-sm">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -506,26 +592,26 @@ const LawyerCases: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 p-1 mb-6">
-          <div className="flex gap-1">
+        {/* Filter Tabs - Enhanced */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 p-2 mb-6">
+          <div className="flex gap-2">
             {(['all', 'pending', 'ongoing', 'closed'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleFilterChange(tab)}
                 className={`
-                  flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors
+                  flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
                   ${
                     filter === tab
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }
                 `}
               >
                 <div className="flex items-center justify-center gap-2">
                   <span className="capitalize">{tab}</span>
                   <span className={`
-                    px-1.5 py-0.5 rounded text-xs font-medium
+                    px-2 py-0.5 rounded-full text-xs font-bold
                     ${filter === tab ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}
                   `}>
                     {tab === 'all' ? stats.total :
@@ -539,14 +625,44 @@ const LawyerCases: React.FC = () => {
         </div>
 
         {/* Cases List */}
-        {filteredCases.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-10 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+        {loading && isTabSwitching ? (
+          /* Skeleton loading for tab switching */
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border-2 border-gray-100 p-5 animate-pulse">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-5 bg-gray-200 rounded w-32"></div>
+                      <div className="h-5 bg-gray-100 rounded-full w-16"></div>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                    <div className="flex flex-wrap gap-3 mt-3">
+                      <div className="h-4 bg-gray-100 rounded w-20"></div>
+                      <div className="h-4 bg-gray-100 rounded w-24"></div>
+                      <div className="h-4 bg-gray-100 rounded w-28"></div>
+                    </div>
+                    <div className="mt-4">
+                      <div className="h-3 bg-gray-100 rounded w-16 mb-2"></div>
+                      <div className="h-2 bg-gray-200 rounded-full w-full"></div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="h-9 bg-gray-200 rounded-lg w-20"></div>
+                    <div className="h-9 bg-gray-100 rounded-lg w-20"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredCases.length === 0 ? (
+          <div className="bg-white rounded-2xl border-2 border-gray-100 p-10 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No cases found</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">No cases found</h3>
             <p className="text-sm text-gray-600 mb-5 max-w-sm mx-auto">
               {filter === 'all' 
                 ? "Get started by creating your first case from a completed appointment."
@@ -555,7 +671,7 @@ const LawyerCases: React.FC = () => {
             {filter === 'all' && (
               <button
                 onClick={openNewCaseModal}
-                className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors text-sm font-semibold shadow-lg shadow-blue-200"
               >
                 Create Your First Case
               </button>
@@ -566,7 +682,7 @@ const LawyerCases: React.FC = () => {
             {filteredCases.map((caseItem) => (
               <div
                 key={caseItem.id}
-                className="bg-white rounded-lg border border-gray-200 p-5 hover:border-gray-300 transition-colors"
+                className="bg-white rounded-2xl border-2 border-gray-100 p-5 hover:border-gray-200 hover:shadow-md transition-all duration-200"
               >
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="flex-1">
@@ -673,7 +789,7 @@ const LawyerCases: React.FC = () => {
                       Update
                     </button>
                     <button
-                      onClick={() => openUpdateModal(caseItem)}
+                      onClick={() => openDetailsModal(caseItem)}
                       className="border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
                     >
                       Details
@@ -726,7 +842,46 @@ const LawyerCases: React.FC = () => {
                     <select
                       required
                       value={selectedAppointment || ''}
-                      onChange={(e) => setSelectedAppointment(Number(e.target.value))}
+                      onChange={(e) => {
+                        const aptId = Number(e.target.value);
+                        setSelectedAppointment(aptId);
+                        
+                        // Auto-populate case type from appointment specialization
+                        if (aptId) {
+                          const apt = appointments.find(a => a.id === aptId);
+                          if (apt) {
+                            // Prefer lawyer-confirmed specialization, fallback to client-selected
+                            const specName = apt.confirmed_specialization?.name || apt.specialization?.name;
+                            // Map specialization to case type
+                            const specToCaseType: { [key: string]: string } = {
+                              'Family Law': 'Family',
+                              'Corporate Law': 'Corporate',
+                              'Criminal Law': 'Criminal',
+                              'Labor Law': 'Labor',
+                              'Tax Law': 'Tax',
+                              'Immigration Law': 'Immigration',
+                              'Real Estate Law': 'Real Estate',
+                              'Intellectual Property Law': 'Intellectual Property',
+                              'Civil Law': 'Civil',
+                            };
+                            const caseType = specName 
+                              ? (specToCaseType[specName] || 
+                                 caseTypes.find(ct => specName.toLowerCase().includes(ct.toLowerCase())) ||
+                                 '')
+                              : '';
+                            // Update both appointment_id and case_type together
+                            setNewCase(prev => ({ 
+                              ...prev, 
+                              appointment_id: aptId,
+                              case_type: caseType 
+                            }));
+                          } else {
+                            setNewCase(prev => ({ ...prev, appointment_id: aptId }));
+                          }
+                        } else {
+                          setNewCase(prev => ({ ...prev, appointment_id: 0, case_type: '' }));
+                        }
+                      }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition text-sm bg-white"
                       >
                         <option value="">Choose a completed appointment...</option>
@@ -796,6 +951,21 @@ const LawyerCases: React.FC = () => {
                         </option>
                       ))}
                     </select>
+                    {selectedAppointment && (() => {
+                      const apt = appointments.find(a => a.id === selectedAppointment);
+                      const specName = apt?.confirmed_specialization?.name || apt?.specialization?.name;
+                      if (specName) {
+                        return (
+                          <p className="mt-1.5 text-xs text-green-600 flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Auto-filled from appointment: {specName}
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   {/* Description */}
@@ -1038,6 +1208,197 @@ const LawyerCases: React.FC = () => {
                     className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition text-sm"
                   >
                     Update Case
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Details Modal (Read-only view) */}
+        {showDetailsModal && selectedCase && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{selectedCase.title}</h2>
+                  <p className="text-sm text-gray-500">Case Details</p>
+                </div>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+                {/* Status and Case Type */}
+                <div className="flex flex-wrap gap-3">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedCase.status)}`}>
+                    {selectedCase.status.charAt(0).toUpperCase() + selectedCase.status.slice(1)}
+                  </span>
+                  {selectedCase.case_type && (
+                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                      {selectedCase.case_type}
+                    </span>
+                  )}
+                </div>
+
+                {/* Client Info */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Client Information</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{selectedCase.user?.name || 'Unknown Client'}</p>
+                      <p className="text-sm text-gray-500">{selectedCase.user?.email || ''}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {selectedCase.description && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Description</h3>
+                    <p className="text-gray-600 bg-gray-50 rounded-lg p-3 text-sm">{selectedCase.description}</p>
+                  </div>
+                )}
+
+                {/* Lawyer Updates */}
+                {selectedCase.lawyer_updates && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Lawyer Updates</h3>
+                    <p className="text-gray-600 bg-blue-50 rounded-lg p-3 text-sm border border-blue-100">{selectedCase.lawyer_updates}</p>
+                  </div>
+                )}
+
+                {/* Resolution Summary (if closed) */}
+                {selectedCase.status === 'closed' && selectedCase.resolution_summary && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Resolution Summary</h3>
+                    <p className="text-gray-600 bg-green-50 rounded-lg p-3 text-sm border border-green-100">{selectedCase.resolution_summary}</p>
+                  </div>
+                )}
+
+                {/* Progress */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-sm font-medium text-gray-700">Progress</h3>
+                    <span className="text-sm text-gray-500">{selectedCase.progress_percentage}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${selectedCase.progress_percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Todos */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Tasks ({todos.filter(t => t.is_completed).length}/{todos.length})</h3>
+                  {todos.length === 0 ? (
+                    <p className="text-gray-500 text-sm">No tasks added yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {todos.map((todo) => (
+                        <div
+                          key={todo.id}
+                          className={`flex items-center gap-3 p-3 rounded-lg border ${
+                            todo.is_completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                            todo.is_completed ? 'bg-green-500' : 'bg-gray-200'
+                          }`}>
+                            {todo.is_completed && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-sm ${todo.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                              {todo.title}
+                            </p>
+                            {todo.due_date && (
+                              <p className="text-xs text-gray-400">
+                                Due: {new Date(todo.due_date).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            todo.priority === 'high' ? 'bg-red-100 text-red-700' :
+                            todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {todo.priority}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500">Created</p>
+                    <p className="font-medium text-gray-900">
+                      {new Date(selectedCase.created_at).toLocaleDateString('en-US', {
+                        month: 'short', day: 'numeric', year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  {selectedCase.started_at && (
+                    <div>
+                      <p className="text-gray-500">Started</p>
+                      <p className="font-medium text-gray-900">
+                        {new Date(selectedCase.started_at).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  {selectedCase.closed_at && (
+                    <div>
+                      <p className="text-gray-500">Closed</p>
+                      <p className="font-medium text-gray-900">
+                        {new Date(selectedCase.closed_at).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex-shrink-0 border-t border-gray-200 px-5 py-3 bg-gray-50 rounded-b-lg">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-100 transition text-sm"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      openUpdateModal(selectedCase);
+                    }}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition text-sm"
+                  >
+                    Edit Case
                   </button>
                 </div>
               </div>
