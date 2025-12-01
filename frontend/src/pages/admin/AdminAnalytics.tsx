@@ -50,37 +50,43 @@ const AdminAnalytics: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(30);
   const [activeTab, setActiveTab] = useState<'overview' | 'descriptive'>('overview');
+  const [dataLoaded, setDataLoaded] = useState(false);
 
+  // Load all analytics data in parallel on mount
   useEffect(() => {
-    loadAnalytics();
-  }, []);
+    if (!dataLoaded) {
+      loadAllAnalytics();
+    }
+  }, [dataLoaded]);
 
- useEffect(() => {
-  if (activeTab === 'descriptive') {
-    loadDescriptiveAnalytics();
-  }
-}, [activeTab, period]);
+  // Only reload descriptive when period changes
+  useEffect(() => {
+    if (dataLoaded && activeTab === 'descriptive') {
+      loadDescriptiveAnalytics();
+    }
+  }, [period]);
 
-  const loadAnalytics = async () => {
-  try {
-    setLoading(true);
-    const response = await adminApi.get('/analytics', {
-      headers: { 'Cache-Control': 'no-cache' }
-    });
-    setAnalytics(response.data);
-  } catch (error) {
-    console.error('Error loading analytics:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+  const loadAllAnalytics = async () => {
+    try {
+      setLoading(true);
+      const [analyticsRes, descriptiveRes] = await Promise.all([
+        adminApi.get('/analytics'),
+        adminApi.get(`/descriptive-analytics?days=${period}`)
+      ]);
+      setAnalytics(analyticsRes.data);
+      setDescriptive(descriptiveRes.data);
+      setDataLoaded(true);
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 const loadDescriptiveAnalytics = async () => {
   try {
     setLoading(true);
-    const response = await adminApi.get(`/descriptive-analytics?days=${period}`, {
-      headers: { 'Cache-Control': 'no-cache' }
-    });
+    const response = await adminApi.get(`/descriptive-analytics?days=${period}`);
     setDescriptive(response.data);
   } catch (error) {
     console.error('Error loading descriptive analytics:', error);
@@ -121,10 +127,10 @@ const loadDescriptiveAnalytics = async () => {
     <PageTransition>
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
-          <p className="text-gray-600">Comprehensive insights and performance metrics</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Analytics Dashboard</h1>
+          <p className="text-sm sm:text-base text-gray-600">Comprehensive insights and performance metrics</p>
         </div>
 
         {activeTab === 'descriptive' && (
@@ -134,7 +140,7 @@ const loadDescriptiveAnalytics = async () => {
               setPeriod(Number(e.target.value));
               setDescriptive(null); // Force reload
             }}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value={7}>Last 7 Days</option>
             <option value={30}>Last 30 Days</option>
@@ -144,11 +150,11 @@ const loadDescriptiveAnalytics = async () => {
         )}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - Responsive */}
       <div className="flex space-x-2">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`px-6 py-3 rounded-lg font-medium transition ${
+          className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition ${
             activeTab === 'overview'
               ? 'bg-blue-600 text-white'
               : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -158,7 +164,7 @@ const loadDescriptiveAnalytics = async () => {
         </button>
         <button
           onClick={() => setActiveTab('descriptive')}
-          className={`px-6 py-3 rounded-lg font-medium transition ${
+          className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition ${
             activeTab === 'descriptive'
               ? 'bg-blue-600 text-white'
               : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -171,56 +177,56 @@ const loadDescriptiveAnalytics = async () => {
       {/* Overview Tab Content */}
       {activeTab === 'overview' && analytics && (
         <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          {/* Stats Cards - Responsive */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-500 text-sm font-medium mb-1">Total Revenue</p>
-                  <p className="text-3xl font-bold text-gray-900">₱{analytics.revenue.total.toLocaleString()}</p>
+                  <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Total Revenue</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-900">₱{analytics.revenue.total.toLocaleString()}</p>
                 </div>
-                <span className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-500 text-2xl font-bold">₱</span>
+                <span className="w-10 h-10 sm:w-12 sm:h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-500 text-lg sm:text-2xl font-bold">₱</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-500 text-sm font-medium mb-1">Total Appointments</p>
-                  <p className="text-3xl font-bold text-gray-900">{analytics.appointments.total}</p>
-                  <p className="text-gray-400 text-xs mt-1">{analytics.appointments.completed} completed</p>
+                  <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Total Appointments</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-900">{analytics.appointments.total}</p>
+                  <p className="text-gray-400 text-xs mt-1 hidden sm:block">{analytics.appointments.completed} completed</p>
                 </div>
-                <Calendar className="w-12 h-12 text-blue-500 bg-blue-50 rounded-xl p-2" />
+                <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-blue-500 bg-blue-50 rounded-xl p-2" />
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-500 text-sm font-medium mb-1">Active Lawyers</p>
-                  <p className="text-3xl font-bold text-gray-900">{analytics.lawyers.active}</p>
-                  <p className="text-gray-400 text-xs mt-1">{analytics.lawyers.total} total</p>
+                  <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Active Lawyers</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-900">{analytics.lawyers.active}</p>
+                  <p className="text-gray-400 text-xs mt-1 hidden sm:block">{analytics.lawyers.total} total</p>
                 </div>
-                <Users className="w-12 h-12 text-purple-500 bg-purple-50 rounded-xl p-2" />
+                <Users className="w-10 h-10 sm:w-12 sm:h-12 text-purple-500 bg-purple-50 rounded-xl p-2" />
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-500 text-sm font-medium mb-1">Total Users</p>
-                  <p className="text-3xl font-bold text-gray-900">{analytics.users.total}</p>
-                  <p className="text-gray-400 text-xs mt-1">{analytics.users.new_this_month} this month</p>
+                  <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Total Users</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-900">{analytics.users.total}</p>
+                  <p className="text-gray-400 text-xs mt-1 hidden sm:block">{analytics.users.new_this_month} this month</p>
                 </div>
-                <Users className="w-12 h-12 text-pink-500 bg-pink-50 rounded-xl p-2" />
+                <Users className="w-10 h-10 sm:w-12 sm:h-12 text-pink-500 bg-pink-50 rounded-xl p-2" />
               </div>
             </div>
           </div>
 
-          {/* Revenue Chart */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Revenue Trend</h3>
-            <ResponsiveContainer width="100%" height={300}>
+          {/* Revenue Chart - Responsive */}
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Revenue Trend</h3>
+            <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={analytics.revenue.daily}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -229,10 +235,10 @@ const loadDescriptiveAnalytics = async () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
+                <XAxis dataKey="date" stroke="#6b7280" tick={{ fontSize: 10 }} />
+                <YAxis stroke="#6b7280" tick={{ fontSize: 10 }} width={50} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }}
                   labelStyle={{ color: '#111827' }}
                 />
                 <Area type="monotone" dataKey="amount" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorRevenue)" />
@@ -241,7 +247,7 @@ const loadDescriptiveAnalytics = async () => {
           </div>
 
           {/* Status Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Appointment Status</h3>
               <div className="space-y-4">
@@ -300,7 +306,7 @@ const loadDescriptiveAnalytics = async () => {
           ) : descriptive ? (
             <>
               {/* Key Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -309,17 +315,6 @@ const loadDescriptiveAnalytics = async () => {
                       <p className="text-gray-400 text-xs mt-1">{descriptive.repeat_clients.toLocaleString()} repeat clients</p>
                     </div>
                     <Users className="w-12 h-12 text-purple-500 bg-purple-50 rounded-xl p-2 flex-shrink-0" />
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-gray-500 text-sm font-medium mb-1">Avg Response Time</p>
-                      <p className="text-3xl font-bold text-gray-900 break-words">{descriptive.avg_response_time_minutes.toLocaleString()}</p>
-                      <p className="text-gray-400 text-xs mt-1">minutes</p>
-                    </div>
-                    <Clock className="w-12 h-12 text-blue-500 bg-blue-50 rounded-xl p-2 flex-shrink-0" />
                   </div>
                 </div>
 

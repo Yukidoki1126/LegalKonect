@@ -216,12 +216,36 @@ class GoogleCalendarService
             $event->setSummary('Consultation - ' . $appointment->user->name . ' [' . strtoupper($appointment->status) . ']');
             $event->setDescription("Client: {$appointment->user->name}\nEmail: {$appointment->user->email}\nMeeting Type: {$appointment->meeting_type}\nStatus: {$appointment->status}\n\nClient Notes:\n{$appointment->client_notes}");
 
+            // Update the date/time (important for rescheduled appointments)
+            // Parse date and time separately to avoid "double time specification" error
+            $dateOnly = Carbon::parse($appointment->appointment_date)->format('Y-m-d');
+            $timeOnly = $appointment->appointment_time;
+            // Ensure time has seconds (some times are stored as HH:mm, others as HH:mm:ss)
+            if (strlen($timeOnly) === 5) {
+                $timeOnly .= ':00';
+            }
+            // Use Asia/Manila timezone explicitly for Philippines
+            $timezone = 'Asia/Manila';
+            $appointmentDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $dateOnly . ' ' . $timeOnly, $timezone);
+
+            $startDateTime = new Google_Service_Calendar_EventDateTime();
+            $startDateTime->setDateTime($appointmentDateTime->toRfc3339String());
+            $startDateTime->setTimeZone($timezone);
+            $event->setStart($startDateTime);
+
+            $endDateTime = new Google_Service_Calendar_EventDateTime();
+            $endDateTime->setDateTime($appointmentDateTime->copy()->addMinutes($lawyer->consultation_duration ?? 60)->toRfc3339String());
+            $endDateTime->setTimeZone($timezone);
+            $event->setEnd($endDateTime);
+
             $service->events->update($calendarId, $eventId, $event);
 
             Log::info('Google Calendar event updated', [
                 'lawyer_id' => $lawyer->id,
                 'appointment_id' => $appointment->id,
-                'event_id' => $eventId
+                'event_id' => $eventId,
+                'new_date' => $appointment->appointment_date,
+                'new_time' => $appointment->appointment_time
             ]);
 
             return true;

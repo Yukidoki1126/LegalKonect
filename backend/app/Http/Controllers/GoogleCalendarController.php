@@ -80,7 +80,10 @@ class GoogleCalendarController extends Controller
             // Exchange code for token
             $token = $this->googleCalendarService->exchangeCodeForToken($code);
 
+            Log::info('Google token exchange response', ['token_keys' => array_keys($token), 'has_access_token' => isset($token['access_token'])]);
+
             if (!isset($token['access_token'])) {
+                Log::error('Google token exchange failed', ['response' => $token]);
                 throw new \Exception('No access token in response');
             }
 

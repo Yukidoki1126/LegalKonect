@@ -163,9 +163,20 @@ export const adminPayoutService = {
     return response.data;
   },
 
-  // Mark payout as paid
+  // Mark payout as paid (legacy - without proof)
   markAsPaid: async (id: number, data: { transaction_reference: string; admin_notes?: string }) => {
     const response = await adminApi.post(`/payouts/${id}/mark-paid`, data);
+    clearAdminCache(); // Clear cache after marking as paid
+    return response.data;
+  },
+
+  // Mark payout as paid with payment proof (FormData)
+  markAsPaidWithProof: async (id: number, formData: FormData) => {
+    const response = await adminApi.post(`/payouts/${id}/mark-paid`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     clearAdminCache(); // Clear cache after marking as paid
     return response.data;
   },

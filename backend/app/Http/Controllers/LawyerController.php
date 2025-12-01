@@ -15,6 +15,11 @@ class LawyerController extends Controller
     // Get all approved lawyers
     public function index(Request $request)
     {
+        // Skip cache if _t parameter is present (cache busting)
+        if ($request->has('_t')) {
+            \Cache::forget('lawyers_list_v1');
+        }
+        
         // Cache the lawyers list for 5 minutes to speed up repeated requests
         $cacheKey = 'lawyers_list_v1';
         $cacheDuration = 300; // 5 minutes
@@ -22,7 +27,6 @@ class LawyerController extends Controller
         $data = \Cache::remember($cacheKey, $cacheDuration, function () {
             $lawyers = Lawyer::with(['user', 'specializations'])
                 ->approved()
-                ->available()
                 ->get();
 
             // Transform data to include needed fields

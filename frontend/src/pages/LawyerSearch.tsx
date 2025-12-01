@@ -45,7 +45,8 @@ const LawyerSearch: React.FC = () => {
     specializations: cachedSpecializations,
     setLawyers: setCachedLawyers,
     setSpecializations: setCachedSpecializations,
-    isCached 
+    isCached,
+    clearCache 
   } = useLawyers();
 
   // Local state
@@ -184,9 +185,12 @@ const LawyerSearch: React.FC = () => {
       setError('');
 
       try {
+        // Add cache-busting timestamp to force fresh data
+        const timestamp = Date.now();
+        
         // Fetch both in parallel
         const [lawyersResponse, specsResponse] = await Promise.all([
-          api.get('/lawyers'),
+          api.get(`/lawyers?_t=${timestamp}`),
           api.get('/specializations')
         ]);
 
@@ -234,7 +238,18 @@ const LawyerSearch: React.FC = () => {
     };
 
     fetchData();
-  }, [user?.latitude, user?.longitude]); // Only re-run if user location changes
+  }, [user?.latitude, user?.longitude, isCached]); // Re-run if user location changes or cache expires
+
+  // Refetch when page gains focus (user tabs back)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('👁️ Page focused - checking if refresh needed');
+      clearCache(); // This will trigger isCached to become false
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [clearCache]);
 
   // Filter and sort lawyers
   const filteredLawyers = (lawyers || [])
@@ -255,6 +270,11 @@ const LawyerSearch: React.FC = () => {
       return matchesSearch && matchesSpecialization;
     })
     .sort((a, b) => {
+      // ALWAYS sort available lawyers first
+      if (a.is_available && !b.is_available) return -1;
+      if (!a.is_available && b.is_available) return 1;
+
+      // Then apply secondary sort
       // Distance: Nearest first
       if (sortBy === 'distance' && a.distance !== undefined && b.distance !== undefined) {
         return a.distance - b.distance;

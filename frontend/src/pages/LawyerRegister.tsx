@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Scale, MapPin, Phone, Mail, Lock, User, FileText, Clock, Award, Upload, CheckCircle, XCircle, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Briefcase, Scale, MapPin, Phone, Mail, Lock, User, FileText, Clock, Award, Upload, CheckCircle, XCircle, Eye, EyeOff, AlertCircle, ArrowLeft, Check, X } from 'lucide-react';
 
 // Extend Window interface for Google Maps
 declare global {
@@ -59,9 +59,30 @@ const LawyerRegister = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const errorBannerRef = useRef<HTMLDivElement>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  // Real-time password validation
+  const passwordValidation = useMemo(() => {
+    const password = formData.password;
+    return {
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecial: /[@$!%*#?&]/.test(password),
+    };
+  }, [formData.password]);
+
+  const isPasswordValid = useMemo(() => {
+    return Object.values(passwordValidation).every(Boolean);
+  }, [passwordValidation]);
+
+  const passwordsMatch = useMemo(() => {
+    return formData.password === formData.password_confirmation && formData.password_confirmation.length > 0;
+  }, [formData.password, formData.password_confirmation]);
 
   // Reset page opacity on load for smooth transition
   useEffect(() => {
@@ -680,7 +701,15 @@ const LawyerRegister = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors ${
+                      formData.password.length === 0
+                        ? 'border-gray-300'
+                        : isPasswordValid
+                        ? 'border-green-500'
+                        : 'border-red-500'
+                    }`}
                     placeholder="Min. 8 characters"
                   />
                   <button
@@ -695,9 +724,34 @@ const LawyerRegister = () => {
                     )}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  Must contain: uppercase, lowercase, number, and special character (@$!%*#?&)
-                </p>
+                {/* Real-time password requirements */}
+                {(passwordFocused || formData.password.length > 0) && (
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                    <p className="text-xs font-medium text-gray-700 mb-2">Password requirements:</p>
+                    <div className="grid grid-cols-1 gap-1">
+                      <div className={`flex items-center text-xs ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
+                        {passwordValidation.minLength ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                        At least 8 characters
+                      </div>
+                      <div className={`flex items-center text-xs ${passwordValidation.hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        {passwordValidation.hasUppercase ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                        One uppercase letter
+                      </div>
+                      <div className={`flex items-center text-xs ${passwordValidation.hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        {passwordValidation.hasLowercase ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                        One lowercase letter
+                      </div>
+                      <div className={`flex items-center text-xs ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
+                        {passwordValidation.hasNumber ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                        One number
+                      </div>
+                      <div className={`flex items-center text-xs ${passwordValidation.hasSpecial ? 'text-green-600' : 'text-gray-500'}`}>
+                        {passwordValidation.hasSpecial ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                        One special character (@$!%*#?&)
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
               </div>
 
@@ -712,7 +766,13 @@ const LawyerRegister = () => {
                     name="password_confirmation"
                     value={formData.password_confirmation}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className={`w-full pl-10 pr-12 py-3 border rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors ${
+                      formData.password_confirmation.length === 0
+                        ? 'border-gray-300'
+                        : passwordsMatch
+                        ? 'border-green-500'
+                        : 'border-red-500'
+                    }`}
                     placeholder="Re-enter password"
                   />
                   <button
@@ -727,6 +787,22 @@ const LawyerRegister = () => {
                     )}
                   </button>
                 </div>
+                {/* Password match indicator */}
+                {formData.password_confirmation.length > 0 && (
+                  <div className={`flex items-center mt-1 text-xs ${passwordsMatch ? 'text-green-600' : 'text-red-600'}`}>
+                    {passwordsMatch ? (
+                      <>
+                        <Check className="w-3 h-3 mr-1" />
+                        Passwords match
+                      </>
+                    ) : (
+                      <>
+                        <X className="w-3 h-3 mr-1" />
+                        Passwords do not match
+                      </>
+                    )}
+                  </div>
+                )}
                 {errors.password_confirmation && <p className="mt-1 text-sm text-red-600">{errors.password_confirmation}</p>}
               </div>
 

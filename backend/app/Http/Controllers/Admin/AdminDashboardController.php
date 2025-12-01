@@ -194,11 +194,17 @@ class AdminDashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        // Get summary statistics
-        $totalPayments = Appointment::where('payment_status', 'paid')->count();
-
-        // Calculate platform revenue (10% of reservation fees)
+        // Get all summary statistics in a single query
         $platformFeePercentage = config('app.platform_fee_percentage', 10.00);
+        
+        $summary = Appointment::where('payment_status', 'paid')
+            ->selectRaw('
+                COUNT(*) as total_payments,
+                SUM(CASE WHEN payment_method = \'card\' THEN 1 ELSE 0 END) as card_payments,
+                SUM(CASE WHEN payment_method = \'gcash\' THEN 1 ELSE 0 END) as gcash_payments
+            ')
+            ->first();
+
         $totalReservationFees = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
             ->where('appointments.payment_status', 'paid')
             ->selectRaw('SUM(COALESCE(lawyers.reservation_fee, 100)) as total')
@@ -206,13 +212,6 @@ class AdminDashboardController extends Controller
 
         // Platform revenue is the percentage we keep
         $totalAmount = $totalReservationFees * ($platformFeePercentage / 100);
-
-        $cardPayments = Appointment::where('payment_status', 'paid')
-            ->where('payment_method', 'card')
-            ->count();
-        $gcashPayments = Appointment::where('payment_status', 'paid')
-            ->where('payment_method', 'gcash')
-            ->count();
 
         // Transform the data - show platform fee (what platform earns)
         $paymentsData = $payments->map(function ($appointment) use ($platformFeePercentage) {
@@ -245,12 +244,12 @@ class AdminDashboardController extends Controller
                 'total' => $payments->total()
             ],
             'summary' => [
-                'total_payments' => $totalPayments,
+                'total_payments' => $summary->total_payments ?? 0,
                 'total_amount' => $totalAmount,
                 'total_revenue' => $totalReservationFees,
                 'platform_fees' => $totalAmount,
-                'card_payments' => $cardPayments,
-                'gcash_payments' => $gcashPayments
+                'card_payments' => $summary->card_payments ?? 0,
+                'gcash_payments' => $summary->gcash_payments ?? 0
             ]
         ]);
     }
@@ -258,33 +257,50 @@ class AdminDashboardController extends Controller
      public function analytics(Request $request)
     {
          $days = (int) $request->input('days', 30);
-         $startDate = now()->subDays($days);
+         $cacheKey = "analytics_{$days}";
+         
+         // Cache for 2 minutes
+         return \Cache::remember($cacheKey, 120, function () use ($days) {
+             $startDate = now()->subDays($days);
 
-         $revenueData = Appointment::where('payment_status', 'paid')
-     ->where('created_at', '>=', $startDate)
-    ->selectRaw('CAST(created_at AS DATE) as date, SUM(consultation_fee) as amount')
-    ->groupBy(DB::raw('CAST(created_at AS DATE)'))
-    ->orderBy('date')
-    ->get();
-        // Appointment statistics - scoped to the analytics period
-        $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
-        $confirmedAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'confirmed')->count();
-        $completedAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'completed')->count();
-        $cancelledAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'cancelled')->count();
-        $pendingAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'pending')->count();
+             $revenueData = Appointment::where('payment_status', 'paid')
+                 ->where('created_at', '>=', $startDate)
+                 ->selectRaw('CAST(created_at AS DATE) as date, SUM(consultation_fee) as amount')
+                 ->groupBy(DB::raw('CAST(created_at AS DATE)'))
+                 ->orderBy('date')
+                 ->get();
 
-        // Lawyer statistics
-        $totalLawyers = Lawyer::count();
-        $activeLawyers = Lawyer::where('is_available', true)->count();
-        $approvedLawyers = Lawyer::where('status', 'approved')->count();
-        $pendingLawyers = Lawyer::where('status', 'pending')->count();
+        // Appointment statistics - single aggregated query
+        $appointmentStats = Appointment::where('created_at', '>=', $startDate)
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN status = \'confirmed\' THEN 1 ELSE 0 END) as confirmed,
+                SUM(CASE WHEN status = \'completed\' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = \'cancelled\' THEN 1 ELSE 0 END) as cancelled,
+                SUM(CASE WHEN status = \'pending\' THEN 1 ELSE 0 END) as pending
+            ')
+            ->first();
 
-        // User statistics
-        $totalUsers = User::count();
-        $newUsersThisMonth = User::whereMonth('created_at', now()->month)->count();
+        // Lawyer statistics - single aggregated query
+        $lawyerStats = Lawyer::selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN is_available = 1 THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN status = \'approved\' THEN 1 ELSE 0 END) as approved,
+                SUM(CASE WHEN status = \'pending\' THEN 1 ELSE 0 END) as pending
+            ')
+            ->first();
+
+        // User statistics - single aggregated query
+        $userStats = User::selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN MONTH(created_at) = ? AND YEAR(created_at) = ? THEN 1 ELSE 0 END) as new_this_month
+            ', [now()->month, now()->year])
+            ->first();
 
         // Total revenue (period)
-        $totalRevenue = Appointment::where('payment_status', 'paid')->where('created_at', '>=', $startDate)->sum('consultation_fee');
+        $totalRevenue = Appointment::where('payment_status', 'paid')
+            ->where('created_at', '>=', $startDate)
+            ->sum('consultation_fee');
 
         return response()->json([
             'revenue' => [
@@ -292,24 +308,25 @@ class AdminDashboardController extends Controller
                 'total' => $totalRevenue
             ],
             'appointments' => [
-                'total' => $totalAppointments,
-                'confirmed' => $confirmedAppointments,
-                'completed' => $completedAppointments,
-                'cancelled' => $cancelledAppointments,
-                'pending' => $pendingAppointments
+                'total' => $appointmentStats->total ?? 0,
+                'confirmed' => $appointmentStats->confirmed ?? 0,
+                'completed' => $appointmentStats->completed ?? 0,
+                'cancelled' => $appointmentStats->cancelled ?? 0,
+                'pending' => $appointmentStats->pending ?? 0
             ],
             'lawyers' => [
-                'total' => $totalLawyers,
-                'active' => $activeLawyers,
-                'approved' => $approvedLawyers,
-                'pending' => $pendingLawyers
+                'total' => $lawyerStats->total ?? 0,
+                'active' => $lawyerStats->active ?? 0,
+                'approved' => $lawyerStats->approved ?? 0,
+                'pending' => $lawyerStats->pending ?? 0
             ],
             'users' => [
-                'total' => $totalUsers,
-                'new_this_month' => $newUsersThisMonth
+                'total' => $userStats->total ?? 0,
+                'new_this_month' => $userStats->new_this_month ?? 0
             ],
             'period_days' => $days
         ]);
+        }); // End cache
     }
 
     public function toggleAvailability($id)
@@ -317,6 +334,9 @@ class AdminDashboardController extends Controller
         $lawyer = Lawyer::findOrFail($id);
         $lawyer->is_available = !$lawyer->is_available;
         $lawyer->save();
+
+        // Clear the lawyers list cache so clients see the update immediately
+        \Cache::forget('lawyers_list_v1');
 
         return response()->json([
             'message' => 'Availability updated successfully',
@@ -388,13 +408,16 @@ class AdminDashboardController extends Controller
     {
         $days = $request->input('days', 30);
         $startDate = now()->subDays($days);
+        $cacheKey = "descriptive_analytics_{$days}";
         
-        // Most requested legal expertise (by confirmed case type)
-        // Uses the specialization confirmed by the lawyer for each appointment
-        // Falls back to lawyer's primary specialization if not confirmed
+        // Cache for 5 minutes to improve performance
+        return \Cache::remember($cacheKey, 300, function () use ($days, $startDate) {
+        // Most requested legal expertise (by case type)
+        // Priority: 1. Lawyer-confirmed specialization, 2. Client-selected specialization, 3. Lawyer's primary specialization
         $topSpecializations = DB::table('appointments')
             ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
             ->leftJoin('specializations as confirmed_spec', 'appointments.confirmed_specialization_id', '=', 'confirmed_spec.id')
+            ->leftJoin('specializations as client_spec', 'appointments.specialization_id', '=', 'client_spec.id')
             ->leftJoinSub(
                 // Subquery: Get the first specialization for each lawyer (fallback)
                 DB::table('lawyer_specializations as ls1')
@@ -412,13 +435,13 @@ class AdminDashboardController extends Controller
             )
             ->leftJoin('specializations as fallback_spec', 'primary_spec.specialization_id', '=', 'fallback_spec.id')
             ->select(
-                DB::raw('COALESCE(confirmed_spec.id, fallback_spec.id) as id'),
-                DB::raw('COALESCE(confirmed_spec.name, fallback_spec.name) as name'),
+                DB::raw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id) as id'),
+                DB::raw('COALESCE(confirmed_spec.name, client_spec.name, fallback_spec.name) as name'),
                 DB::raw('COUNT(*) as appointment_count')
             )
             ->where('appointments.created_at', '>=', $startDate)
-            ->whereRaw('COALESCE(confirmed_spec.id, fallback_spec.id) IS NOT NULL')
-            ->groupBy(DB::raw('COALESCE(confirmed_spec.id, fallback_spec.id)'), DB::raw('COALESCE(confirmed_spec.name, fallback_spec.name)'))
+            ->whereRaw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id) IS NOT NULL')
+            ->groupBy(DB::raw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id)'), DB::raw('COALESCE(confirmed_spec.name, client_spec.name, fallback_spec.name)'))
             ->orderBy('appointment_count', 'desc')
             ->limit(10)
             ->get();
@@ -474,9 +497,13 @@ class AdminDashboardController extends Controller
             ->get();
         
         // Average consultation fee by primary specialization (to avoid double counting)
+        // Average fee by specialization
+        // Priority: 1. Lawyer-confirmed specialization, 2. Client-selected specialization, 3. Lawyer's primary specialization
         $avgFeeBySpecialization = DB::table('appointments')
             ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
-            ->joinSub(
+            ->leftJoin('specializations as confirmed_spec', 'appointments.confirmed_specialization_id', '=', 'confirmed_spec.id')
+            ->leftJoin('specializations as client_spec', 'appointments.specialization_id', '=', 'client_spec.id')
+            ->leftJoinSub(
                 // Subquery: Get the first specialization for each lawyer
                 DB::table('lawyer_specializations as ls1')
                     ->select('ls1.lawyer_id', 'ls1.specialization_id')
@@ -491,16 +518,17 @@ class AdminDashboardController extends Controller
                 '=',
                 'primary_spec.lawyer_id'
             )
-            ->join('specializations', 'primary_spec.specialization_id', '=', 'specializations.id')
+            ->leftJoin('specializations as fallback_spec', 'primary_spec.specialization_id', '=', 'fallback_spec.id')
             ->select(
-                'specializations.id',
-                'specializations.name',
+                DB::raw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id) as id'),
+                DB::raw('COALESCE(confirmed_spec.name, client_spec.name, fallback_spec.name) as name'),
                 DB::raw('COALESCE(AVG(appointments.consultation_fee), 0) as avg_fee'),
                 DB::raw('MIN(appointments.consultation_fee) as min_fee'),
                 DB::raw('MAX(appointments.consultation_fee) as max_fee')
             )
             ->where('appointments.created_at', '>=', $startDate)
-            ->groupBy('specializations.id', 'specializations.name')
+            ->whereRaw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id) IS NOT NULL')
+            ->groupBy(DB::raw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id)'), DB::raw('COALESCE(confirmed_spec.name, client_spec.name, fallback_spec.name)'))
             ->orderBy('avg_fee', 'desc')
             ->get();
         
@@ -555,6 +583,7 @@ class AdminDashboardController extends Controller
             'period_days' => $days,
             'total_appointments' => $totalAppointments,
         ]);
+        }); // End cache
     }
 
     /**

@@ -453,7 +453,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                           <p className="text-gray-600 mt-4 text-sm font-medium">Loading available slots...</p>
                         </div>
                       ) : availableSlots.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
+                        <div className="grid grid-cols-2 gap-3">
                           {availableSlots.map((slot) => (
                             <button
                               key={slot.time}

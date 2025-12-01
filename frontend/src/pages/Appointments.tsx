@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
+import { cacheService } from '../services/cacheService';
 import ReviewModal from '../components/ReviewModal';
 import { Star, Eye } from 'lucide-react';
 import { notificationService } from '../services/notificationService';
@@ -183,6 +184,9 @@ const Appointments: React.FC = () => {
       });
       console.log('Cancel response:', response);
 
+      // Invalidate appointments cache to ensure fresh data
+      cacheService.invalidatePattern('/appointments');
+
       setShowCancelModal(false);
       setCancelReason('');
       setShowCancelSuccessModal(true);
@@ -248,6 +252,7 @@ const Appointments: React.FC = () => {
     setRespondingToReschedule(true);
     try {
       await api.post(`/appointments/${selectedAppointment.id}/reschedule/accept`);
+      cacheService.invalidatePattern('/appointments');
       setShowRescheduleModal(false);
       setShowRescheduleSuccessModal(true);
       fetchAppointments();
@@ -270,6 +275,7 @@ const Appointments: React.FC = () => {
     setRespondingToReschedule(true);
     try {
       await api.post(`/appointments/${selectedAppointment.id}/reschedule/decline`);
+      cacheService.invalidatePattern('/appointments');
       setShowDeclineConfirmModal(false);
       setToast({
         show: true,
@@ -321,6 +327,16 @@ const Appointments: React.FC = () => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  // Extract time from a datetime string like "2025-12-27 15:00:00" or "2025-12-27T15:00:00"
+  const getTimeFromDateTime = (dateTimeString: string) => {
+    if (!dateTimeString) return '';
+    // Handle both "2025-12-27 15:00:00" and "2025-12-27T15:00:00" formats
+    const timePart = dateTimeString.includes('T') 
+      ? dateTimeString.split('T')[1] 
+      : dateTimeString.split(' ')[1];
+    return timePart ? timePart.substring(0, 5) : ''; // Get HH:mm
   };
 
   return (
@@ -655,7 +671,7 @@ const Appointments: React.FC = () => {
                               <strong>Reason:</strong> {appointment.reschedule_reason}
                             </p>
                             <p className="text-sm text-orange-800 mb-3">
-                              <strong>New Date & Time:</strong> {formatDate(appointment.proposed_date)} at {formatTime(appointment.proposed_date.split(' ')[1] || appointment.appointment_time)}
+                              <strong>New Date & Time:</strong> {formatDate(appointment.proposed_date)} at {formatTime(getTimeFromDateTime(appointment.proposed_date) || appointment.appointment_time)}
                             </p>
                             <button
                               onClick={() => handleViewRescheduleRequest(appointment)}
@@ -696,6 +712,18 @@ const Appointments: React.FC = () => {
                         </svg>
                         View Lawyer
                       </button>
+
+                      {appointment.payment_status === 'unpaid' && appointment.status !== 'cancelled' && (
+                        <button
+                          onClick={() => navigate(`/appointments/${appointment.id}/payment`)}
+                          className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-600 hover:shadow-lg transition-all flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                          </svg>
+                          Pay Now
+                        </button>
+                      )}
 
                       {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
                         <button
@@ -890,7 +918,10 @@ const Appointments: React.FC = () => {
                       <div className="flex-1">
                         <h4 className="text-sm font-bold text-blue-900 mb-2">Refund Policy</h4>
                         {(() => {
-                          const appointmentDateTime = new Date(`${selectedAppointment.appointment_date}T${selectedAppointment.appointment_time}`);
+                          // Parse date properly - extract just the date part (YYYY-MM-DD)
+                          const datePart = selectedAppointment.appointment_date.split('T')[0];
+                          const timePart = selectedAppointment.appointment_time.substring(0, 5); // Get HH:MM
+                          const appointmentDateTime = new Date(`${datePart}T${timePart}:00`);
                           const now = new Date();
                           const hoursUntilAppointment = (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
                           const isMoreThan24Hours = hoursUntilAppointment >= 24;
@@ -1120,7 +1151,7 @@ const Appointments: React.FC = () => {
                 <p className="text-sm font-semibold text-orange-900 mb-3">Proposed New Date & Time:</p>
                 <div className="space-y-2">
                   <p className="text-base text-orange-900 font-semibold">
-                    {formatDate(selectedAppointment.proposed_date || '')} at {formatTime(selectedAppointment.proposed_date?.split(' ')[1] || selectedAppointment.appointment_time)}
+                    {formatDate(selectedAppointment.proposed_date || '')} at {formatTime(getTimeFromDateTime(selectedAppointment.proposed_date || '') || selectedAppointment.appointment_time)}
                   </p>
                 </div>
               </div>
@@ -1227,7 +1258,7 @@ const Appointments: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span className="font-medium">Time:</span>
-                      <span className="font-semibold">{formatTime(selectedAppointment.proposed_date?.split(' ')[1] || selectedAppointment.appointment_time)}</span>
+                      <span className="font-semibold">{formatTime(getTimeFromDateTime(selectedAppointment.proposed_date || '') || selectedAppointment.appointment_time)}</span>
                     </div>
                   </div>
                 </div>

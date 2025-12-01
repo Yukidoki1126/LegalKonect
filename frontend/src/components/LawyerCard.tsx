@@ -30,15 +30,20 @@ const LawyerCard: React.FC<LawyerCardProps> = ({ lawyer }) => {
       {/* Subtle gradient accent on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-indigo-50/0 group-hover:from-blue-50/50 group-hover:to-indigo-50/30 transition-all duration-300 pointer-events-none"></div>
       
-      {/* Verified Badge */}
-      {lawyer.is_available && (
-        <div className="absolute top-4 right-4 z-10">
+      {/* Availability Badge */}
+      <div className="absolute top-4 right-4 z-10">
+        {lawyer.is_available ? (
           <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
             Available
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-500 text-xs font-semibold rounded-full">
+            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+            Unavailable
+          </div>
+        )}
+      </div>
 
       {/* Profile Photo and Name */}
       <div className="flex items-start gap-4 mb-4 relative z-10">

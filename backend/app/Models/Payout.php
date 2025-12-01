@@ -23,6 +23,8 @@ class Payout extends Model
         'admin_notes',
         'rejection_reason',
         'transaction_reference',
+        'payment_proof',
+        'payment_confirmed_at',
     ];
 
     protected $casts = [
@@ -31,7 +33,21 @@ class Payout extends Model
         'approved_at' => 'datetime',
         'paid_at' => 'datetime',
         'rejected_at' => 'datetime',
+        'payment_confirmed_at' => 'datetime',
     ];
+
+    protected $appends = ['payment_proof_url'];
+
+    /**
+     * Get the payment proof URL
+     */
+    public function getPaymentProofUrlAttribute()
+    {
+        if ($this->payment_proof) {
+            return asset('storage/' . $this->payment_proof);
+        }
+        return null;
+    }
 
     /**
      * Get the lawyer that requested the payout

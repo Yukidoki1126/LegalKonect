@@ -405,6 +405,9 @@ class LawyerDashboardController extends Controller
         $lawyer->is_available = !$lawyer->is_available;
         $lawyer->save();
 
+        // Clear the lawyers list cache so clients see the update immediately
+        \Cache::forget('lawyers_list_v1');
+
         return response()->json([
             'message' => 'Availability updated',
             'is_available' => $lawyer->is_available
@@ -502,6 +505,13 @@ class LawyerDashboardController extends Controller
             $lawyer->profile_photo = $path;
         }
 
+        // Debug: Log what is_available value we received
+        \Log::info('UpdateProfile: is_available value', [
+            'raw_request' => $request->input('is_available'),
+            'validated' => $validated['is_available'] ?? 'NOT SET',
+            'current_db_value' => $lawyer->is_available,
+        ]);
+
         // Update lawyer details
         $lawyer->update([
             'first_name' => $validated['first_name'],
@@ -516,8 +526,12 @@ class LawyerDashboardController extends Controller
             'office_longitude' => $validated['office_longitude'] ?? null,
             'office_phone' => $validated['office_phone'],
             'office_hours' => $validated['office_hours'] ?? null,
-            'is_available' => $validated['is_available'] ?? true,
+            'is_available' => $validated['is_available'] ?? $lawyer->is_available,
         ]);
+        
+        // Debug: Log the new value after save
+        $lawyer->refresh();
+        \Log::info('UpdateProfile: After save', ['is_available' => $lawyer->is_available]);
 
         // Also sync the name on the linked user record so admin / users list shows the updated name
         try {
@@ -535,6 +549,9 @@ class LawyerDashboardController extends Controller
 
         // Sync specializations
         $lawyer->specializations()->sync($validated['specialization_ids']);
+
+        // Clear the lawyers list cache so clients see the update immediately
+        \Cache::forget('lawyers_list_v1');
 
         return response()->json([
             'message' => 'Profile updated successfully',

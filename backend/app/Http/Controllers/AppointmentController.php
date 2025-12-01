@@ -832,8 +832,12 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'Reschedule request not found'], 404);
         }
 
-        // Update appointment fields
-        $appointment->appointment_date = $appointment->proposed_date;
+        // Parse the proposed_date which contains both date and time
+        $proposedDateTime = Carbon::parse($appointment->proposed_date);
+
+        // Update appointment fields - both date AND time
+        $appointment->appointment_date = $proposedDateTime->format('Y-m-d');
+        $appointment->appointment_time = $proposedDateTime->format('H:i:s');
         $appointment->reschedule_status = null; // Clear reschedule status so it shows in Upcoming again
         $appointment->reschedule_responded_at = now();
         $updated = $appointment->save();
@@ -851,15 +855,40 @@ class AppointmentController extends Controller
         Log::info('Reschedule accepted', [
             'appointment_id' => $appointment->id,
             'new_date' => $appointment->appointment_date,
-            'reschedule_status' => $appointment->reschedule_status,
+            'new_time' => $appointment->appointment_time,
         ]);
+
+        // Load relationships for notifications and Google Calendar
+        $appointment->load(['user', 'lawyer']);
 
         // Create notification for the lawyer about reschedule acceptance
         try {
-            $appointment->load(['user', 'lawyer']);
             $this->notificationService->rescheduleResponded($appointment, 'accepted');
         } catch (\Exception $e) {
             Log::error('Failed to create reschedule acceptance notification: ' . $e->getMessage());
+        }
+
+        // Update Google Calendar event if lawyer has Google Calendar connected
+        try {
+            $lawyer = $appointment->lawyer;
+
+            if ($lawyer && $lawyer->google_calendar_connected && $appointment->google_event_id) {
+                $calendarUpdated = $this->googleCalendarService->updateAppointmentEvent(
+                    $lawyer,
+                    $appointment,
+                    $appointment->google_event_id
+                );
+                
+                if (!$calendarUpdated) {
+                    Log::warning('Google Calendar update failed for reschedule', [
+                        'appointment_id' => $appointment->id,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to update Google Calendar event for reschedule: ' . $e->getMessage(), [
+                'exception' => $e->getTraceAsString(),
+            ]);
         }
 
         // TODO: Send confirmation email to both parties

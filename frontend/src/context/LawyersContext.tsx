@@ -7,22 +7,34 @@ interface LawyersContextType {
   setLawyers: (lawyers: Lawyer[]) => void;
   setSpecializations: (specs: Specialization[]) => void;
   isCached: boolean;
+  clearCache: () => void;
+  lastFetched: number | null;
 }
 
 const LawyersContext = createContext<LawyersContextType | undefined>(undefined);
 
+// Cache expires after 30 seconds for real-time availability updates
+const CACHE_DURATION = 30 * 1000;
+
 export const LawyersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [specializations, setSpecializations] = useState<Specialization[]>([]);
-  const [isCached, setIsCached] = useState(false);
+  const [lastFetched, setLastFetched] = useState<number | null>(null);
+
+  // Check if cache is still valid
+  const isCached = lastFetched !== null && (Date.now() - lastFetched) < CACHE_DURATION;
 
   const handleSetLawyers = (newLawyers: Lawyer[]) => {
     setLawyers(newLawyers);
-    setIsCached(true);
+    setLastFetched(Date.now());
   };
 
   const handleSetSpecializations = (newSpecs: Specialization[]) => {
     setSpecializations(newSpecs);
+  };
+
+  const clearCache = () => {
+    setLastFetched(null);
   };
 
   return (
@@ -33,6 +45,8 @@ export const LawyersProvider: React.FC<{ children: ReactNode }> = ({ children })
         setLawyers: handleSetLawyers,
         setSpecializations: handleSetSpecializations,
         isCached,
+        clearCache,
+        lastFetched,
       }}
     >
       {children}

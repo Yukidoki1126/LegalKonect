@@ -294,53 +294,53 @@ const AdminUsers: React.FC = () => {
 
   return (
     <PageTransition>
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Users Management</h1>
-        <p className="text-gray-600">Manage all platform users and clients</p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Users Management</h1>
+        <p className="text-sm sm:text-base text-gray-600">Manage all platform users and clients</p>
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
+        <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Total Users</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{pagination.total}</p>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Total Users</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{pagination.total}</p>
             </div>
-            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-lg sm:rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Clients Only</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Clients Only</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">
                 {users.filter(u => !u.is_lawyer).length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 rounded-lg sm:rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Lawyer Accounts</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Lawyer Accounts</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">
                 {users.filter(u => u.is_lawyer).length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-50 rounded-lg sm:rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
@@ -349,11 +349,11 @@ const AdminUsers: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-xl p-3 sm:p-5 shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -361,7 +361,7 @@ const AdminUsers: React.FC = () => {
               placeholder="Search by name, email, or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+              className="w-full pl-9 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
             />
           </div>
 
@@ -369,7 +369,7 @@ const AdminUsers: React.FC = () => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all min-w-[160px]"
+            className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all sm:min-w-[160px]"
           >
             <option value="all">All Users</option>
             <option value="clients">Clients Only</option>
@@ -378,8 +378,8 @@ const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      {/* Users Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -500,24 +500,104 @@ const AdminUsers: React.FC = () => {
         </div>
       </div>
 
+      {/* Users Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {filteredUsers.length === 0 ? (
+          <div className="bg-white rounded-xl p-6 text-center text-gray-600 border border-gray-200">
+            No users found
+          </div>
+        ) : (
+          filteredUsers.map((user) => (
+            <div key={user.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+              {/* User Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-sm">
+                      {getDisplayName(user).charAt(0) || 'U'}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 text-sm truncate">{getDisplayName(user)}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email || 'N/A'}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${user.is_lawyer ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {user.is_lawyer ? 'Lawyer' : 'Client'}
+                  </span>
+                  {user.status === 'suspended' && (
+                    <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                      Suspended
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* User Details */}
+              <div className="grid grid-cols-2 gap-2 text-sm mb-3 py-3 border-t border-b border-gray-100">
+                <div>
+                  <p className="text-xs text-gray-500">Phone</p>
+                  <p className="text-gray-900 font-medium truncate">{user.phone || 'No phone'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Bookings</p>
+                  <p className="text-gray-900 font-medium">{user.total_appointments || 0}</p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  Joined {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                <div className="flex gap-2">
+                  {user.status === 'suspended' ? (
+                    <button
+                      onClick={() => activateUser(user.id, getDisplayName(user))}
+                      className="px-3 py-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg font-medium transition text-xs"
+                    >
+                      Activate
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => suspendUser(user.id, getDisplayName(user))}
+                      className="px-3 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg font-medium transition text-xs"
+                    >
+                      Suspend
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteUser(user.id, getDisplayName(user))}
+                    className="px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-medium transition text-xs"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Pagination */}
       {pagination.lastPage > 1 && (
-        <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-600">
-            Showing page {pagination.currentPage} of {pagination.lastPage} ({pagination.total} total)
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white rounded-lg p-3 sm:p-4 border border-gray-200 shadow-sm">
+          <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
+            Page {pagination.currentPage} of {pagination.lastPage} ({pagination.total} total)
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }))}
               disabled={pagination.currentPage === 1}
-              className="px-4 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-300 text-gray-900 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               Previous
             </button>
             <button
               onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }))}
               disabled={pagination.currentPage === pagination.lastPage}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               Next
             </button>
@@ -526,7 +606,7 @@ const AdminUsers: React.FC = () => {
       )}
 
       {/* Results Count */}
-      <div className="text-center text-gray-600 text-sm">
+      <div className="text-center text-gray-600 text-xs sm:text-sm">
         Showing {filteredUsers.length} users
       </div>
 

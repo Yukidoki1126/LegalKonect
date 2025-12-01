@@ -425,15 +425,17 @@ class PayoutController extends Controller
                 ], 422);
             }
 
+            // Note: processed_by references users table, but admins are in a separate table
             $payout->update([
                 'status' => 'approved',
                 'approved_at' => now(),
-                'processed_by' => $user->id,
+                'processed_by' => null, // Admins are in separate table
+                'admin_notes' => "Approved by: {$user->name} ({$user->email})",
             ]);
 
             Log::info('Payout approved', [
                 'payout_id' => $payout->id,
-                'admin_id' => $user->id,
+                'admin_email' => $user->email,
             ]);
 
             return response()->json([
@@ -462,8 +464,9 @@ class PayoutController extends Controller
     {
         try {
             $validated = $request->validate([
-                'transaction_reference' => 'nullable|string|max:255',
+                'transaction_reference' => 'required|string|max:255',
                 'admin_notes' => 'nullable|string',
+                'payment_proof' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
             ]);
 
             $user = $request->user();
@@ -480,12 +483,28 @@ class PayoutController extends Controller
                 ], 422);
             }
 
+            // Handle payment proof upload
+            $paymentProofPath = null;
+            if ($request->hasFile('payment_proof')) {
+                $file = $request->file('payment_proof');
+                $filename = 'payout_' . $payout->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $paymentProofPath = $file->storeAs('payment_proofs', $filename, 'public');
+            }
+
+            // Note: processed_by references users table, but admins are in a separate table
+            // So we set it to null and record admin info in admin_notes
+            $adminInfo = "Processed by: {$user->name} ({$user->email})";
+            $adminNotes = $validated['admin_notes'] ?? '';
+            $fullNotes = $adminNotes ? "{$adminInfo}\n{$adminNotes}" : $adminInfo;
+
             $payout->update([
                 'status' => 'paid',
                 'paid_at' => now(),
-                'processed_by' => $user->id,
-                'transaction_reference' => $validated['transaction_reference'] ?? null,
-                'admin_notes' => $validated['admin_notes'] ?? null,
+                'payment_confirmed_at' => now(),
+                'processed_by' => null, // Admins are in separate table, can't use foreign key
+                'transaction_reference' => $validated['transaction_reference'],
+                'payment_proof' => $paymentProofPath,
+                'admin_notes' => $fullNotes,
             ]);
 
             // Reload payout with lawyer relationship for email
@@ -513,6 +532,7 @@ class PayoutController extends Controller
             Log::info('Payout marked as paid', [
                 'payout_id' => $payout->id,
                 'admin_id' => $user->id,
+                'payment_proof' => $paymentProofPath,
             ]);
 
             return response()->json([
@@ -521,6 +541,8 @@ class PayoutController extends Controller
                     'id' => $payout->id,
                     'status' => $payout->status,
                     'paid_at' => $payout->paid_at->format('Y-m-d H:i:s'),
+                    'transaction_reference' => $payout->transaction_reference,
+                    'payment_proof_url' => $paymentProofPath ? asset('storage/' . $paymentProofPath) : null,
                 ],
             ]);
 
@@ -563,16 +585,18 @@ class PayoutController extends Controller
                 ], 422);
             }
 
+            // Note: processed_by references users table, but admins are in a separate table
             $payout->update([
                 'status' => 'rejected',
                 'rejected_at' => now(),
-                'processed_by' => $user->id,
+                'processed_by' => null, // Admins are in separate table
                 'rejection_reason' => $validated['rejection_reason'],
+                'admin_notes' => "Rejected by: {$user->name} ({$user->email})",
             ]);
 
             Log::info('Payout rejected', [
                 'payout_id' => $payout->id,
-                'admin_id' => $user->id,
+                'admin_email' => $user->email,
                 'reason' => $validated['rejection_reason'],
             ]);
 
