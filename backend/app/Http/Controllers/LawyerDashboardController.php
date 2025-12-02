@@ -453,6 +453,14 @@ class LawyerDashboardController extends Controller
             'verified_at' => $lawyer->verified_at,
             'verification_notes' => $lawyer->verification_notes,
             'specializations' => $lawyer->specializations,
+            // Payment info for direct client payments
+            'gcash_number' => $lawyer->gcash_number,
+            'gcash_account_name' => $lawyer->gcash_account_name,
+            'gcash_qr_code' => $lawyer->gcash_qr_code ? Storage::url($lawyer->gcash_qr_code) : null,
+            'bank_name' => $lawyer->bank_name,
+            'bank_account_number' => $lawyer->bank_account_number,
+            'bank_account_name' => $lawyer->bank_account_name,
+            'preferred_payout_method' => $lawyer->preferred_payout_method,
             'created_at' => $lawyer->created_at,
             'updated_at' => $lawyer->updated_at,
         ]);
@@ -786,5 +794,191 @@ class LawyerDashboardController extends Controller
         return response()->json([
             'events' => $events
         ]);
+    }
+
+    /**
+     * Update lawyer's payment information (GCash/Bank details)
+     */
+    public function updatePaymentInfo(Request $request)
+    {
+        try {
+            $lawyer = $request->user()->lawyer;
+
+            if (!$lawyer) {
+                return response()->json(['message' => 'Lawyer profile not found'], 404);
+            }
+
+            $request->validate([
+                'gcash_number' => 'nullable|string|max:20',
+                'gcash_account_name' => 'nullable|string|max:255',
+                'bank_name' => 'nullable|string|max:255',
+                'bank_account_number' => 'nullable|string|max:50',
+                'bank_account_name' => 'nullable|string|max:255',
+                'preferred_payout_method' => 'nullable|in:gcash,bank',
+            ]);
+
+            $lawyer->update([
+                'gcash_number' => $request->gcash_number,
+                'gcash_account_name' => $request->gcash_account_name,
+                'bank_name' => $request->bank_name,
+                'bank_account_number' => $request->bank_account_number,
+                'bank_account_name' => $request->bank_account_name,
+                'preferred_payout_method' => $request->preferred_payout_method ?? 'gcash',
+            ]);
+
+            Log::info('Lawyer payment info updated', ['lawyer_id' => $lawyer->id]);
+
+            return response()->json([
+                'message' => 'Payment information updated successfully',
+                'payment_info' => [
+                    'gcash_number' => $lawyer->gcash_number,
+                    'gcash_account_name' => $lawyer->gcash_account_name,
+                    'gcash_qr_code' => $lawyer->gcash_qr_code ? Storage::url($lawyer->gcash_qr_code) : null,
+                    'bank_name' => $lawyer->bank_name,
+                    'bank_account_number' => $lawyer->bank_account_number,
+                    'bank_account_name' => $lawyer->bank_account_name,
+                    'preferred_payout_method' => $lawyer->preferred_payout_method,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating payment info: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to update payment information'], 500);
+        }
+    }
+
+    /**
+     * Upload GCash QR code
+     */
+    public function uploadGcashQr(Request $request)
+    {
+        try {
+            $lawyer = $request->user()->lawyer;
+
+            if (!$lawyer) {
+                return response()->json(['message' => 'Lawyer profile not found'], 404);
+            }
+
+            $request->validate([
+                'gcash_qr' => 'required|image|mimes:jpeg,png,jpg|max:2048', // 2MB max
+            ]);
+
+            // Delete old QR if exists
+            if ($lawyer->gcash_qr_code) {
+                Storage::disk('public')->delete($lawyer->gcash_qr_code);
+            }
+
+            // Store new QR
+            $file = $request->file('gcash_qr');
+            $filename = 'gcash_qr_' . $lawyer->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('gcash_qr_codes', $filename, 'public');
+
+            $lawyer->update(['gcash_qr_code' => $path]);
+
+            Log::info('GCash QR uploaded', ['lawyer_id' => $lawyer->id]);
+
+            return response()->json([
+                'message' => 'GCash QR code uploaded successfully',
+                'gcash_qr_url' => Storage::url($path),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error uploading GCash QR: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to upload GCash QR code'], 500);
+        }
+    }
+
+    /**
+     * Delete GCash QR code
+     */
+    public function deleteGcashQr(Request $request)
+    {
+        try {
+            $lawyer = $request->user()->lawyer;
+
+            if (!$lawyer) {
+                return response()->json(['message' => 'Lawyer profile not found'], 404);
+            }
+
+            if ($lawyer->gcash_qr_code) {
+                Storage::disk('public')->delete($lawyer->gcash_qr_code);
+                $lawyer->update(['gcash_qr_code' => null]);
+            }
+
+            return response()->json(['message' => 'GCash QR code deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting GCash QR: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to delete GCash QR code'], 500);
+        }
+    }
+
+    /**
+     * Get transaction history (completed appointments with payment info)
+     */
+    public function getTransactionHistory(Request $request)
+    {
+        try {
+            $lawyer = $request->user()->lawyer;
+
+            if (!$lawyer) {
+                return response()->json(['message' => 'Lawyer profile not found'], 404);
+            }
+
+            $perPage = $request->get('per_page', 20);
+
+            // Get completed appointments with payment confirmed
+            $transactions = $lawyer->appointments()
+                ->with('user:id,name,email')
+                ->whereIn('status', ['completed', 'confirmed'])
+                ->orderBy('appointment_date', 'desc')
+                ->paginate($perPage);
+
+            $formattedTransactions = $transactions->getCollection()->map(function ($appointment) {
+                return [
+                    'id' => $appointment->id,
+                    'appointment_id' => $appointment->id,
+                    'client_name' => $appointment->user->name ?? 'Unknown',
+                    'client_email' => $appointment->user->email ?? '',
+                    'appointment_date' => $appointment->appointment_date->format('Y-m-d'),
+                    'appointment_time' => $appointment->appointment_time,
+                    'consultation_fee' => $appointment->consultation_fee,
+                    'reservation_fee' => $appointment->lawyer->reservation_fee ?? 100,
+                    'payment_method_used' => $appointment->payment_method_used ?? null,
+                    'payment_status' => $appointment->payment_status,
+                    'payment_confirmed' => (bool) $appointment->payment_confirmed,
+                    'payment_confirmed_at' => $appointment->payment_confirmed_at 
+                        ? $appointment->payment_confirmed_at->toISOString() 
+                        : null,
+                    'status' => $appointment->status,
+                    'completed_at' => $appointment->updated_at->toISOString(),
+                ];
+            });
+
+            // Calculate summary stats
+            $summary = [
+                'total_appointments' => $lawyer->appointments()->count(),
+                'confirmed_payments' => $lawyer->appointments()
+                    ->where('payment_confirmed', true)
+                    ->count(),
+                'total_completed' => $lawyer->appointments()->where('status', 'completed')->count(),
+                'pending_confirmation' => $lawyer->appointments()
+                    ->whereNotNull('payment_proof')
+                    ->where('payment_confirmed', false)
+                    ->whereIn('status', ['pending', 'confirmed'])
+                    ->count(),
+            ];
+
+            return response()->json([
+                'transactions' => $formattedTransactions,
+                'summary' => $summary,
+                'pagination' => [
+                    'current_page' => $transactions->currentPage(),
+                    'last_page' => $transactions->lastPage(),
+                    'per_page' => $transactions->perPage(),
+                    'total' => $transactions->total(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting transaction history: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to get transaction history'], 500);
+        }
     }
 }

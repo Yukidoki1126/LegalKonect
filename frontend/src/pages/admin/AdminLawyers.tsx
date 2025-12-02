@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import adminApi, { clearAdminCache } from '../../services/adminApi';
 import PageTransition from '../../components/PageTransition';
 interface Lawyer {
@@ -29,6 +30,18 @@ const AdminLawyers: React.FC = () => {
     lawyerName: string;
     currentStatus: string;
   } | null>(null);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showConfirmModal || showNotificationModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showConfirmModal, showNotificationModal]);
 
   useEffect(() => {
     loadLawyers();
@@ -189,83 +202,83 @@ const confirmToggleStatus = async () => {
 
   return (
     <PageTransition>
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Lawyers Management</h1>
-        <p className="text-gray-600">Manage all lawyers on the platform</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Lawyers Management</h1>
+        <p className="text-sm sm:text-base text-gray-600">Manage all lawyers on the platform</p>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+      {/* Stats Summary - Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-5">
+        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Total Lawyers</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{(lawyers || []).length}</p>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Total Lawyers</p>
+              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">{(lawyers || []).length}</p>
             </div>
-            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Approved</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Verified</p>
+              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">
                 {(lawyers || []).filter(l => l.status === 'approved').length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-50 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Pending</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Pending</p>
+              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">
                 {(lawyers || []).filter(l => l.status === 'pending').length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Rejected</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Rejected</p>
+              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">
                 {(lawyers || []).filter(l => l.status === 'rejected').length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-50 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Available Now</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Available Now</p>
+              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">
                 {(lawyers || []).filter(l => l.status === 'approved' && l.is_available).length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z" />
               </svg>
             </div>
@@ -274,19 +287,19 @@ const confirmToggleStatus = async () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-xl p-3 sm:p-5 shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
               type="text"
-              placeholder="Search by name, email, or specialization..."
+              placeholder="Search lawyers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+              className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
             />
           </div>
 
@@ -294,18 +307,18 @@ const confirmToggleStatus = async () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all min-w-[160px]"
+            className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all sm:min-w-[160px]"
           >
             <option value="all">All Status</option>
-            <option value="approved">Approved</option>
+            <option value="approved">Verified</option>
             <option value="pending">Pending</option>
             <option value="suspended">Suspended</option>
           </select>
         </div>
       </div>
 
-      {/* Lawyers Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Lawyers Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -375,7 +388,7 @@ const confirmToggleStatus = async () => {
                         lawyer.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-red-100 text-red-700'
                       }`}>
-                        {lawyer.status || 'unknown'}
+                        {lawyer.status === 'approved' ? 'verified' : lawyer.status || 'unknown'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -425,23 +438,133 @@ const confirmToggleStatus = async () => {
         </div>
       </div>
 
+      {/* Lawyers Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {filteredLawyers.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+            <p className="text-gray-500 text-sm">No lawyers found</p>
+          </div>
+        ) : (
+          filteredLawyers.map((lawyer) => (
+            <div key={lawyer.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              {/* Header with Lawyer Info and Status */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-sm">
+                      {lawyer.name?.charAt(0) || 'L'}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">{lawyer.name || 'Unknown'}</div>
+                    <div className="text-xs text-gray-500 truncate">{lawyer.email || 'N/A'}</div>
+                  </div>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                  lawyer.status === 'approved' ? 'bg-green-100 text-green-700' :
+                  lawyer.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  {lawyer.status === 'approved' ? 'verified' : lawyer.status || 'unknown'}
+                </span>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                <div>
+                  <div className="text-xs text-gray-500 mb-0.5">Specialization</div>
+                  <div className="text-gray-900 text-xs font-medium truncate">{lawyer.specialization || 'N/A'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-0.5">Fee</div>
+                  <div className="text-gray-900 text-xs font-medium">
+                    ₱{lawyer.consultation_fee ? lawyer.consultation_fee.toLocaleString() : '0'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-0.5">Appointments</div>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    {lawyer.total_appointments || 0} bookings
+                  </span>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-0.5">Availability</div>
+                  {lawyer.status === 'approved' ? (
+                    <button
+                      onClick={() => toggleAvailability(lawyer.id, lawyer.is_available, lawyer.name)}
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${
+                        lawyer.is_available
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {lawyer.is_available ? 'Online' : 'Offline'}
+                    </button>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400">N/A</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-3 border-t border-gray-100 flex justify-end">
+                {lawyer.status === 'approved' ? (
+                  <button
+                    onClick={() => showConfirmationModal(lawyer.id, lawyer.status, lawyer.name)}
+                    className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition"
+                  >
+                    Suspend
+                  </button>
+                ) : lawyer.status === 'suspended' ? (
+                  <button
+                    onClick={() => showConfirmationModal(lawyer.id, lawyer.status, lawyer.name)}
+                    className="px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-medium hover:bg-green-100 transition"
+                  >
+                    Activate
+                  </button>
+                ) : (
+                  <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs">
+                    Pending Verification
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Results Count */}
-      <div className="text-center text-gray-600 text-sm">
+      <div className="text-center text-gray-600 text-xs sm:text-sm">
         Showing {filteredLawyers.length} of {(lawyers || []).length} lawyers
       </div>
 
       {/* Confirmation Modal */}
-      {showConfirmModal && confirmAction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full shadow-xl">
-            <div className="p-6">
-              {/* Warning Icon */}
-              <div className="flex justify-center mb-4">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                  confirmAction.type === 'suspend' ? 'bg-red-100' : 'bg-green-100'
-                }`}>
-                  <svg className={`w-8 h-8 ${
-                    confirmAction.type === 'suspend' ? 'text-red-600' : 'text-green-600'
+      {showConfirmModal && confirmAction && createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+            <div className="bg-white rounded-lg max-w-md w-full mx-4 shadow-xl">
+              <div className="p-6">
+                {/* Warning Icon */}
+                <div className="flex justify-center mb-4">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                    confirmAction.type === 'suspend' ? 'bg-red-100' : 'bg-green-100'
+                  }`}>
+                    <svg className={`w-8 h-8 ${
+                      confirmAction.type === 'suspend' ? 'text-red-600' : 'text-green-600'
                   }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
@@ -489,13 +612,29 @@ const confirmToggleStatus = async () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root') || document.body
       )}
 
       {/* Notification Modal */}
-      {showNotificationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full shadow-xl">
+      {showNotificationModal && createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div className="bg-white rounded-lg max-w-md w-full mx-4 shadow-xl">
             <div className="p-6">
               {/* Icon */}
               <div className="flex justify-center mb-4">
@@ -551,7 +690,8 @@ const confirmToggleStatus = async () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
     </PageTransition>

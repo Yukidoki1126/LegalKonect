@@ -103,7 +103,7 @@
 
             <div class="info-row">
                 <span class="label">Current Time:</span>
-                <span class="value">{{ $appointment->appointment_time }}</span>
+                <span class="value">{{ \Carbon\Carbon::parse($appointment->appointment_time)->format('g:i A') }}</span>
             </div>
         </div>
 

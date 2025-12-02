@@ -37,6 +37,14 @@ class Appointment extends Model
         'proposed_date',
         'reschedule_requested_at',
         'reschedule_responded_at',
+        'reschedule_requested_by',
+        'client_reschedule_used',
+        // Manual payment fields
+        'payment_proof',
+        'payment_method_used',
+        'payment_proof_uploaded_at',
+        'payment_confirmed',
+        'payment_confirmed_at',
     ];
 
     protected $casts = [
@@ -48,6 +56,10 @@ class Appointment extends Model
         'proposed_date' => 'datetime',
         'reschedule_requested_at' => 'datetime',
         'reschedule_responded_at' => 'datetime',
+        'payment_proof_uploaded_at' => 'datetime',
+        'payment_confirmed' => 'boolean',
+        'payment_confirmed_at' => 'datetime',
+        'client_reschedule_used' => 'boolean',
     ];
 
     

@@ -17,7 +17,7 @@ import Profile from './pages/Profile';
 import LawyerSearch from './pages/LawyerSearch';
 import LawyerDetail from './pages/LawyerDetail';
 import Appointments from './pages/Appointments';
-import PaymentPage from './pages/PaymentPage';
+import ManualPaymentPage from './pages/ManualPaymentPage';
 import PaymentRedirect from './pages/PaymentRedirect';
 import Cases from './pages/Cases';
 import ClientOnlyRoute from './components/ClientOnlyRoute';
@@ -30,7 +30,7 @@ import ToastNotification from './components/ToastNotification';
 import LawyerLayout from './pages/lawyer/LawyerLayout';
 import LawyerDashboard from './pages/lawyer/LawyerDashboard';
 import LawyerAppointments from './pages/lawyer/LawyerAppointments';
-import LawyerEarnings from './pages/lawyer/LawyerEarnings';
+import LawyerTransactionHistory from './pages/lawyer/LawyerTransactionHistory';
 import LawyerProfile from './pages/lawyer/LawyerProfile';
 import LawyerSchedule from './pages/lawyer/LawyerSchedule';
 import LawyerGoogleCalendar from './pages/lawyer/LawyerGoogleCalendar';
@@ -43,7 +43,6 @@ import AdminLawyers from './pages/admin/AdminLawyers';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPayments from './pages/admin/AdminPayments';
-import AdminPayouts from './pages/admin/AdminPayouts';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminFaqs from './pages/admin/AdminFaqs';
 import AdminVerifications from './pages/admin/AdminVerifications';
@@ -114,7 +113,7 @@ function AppContent() {
           path="/appointments/:appointmentId/payment"
           element={
             <ProtectedRoute>
-              <PaymentPage />
+              <ManualPaymentPage />
             </ProtectedRoute>
           }
         />
@@ -149,7 +148,8 @@ function AppContent() {
           <Route path="cases" element={<LawyerCases />} />
           <Route path="calendar" element={<LawyerGoogleCalendar />} />
           <Route path="schedule" element={<LawyerSchedule />} />
-          <Route path="earnings" element={<LawyerEarnings />} />
+          <Route path="earnings" element={<LawyerTransactionHistory />} />
+          <Route path="transactions" element={<LawyerTransactionHistory />} />
           <Route path="profile" element={<LawyerProfile />} />
         </Route>
 
@@ -162,15 +162,14 @@ function AppContent() {
           <Route path="appointments" element={<AdminAppointments />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="payments" element={<AdminPayments />} />
-          <Route path="payouts" element={<AdminPayouts />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="faqs" element={<AdminFaqs />} />
           <Route path="admins" element={<AdminManagement />} />
         </Route>
       </Routes>
 
-      {/* FAQ Chatbot */}
-      <FAQChatbot />
+      {/* FAQ Chatbot - Only show for clients (not on lawyer or admin routes) */}
+      {!isLawyerRoute && !isAdminRoute && <FAQChatbot />}
       
       {/* Real-time Toast Notifications */}
       <ToastNotification />

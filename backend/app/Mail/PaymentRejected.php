@@ -9,18 +9,23 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class RefundInitiated extends Mailable
+class PaymentRejected extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $appointment;
+    public $lawyerName;
+    public $reason;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Appointment $appointment)
+    public function __construct(Appointment $appointment, string $reason = '')
     {
         $this->appointment = $appointment;
+        $lawyer = $appointment->lawyer;
+        $this->lawyerName = $lawyer->user->name ?? "{$lawyer->first_name} {$lawyer->last_name}";
+        $this->reason = $reason ?: 'The payment proof could not be verified. Please upload a valid payment receipt.';
     }
 
     /**
@@ -29,7 +34,7 @@ class RefundInitiated extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Refund Request Submitted - LegalKonect',
+            subject: 'Payment Verification Failed - Action Required - LegalKonect',
         );
     }
 
@@ -39,14 +44,12 @@ class RefundInitiated extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.refund-initiated',
+            view: 'emails.payment-rejected',
         );
     }
 
     /**
      * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
     public function attachments(): array
     {

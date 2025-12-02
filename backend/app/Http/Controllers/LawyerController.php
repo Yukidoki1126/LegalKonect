@@ -64,6 +64,23 @@ class LawyerController extends Controller
             ->approved()
             ->findOrFail($id);
 
+        // Build payment methods for clients
+        $paymentMethods = [];
+        if ($lawyer->gcash_number) {
+            $paymentMethods['gcash'] = [
+                'number' => $lawyer->gcash_number,
+                'account_name' => $lawyer->gcash_account_name,
+                'qr_code' => $lawyer->gcash_qr_code ? \Storage::url($lawyer->gcash_qr_code) : null,
+            ];
+        }
+        if ($lawyer->bank_account_number) {
+            $paymentMethods['bank'] = [
+                'bank_name' => $lawyer->bank_name,
+                'account_number' => $lawyer->bank_account_number,
+                'account_name' => $lawyer->bank_account_name,
+            ];
+        }
+
         // Ensure all fields including coordinates are returned
         $transformedLawyer = [
             'id' => $lawyer->id,
@@ -87,6 +104,10 @@ class LawyerController extends Controller
             'total_reviews' => $lawyer->total_reviews ?? 0,
             'user' => $lawyer->user,
             'specializations' => $lawyer->specializations,
+            // Payment information for clients (direct payment)
+            'payment_methods' => $paymentMethods,
+            'preferred_payment_method' => $lawyer->preferred_payout_method,
+            'has_payment_info' => !empty($paymentMethods),
         ];
 
         return response()->json([

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { lawyerApi } from '../../services/lawyerApi';
 import LocationPickerWithMap from '../../components/LocationPickerWithMap';
 import ProfilePictureUpload from '../../components/ProfilePictureUpload';
+import PaymentSettings from '../../components/lawyer/PaymentSettings';
 import { 
   User, 
   Shield, 
@@ -34,6 +35,14 @@ interface LawyerProfile {
   verified_at?: string | null;
   verification_notes?: string | null;
   specializations: Array<{ id: number; name: string }>;
+  // Payment info
+  gcash_number?: string;
+  gcash_account_name?: string;
+  gcash_qr_code?: string | null;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
+  preferred_payout_method?: 'gcash' | 'bank';
 }
 
 interface Specialization {
@@ -54,6 +63,20 @@ const LawyerProfile: React.FC = () => {
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified' | 'rejected' | null>(null);
   const [verifiedAt, setVerifiedAt] = useState<string | null>(null);
   const [verificationNotes, setVerificationNotes] = useState<string | null>(null);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [pendingAvailability, setPendingAvailability] = useState<boolean | null>(null);
+  const [savingAvailability, setSavingAvailability] = useState(false);
+
+  // Payment info state
+  const [paymentInfo, setPaymentInfo] = useState<{
+    gcash_number?: string;
+    gcash_account_name?: string;
+    gcash_qr_code?: string | null;
+    bank_name?: string;
+    bank_account_number?: string;
+    bank_account_name?: string;
+    preferred_payout_method?: 'gcash' | 'bank';
+  }>({});
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -101,6 +124,16 @@ const LawyerProfile: React.FC = () => {
         is_available: data.is_available,
         specialization_ids: data.specializations?.map((s: { id: number; name: string }) => s.id) || [],
       });
+      // Set payment info
+      setPaymentInfo({
+        gcash_number: data.gcash_number || '',
+        gcash_account_name: data.gcash_account_name || '',
+        gcash_qr_code: data.gcash_qr_code || null,
+        bank_name: data.bank_name || '',
+        bank_account_number: data.bank_account_number || '',
+        bank_account_name: data.bank_account_name || '',
+        preferred_payout_method: data.preferred_payout_method || 'gcash',
+      });
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile');
@@ -125,10 +158,43 @@ const LawyerProfile: React.FC = () => {
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      is_available: e.target.checked,
-    }));
+    // Show confirmation modal instead of direct change
+    setPendingAvailability(e.target.checked);
+    setShowAvailabilityModal(true);
+  };
+
+  const confirmAvailabilityChange = async () => {
+    if (pendingAvailability === null) return;
+    
+    setSavingAvailability(true);
+    try {
+      // Call the toggle availability API
+      const response = await lawyerApi.toggleAvailability();
+      
+      // Update local state with the response
+      setFormData(prev => ({
+        ...prev,
+        is_available: response.is_available,
+      }));
+      
+      setSuccessMessage(response.is_available 
+        ? 'You are now available for new clients!' 
+        : 'You are now unavailable for new clients.');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
+    } catch (err: any) {
+      console.error('Error toggling availability:', err);
+      setError(err.response?.data?.message || 'Failed to update availability');
+    } finally {
+      setSavingAvailability(false);
+      setShowAvailabilityModal(false);
+      setPendingAvailability(null);
+    }
+  };
+
+  const cancelAvailabilityChange = () => {
+    setShowAvailabilityModal(false);
+    setPendingAvailability(null);
   };
 
   const handleSpecializationToggle = (specId: number) => {
@@ -145,6 +211,10 @@ const LawyerProfile: React.FC = () => {
     setError('');
     setSuccess('');
     setSaving(true);
+
+    // Debug: Log what we're sending
+    console.log('📤 Submitting profile with is_available:', formData.is_available);
+    console.log('📤 Full formData:', formData);
 
     try {
       await lawyerApi.updateProfile(formData);
@@ -689,31 +759,6 @@ const LawyerProfile: React.FC = () => {
                 ))}
               </div>
             </div>
-
-            {/* Availability - Enhanced */}
-            <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <Clock className="w-4 h-4 text-green-600" />
-                </div>
-                <h2 className="text-lg font-semibold text-gray-900">Availability</h2>
-              </div>
-
-              <label className="flex items-center cursor-pointer p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.is_available}
-                  onChange={handleCheckboxChange}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <div className="ml-3">
-                  <span className="text-sm font-semibold text-gray-700">Available for new clients</span>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    When unchecked, your profile will be hidden from client searches
-                  </p>
-                </div>
-              </label>
-            </div>
           </div>
 
         
@@ -741,11 +786,44 @@ const LawyerProfile: React.FC = () => {
                 }}
               />
             </div>
+
+            {/* Availability - Enhanced */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:shadow-lg transition-all duration-300 mt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <Clock className="w-4 h-4 text-green-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Availability</h2>
+              </div>
+
+              <label className="flex items-center cursor-pointer p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={formData.is_available}
+                  onChange={handleCheckboxChange}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <span className="text-sm font-semibold text-gray-700">Available for new clients</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    When unchecked, your profile will be hidden from client searches
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Payment Settings - NEW */}
+            <div className="mt-6">
+              <PaymentSettings 
+                initialData={paymentInfo}
+                onUpdate={fetchProfile}
+              />
+            </div>
           </div>
         </div>
 
         {/* Actions - Enhanced */}
-        <div className="mt-6 bg-white rounded-2xl border-2 border-gray-100 p-5 flex justify-end gap-3">
+        <div className="mt-6 bg-white rounded-2xl border-2 border-gray-100 p-5 flex justify-start gap-3">
           <button
             type="button"
             onClick={fetchProfile}
@@ -817,6 +895,75 @@ const LawyerProfile: React.FC = () => {
                 className="w-full px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
               >
                 Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Availability Confirmation Modal */}
+      {showAvailabilityModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={cancelAvailabilityChange}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-fadeIn">
+            {/* Icon */}
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+              pendingAvailability ? 'bg-green-100' : 'bg-orange-100'
+            }`}>
+              {pendingAvailability ? (
+                <BadgeCheck className="w-8 h-8 text-green-600" />
+              ) : (
+                <Clock className="w-8 h-8 text-orange-600" />
+              )}
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
+              {pendingAvailability ? 'Go Available?' : 'Go Unavailable?'}
+            </h3>
+
+            {/* Message */}
+            <p className="text-sm text-gray-600 text-center mb-6">
+              {pendingAvailability 
+                ? 'Your profile will be visible to clients searching for lawyers. You may receive new appointment requests.'
+                : 'Your profile will be hidden from client searches. Existing appointments will not be affected.'}
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={cancelAvailabilityChange}
+                disabled={savingAvailability}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAvailabilityChange}
+                disabled={savingAvailability}
+                className={`flex-1 px-4 py-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  pendingAvailability 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-orange-600 hover:bg-orange-700'
+                }`}
+              >
+                {savingAvailability ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  'Confirm'
+                )}
               </button>
             </div>
           </div>

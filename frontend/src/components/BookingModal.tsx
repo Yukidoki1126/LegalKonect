@@ -231,7 +231,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
       <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-100">
         {/* Header */}
         <div className="relative p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 via-white to-indigo-50">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3 mb-1">

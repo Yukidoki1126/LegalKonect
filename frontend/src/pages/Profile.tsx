@@ -317,10 +317,11 @@ const Profile: React.FC = () => {
                   />
                 </div>
               </div>
-              {/* Location */}
+
+              {/* Address */}
               <div className="group">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Location
+                  Address
                 </label>
                 <div className="w-full pl-12 pr-4 py-3.5 text-base border-2 border-gray-200 rounded-xl bg-gray-50/50 flex items-center gap-2 relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -328,8 +329,8 @@ const Profile: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     </svg>
                   </div>
-                  <span className={user?.city ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-                    {user?.city ? `${user.city}, ${user.province}` : 'No location set'}
+                  <span className={`truncate ${user?.address || user?.city ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                    {user?.address || (user?.city ? `${user.city}, ${user.province}` : 'No address set')}
                   </span>
                 </div>
               </div>
@@ -344,7 +345,7 @@ const Profile: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                     </svg>
                   </div>
-                  <h3 className="text-base font-semibold text-gray-900">Update Your Location</h3>
+                  <h3 className="text-base font-semibold text-gray-900">Update Your Address</h3>
                 </div>
                 <LocationPickerWithMap
                   initialLat={user?.latitude}
@@ -381,7 +382,7 @@ const Profile: React.FC = () => {
             </div>
 
             {/* Save Button */}
-            <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="mt-8 pt-6 border-t border-gray-100 flex justify-start">
               <button
                 type="submit"
                 disabled={loading}

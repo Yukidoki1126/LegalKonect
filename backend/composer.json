@@ -14,7 +14,6 @@
         "laravel/sanctum": "^4.2",
         "laravel/socialite": "^5.23",
         "laravel/tinker": "^2.10.1",
-        "paymongo/paymongo-php": "^0.0.0",
         "resend/resend-laravel": "^1.0"
     },
     "require-dev": {

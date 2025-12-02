@@ -131,8 +131,8 @@ export default function LawyerEarnings() {
   const fetchPayouts = async () => {
     try {
       const response = await lawyerApi.getPayouts();
-      // Handle different response structures
-      const payoutsData = response.payouts || response.data || (Array.isArray(response) ? response : []);
+      // Handle different response structures - getPayouts now returns { payouts: [], message: string }
+      const payoutsData = response.payouts || (Array.isArray(response) ? response : []);
       setPayouts(payoutsData);
     } catch (err: any) {
       console.error('Failed to load payouts:', err);

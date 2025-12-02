@@ -19,12 +19,21 @@ class NotificationService
     }
 
     /**
-     * Called when a reschedule is requested
+     * Called when a reschedule is requested by lawyer
      * Instance method wrapper for controller usage
      */
     public function rescheduleRequested(Appointment $appointment)
     {
         self::notifyRescheduleRequested($appointment);
+    }
+
+    /**
+     * Called when a reschedule is requested by client
+     * Instance method wrapper for controller usage
+     */
+    public function clientRescheduleRequested(Appointment $appointment)
+    {
+        self::notifyClientRescheduleRequested($appointment);
     }
 
     /**
@@ -67,6 +76,50 @@ class NotificationService
     public function appointmentCancelled(Appointment $appointment, string $cancelledBy = 'client')
     {
         self::notifyAppointmentCancelled($appointment, $cancelledBy);
+    }
+
+    /**
+     * Generic method to notify a lawyer
+     * Instance method for controller usage
+     */
+    public function notifyLawyer(int $lawyerId, string $type, string $title, string $message, array $data = [])
+    {
+        $lawyer = Lawyer::find($lawyerId);
+        if (!$lawyer || !$lawyer->user) {
+            return;
+        }
+
+        Notification::create([
+            'user_id' => $lawyer->user->id,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Generic method to notify a client/user
+     * Instance method for controller usage
+     */
+    public function notifyClient(int $userId, string $type, string $title, string $message, array $data = [])
+    {
+        Notification::create([
+            'user_id' => $userId,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Alias for notifyClient - notify a user by ID
+     * Instance method for controller usage
+     */
+    public function notifyUser(int $userId, string $type, string $title, string $message, array $data = [])
+    {
+        $this->notifyClient($userId, $type, $title, $message, $data);
     }
 
     /**
@@ -117,6 +170,35 @@ class NotificationService
                 'lawyer_name' => $lawyerName,
                 'original_date' => $appointment->original_date,
                 'proposed_date' => $appointment->proposed_date,
+            ],
+        ]);
+    }
+
+    /**
+     * Notify lawyer that client requested to reschedule
+     */
+    public static function notifyClientRescheduleRequested(Appointment $appointment)
+    {
+        $lawyer = $appointment->lawyer;
+        $lawyerUser = $lawyer->user;
+        $client = $appointment->user;
+
+        if (!$lawyerUser) return;
+
+        $newDate = \Carbon\Carbon::parse($appointment->proposed_date)->format('M d, Y');
+        $clientName = $client->name ?? 'A client';
+
+        Notification::create([
+            'user_id' => $lawyerUser->id,
+            'type' => 'client_reschedule_requested',
+            'title' => 'Client Reschedule Request',
+            'message' => "{$clientName} requested to reschedule their appointment to {$newDate}",
+            'data' => [
+                'appointment_id' => $appointment->id,
+                'client_name' => $clientName,
+                'original_date' => $appointment->original_date,
+                'proposed_date' => $appointment->proposed_date,
+                'reason' => $appointment->reschedule_reason,
             ],
         ]);
     }

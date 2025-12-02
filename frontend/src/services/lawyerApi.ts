@@ -95,6 +95,19 @@ export const lawyerApi = {
     return response.data;
   },
 
+  // Respond to client's reschedule request
+  respondToClientReschedule: async (appointmentId: number, response: 'accept' | 'decline') => {
+    const res = await axios.post(
+      `${API_URL}/lawyer/appointments/${appointmentId}/respond-to-client-reschedule`,
+      { response },
+      { headers: getAuthHeader() }
+    );
+    // Invalidate cache after mutation
+    cacheService.invalidatePattern('appointments');
+    cacheService.invalidatePattern('dashboard');
+    return res.data;
+  },
+
   // Bulk reschedule appointments
   bulkReschedule: async (data: { original_date: string; proposed_date: string; proposed_time: string; reason: string; appointment_ids: number[] }) => {
     const response = await axios.post(
@@ -390,7 +403,85 @@ export const lawyerApi = {
     return response.data;
   },
 
-  // Payouts - Update payout information
+  // Payment Info - Update payment information (GCash/Bank)
+  updatePaymentInfo: async (data: {
+    gcash_number?: string;
+    gcash_account_name?: string;
+    bank_name?: string;
+    bank_account_number?: string;
+    bank_account_name?: string;
+    preferred_payout_method: 'gcash' | 'bank';
+  }) => {
+    const response = await axios.put(`${API_URL}/lawyer/payment-info`, data, {
+      headers: getAuthHeader(),
+    });
+    cacheService.invalidatePattern('/lawyer/profile');
+    return response.data;
+  },
+
+  // Payment Info - Upload GCash QR code
+  uploadGcashQr: async (file: File) => {
+    const formData = new FormData();
+    formData.append('gcash_qr', file);
+    const response = await axios.post(`${API_URL}/lawyer/gcash-qr`, formData, {
+      headers: {
+        ...getAuthHeader(),
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    cacheService.invalidatePattern('/lawyer/profile');
+    return response.data;
+  },
+
+  // Payment Info - Delete GCash QR code
+  deleteGcashQr: async () => {
+    const response = await axios.delete(`${API_URL}/lawyer/gcash-qr`, {
+      headers: getAuthHeader(),
+    });
+    cacheService.invalidatePattern('/lawyer/profile');
+    return response.data;
+  },
+
+  // Payment - Confirm client payment
+  confirmPayment: async (appointmentId: number) => {
+    const response = await axios.post(
+      `${API_URL}/lawyer/appointments/${appointmentId}/confirm-payment`,
+      {},
+      { headers: getAuthHeader() }
+    );
+    cacheService.invalidatePattern('/lawyer/appointments');
+    return response.data;
+  },
+
+  // Payment - Reject client payment
+  rejectPayment: async (appointmentId: number, reason: string) => {
+    const response = await axios.post(
+      `${API_URL}/lawyer/appointments/${appointmentId}/reject-payment`,
+      { reason },
+      { headers: getAuthHeader() }
+    );
+    cacheService.invalidatePattern('/lawyer/appointments');
+    return response.data;
+  },
+
+  // Payment - Get payment proof
+  getPaymentProof: async (appointmentId: number) => {
+    const response = await axios.get(
+      `${API_URL}/lawyer/appointments/${appointmentId}/payment-proof`,
+      { headers: getAuthHeader() }
+    );
+    return response.data;
+  },
+
+  // Transaction History - Get completed appointments
+  getTransactionHistory: async (page: number = 1) => {
+    const response = await axios.get(`${API_URL}/lawyer/transactions?page=${page}`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  },
+
+  // Old Payout methods - DEPRECATED (keeping for compatibility)
   updatePayoutInfo: async (data: {
     gcash_number?: string;
     gcash_account_name?: string;
@@ -399,29 +490,23 @@ export const lawyerApi = {
     bank_account_name?: string;
     preferred_payout_method: 'gcash' | 'bank';
   }) => {
-    const response = await axios.put(`${API_URL}/lawyer/payout-info`, data, {
+    // Redirect to new payment info endpoint
+    const response = await axios.put(`${API_URL}/lawyer/payment-info`, data, {
       headers: getAuthHeader(),
     });
-    // Invalidate cache after mutation
-    cacheService.invalidatePattern('/lawyer/earnings');
+    cacheService.invalidatePattern('/lawyer/profile');
     return response.data;
   },
 
-  // Payouts - Request payout
+  // Payouts - Request payout - DEPRECATED
   requestPayout: async (amount: number, payoutMethod?: 'gcash' | 'bank') => {
-    const response = await axios.post(
-      `${API_URL}/lawyer/payouts/request`,
-      { amount, payout_method: payoutMethod },
-      { headers: getAuthHeader() }
-    );
-    // Invalidate cache after mutation
-    cacheService.invalidatePattern('/lawyer/earnings');
-    cacheService.invalidatePattern('/lawyer/payouts');
-    return response.data;
+    console.warn('requestPayout is deprecated - lawyers now receive payments directly');
+    return { message: 'Payout system disabled - you receive payments directly now' };
   },
 
-  // Payouts - Get payout history - cached for 30 seconds
+  // Payouts - Get payout history - DEPRECATED
   getPayouts: async () => {
-    return cachedGet(`${API_URL}/lawyer/payouts`, 30000);
+    console.warn('getPayouts is deprecated - use getTransactionHistory instead');
+    return { payouts: [], message: 'Payout system disabled - use transaction history' };
   },
 };

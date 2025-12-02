@@ -15,7 +15,9 @@ import {
   XCircle,
   AlertCircle,
   CalendarClock,
-  FileText
+  FileText,
+  Zap,
+  Sparkles
 } from 'lucide-react';
 
 interface User {
@@ -40,15 +42,25 @@ interface Appointment {
   client_notes: string;
   lawyer_notes: string;
   cancellation_reason: string;
+  cancelled_at?: string | null;
   meeting_type: string;
   meeting_link: string;
   reschedule_status?: string | null;
   reschedule_reason?: string | null;
+  reschedule_requested_by?: string | null;
+  client_reschedule_used?: boolean;
   original_date?: string | null;
   proposed_date?: string | null;
+  created_at: string;
   user: User;
   specialization?: { id: number; name: string } | null;
   confirmed_specialization?: { id: number; name: string } | null;
+  // Payment proof fields
+  payment_proof?: string | null;
+  payment_method_used?: string | null;
+  payment_proof_uploaded_at?: string | null;
+  payment_confirmed?: boolean;
+  payment_confirmed_at?: string | null;
 }
 
 const LawyerAppointments: React.FC = () => {
@@ -64,6 +76,11 @@ const LawyerAppointments: React.FC = () => {
   const [showBulkRescheduleModal, setShowBulkRescheduleModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showCaseTypeModal, setShowCaseTypeModal] = useState(false);
+  const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
+  const [showRejectPaymentModal, setShowRejectPaymentModal] = useState(false);
+  const [showClientRescheduleModal, setShowClientRescheduleModal] = useState(false);
+  const [paymentProofData, setPaymentProofData] = useState<{ url: string; method: string; uploadedAt: string } | null>(null);
+  const [rejectPaymentReason, setRejectPaymentReason] = useState('');
   const [lawyerSpecializations, setLawyerSpecializations] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedCaseTypeId, setSelectedCaseTypeId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -81,21 +98,24 @@ const LawyerAppointments: React.FC = () => {
   const [isTabSwitching, setIsTabSwitching] = useState(false);
   
   // Sorting and filtering
-  const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
+  const [sortBy, setSortBy] = useState<'date' | 'booking' | 'name'>('booking');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Default: Latest First
   const [filterClient, setFilterClient] = useState('');
 
-  // Fetch lawyer's specializations on mount
+  // Fetch lawyer's specializations on mount (from their profile, not all specializations)
   useEffect(() => {
-    const fetchSpecializations = async () => {
+    const fetchLawyerSpecializations = async () => {
       try {
-        const specs = await lawyerApi.getSpecializations();
-        setLawyerSpecializations(specs);
+        const profile = await lawyerApi.getProfile();
+        // Get specializations from the lawyer's profile
+        if (profile.specializations && Array.isArray(profile.specializations)) {
+          setLawyerSpecializations(profile.specializations);
+        }
       } catch (error) {
-        console.error('Failed to fetch specializations:', error);
+        console.error('Failed to fetch lawyer specializations:', error);
       }
     };
-    fetchSpecializations();
+    fetchLawyerSpecializations();
   }, []);
 
   useEffect(() => {
@@ -115,7 +135,7 @@ const LawyerAppointments: React.FC = () => {
   // Auto-refresh appointments every 5 seconds for real-time updates
   useEffect(() => {
     const intervalId = setInterval(() => {
-      fetchAppointments(false); // Silent refresh
+      fetchAppointments(false, true); // Silent refresh with cache invalidation
     }, 5000); // 5 seconds (fast refresh)
 
     return () => clearInterval(intervalId);
@@ -137,10 +157,73 @@ const LawyerAppointments: React.FC = () => {
 
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
 
-  const fetchAppointments = async (showLoading = false) => {
+  // Helper function to check if appointment is upcoming (within next 3 days, confirmed/pending only)
+  const isUpcoming = useMemo(() => {
+    return (appointment: Appointment): boolean => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const threeDaysLater = new Date(today);
+      threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+      
+      const appointmentDate = new Date(appointment.appointment_date.split('T')[0]);
+      
+      // Must be today or within next 3 days
+      // Must be confirmed or pending status
+      // Must not be cancelled or completed
+      return appointmentDate >= today && 
+             appointmentDate <= threeDaysLater && 
+             ['confirmed', 'pending'].includes(appointment.status);
+    };
+  }, []);
+
+  // Helper function to check if appointment is a new booking (created within last 24 hours)
+  const isNewBooking = useMemo(() => {
+    return (appointment: Appointment): boolean => {
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const createdAt = new Date(appointment.created_at);
+      
+      // New booking = created within last 24 hours and pending status
+      return createdAt >= oneDayAgo && appointment.status === 'pending';
+    };
+  }, []);
+
+  // Get new bookings count - memoized to prevent flickering
+  const newBookingCount = useMemo(() => {
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    return allAppointments.filter(apt => {
+      const createdAt = new Date(apt.created_at);
+      return createdAt >= oneDayAgo && apt.status === 'pending';
+    }).length;
+  }, [allAppointments]);
+
+  // Get upcoming appointments count - memoized to prevent flickering
+  const upcomingCount = useMemo(() => {
+    return allAppointments.filter(apt => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const threeDaysLater = new Date(today);
+      threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+      
+      const appointmentDate = new Date(apt.appointment_date.split('T')[0]);
+      
+      return appointmentDate >= today && 
+             appointmentDate <= threeDaysLater && 
+             ['confirmed', 'pending'].includes(apt.status);
+    }).length;
+  }, [allAppointments]);
+
+  const fetchAppointments = async (showLoading = false, forceRefresh = false) => {
     try {
       if (showLoading) setLoading(true);
       if (!showLoading) setIsRefreshing(true);
+
+      // Force invalidate cache if requested (e.g., manual refresh)
+      if (forceRefresh) {
+        cacheService.invalidatePattern('/lawyer/appointments');
+      }
 
       // Always fetch all appointments first to ensure accurate badge counts
       const allData = await lawyerApi.getAppointments(undefined);
@@ -149,6 +232,12 @@ const LawyerAppointments: React.FC = () => {
       // Then filter for display based on active tab
       if (activeTab === 'all') {
         setAppointments(allData);
+      } else if (activeTab === 'new') {
+        const filteredData = allData.filter((a: Appointment) => isNewBooking(a));
+        setAppointments(filteredData);
+      } else if (activeTab === 'upcoming') {
+        const filteredData = allData.filter((a: Appointment) => isUpcoming(a));
+        setAppointments(filteredData);
       } else if (activeTab === 'reschedule') {
         const filteredData = allData.filter((a: Appointment) => a.reschedule_status === 'pending');
         setAppointments(filteredData);
@@ -198,7 +287,23 @@ const LawyerAppointments: React.FC = () => {
     
     // Sort appointments
     filtered.sort((a, b) => {
-      if (sortBy === 'date') {
+      // For cancelled tab, always sort by cancelled_at (when it was cancelled)
+      if (a.status === 'cancelled' && b.status === 'cancelled') {
+        const cancelledA = a.cancelled_at ? new Date(a.cancelled_at).getTime() : new Date(a.created_at).getTime();
+        const cancelledB = b.cancelled_at ? new Date(b.cancelled_at).getTime() : new Date(b.created_at).getTime();
+        return sortOrder === 'asc' 
+          ? cancelledA - cancelledB 
+          : cancelledB - cancelledA;
+      }
+      
+      if (sortBy === 'booking') {
+        // Sort by created_at (booking time) - newest bookings first
+        const createdA = new Date(a.created_at).getTime();
+        const createdB = new Date(b.created_at).getTime();
+        return sortOrder === 'asc' 
+          ? createdA - createdB 
+          : createdB - createdA;
+      } else if (sortBy === 'date') {
         // Parse dates properly - handle both ISO format and simple date strings
         const dateStrA = a.appointment_date.split('T')[0];
         const dateStrB = b.appointment_date.split('T')[0];
@@ -277,6 +382,72 @@ const LawyerAppointments: React.FC = () => {
     }
   };
 
+  // Payment proof handlers
+  const handleViewPaymentProof = async (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    try {
+      const data = await lawyerApi.getPaymentProof(appointment.id);
+      setPaymentProofData({
+        url: data.payment_proof_url,
+        method: data.payment_method_used,
+        uploadedAt: data.uploaded_at,
+      });
+      setShowPaymentProofModal(true);
+    } catch (err) {
+      console.error('Error fetching payment proof:', err);
+      setSuccessMessage('Failed to load payment proof');
+      setShowSuccessModal(true);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!selectedAppointment) return;
+
+    try {
+      setActionLoading(true);
+      await lawyerApi.confirmPayment(selectedAppointment.id);
+      setShowPaymentProofModal(false);
+      setSuccessMessage('Payment confirmed successfully!');
+      setShowSuccessModal(true);
+      fetchAppointments();
+    } catch (err) {
+      console.error('Error confirming payment:', err);
+      setSuccessMessage('Failed to confirm payment');
+      setShowSuccessModal(true);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectPaymentClick = () => {
+    setShowPaymentProofModal(false);
+    setRejectPaymentReason('');
+    setShowRejectPaymentModal(true);
+  };
+
+  const handleRejectPaymentSubmit = async () => {
+    if (!selectedAppointment || !rejectPaymentReason.trim()) {
+      setSuccessMessage('Please provide a reason for rejection');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await lawyerApi.rejectPayment(selectedAppointment.id, rejectPaymentReason);
+      setShowRejectPaymentModal(false);
+      setSuccessMessage('Payment rejected. Client has been notified to upload a new receipt.');
+      setShowSuccessModal(true);
+      fetchAppointments();
+    } catch (err) {
+      console.error('Error rejecting payment:', err);
+      setSuccessMessage('Failed to reject payment');
+      setShowSuccessModal(true);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleRescheduleClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setRescheduleReason('');
@@ -312,6 +483,32 @@ const LawyerAppointments: React.FC = () => {
       console.error('Error requesting reschedule:', err);
       setShowRescheduleModal(false);
       setSuccessMessage(err.response?.data?.message || 'Failed to request reschedule');
+      setShowSuccessModal(true);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRespondToClientReschedule = async (response: 'accept' | 'decline') => {
+    if (!selectedAppointment) return;
+
+    try {
+      setActionLoading(true);
+      await lawyerApi.respondToClientReschedule(selectedAppointment.id, response);
+      setShowClientRescheduleModal(false);
+      setSuccessMessage(
+        response === 'accept'
+          ? 'Reschedule request accepted! The appointment has been updated.'
+          : 'Reschedule request declined. The original appointment remains unchanged.'
+      );
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        fetchAppointments();
+      }, 500);
+    } catch (err: any) {
+      console.error('Error responding to client reschedule:', err);
+      setShowClientRescheduleModal(false);
+      setSuccessMessage(err.response?.data?.message || 'Failed to respond to reschedule request');
       setShowSuccessModal(true);
     } finally {
       setActionLoading(false);
@@ -424,6 +621,28 @@ const LawyerAppointments: React.FC = () => {
     }
   };
 
+  // Simplified smart status for lawyers - matches client side
+  const getSmartStatus = (appointment: Appointment) => {
+    if (appointment.status === 'cancelled') {
+      return { label: 'Cancelled', color: 'bg-red-100 text-red-800 border border-red-300' };
+    }
+    if (appointment.status === 'completed') {
+      return { label: 'Completed', color: 'bg-blue-100 text-blue-800 border border-blue-300' };
+    }
+    if (appointment.status === 'no_show') {
+      return { label: 'No Show', color: 'bg-gray-100 text-gray-800 border border-gray-300' };
+    }
+    
+    // For active appointments:
+    // - Payment confirmed = Partially Paid (green)
+    // - Payment not confirmed = Pending (yellow/orange)
+    if (appointment.payment_confirmed === true) {
+      return { label: 'Partially Paid', color: 'bg-green-100 text-green-800 border border-green-300' };
+    }
+    
+    return { label: 'Pending', color: 'bg-orange-100 text-orange-800 border border-orange-300' };
+  };
+
   const getStatusBadge = (status: string) => {
     const styles = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -432,12 +651,6 @@ const LawyerAppointments: React.FC = () => {
       cancelled: 'bg-red-100 text-red-800',
     };
     return styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getPaymentBadge = (status: string) => {
-    return status === 'paid' 
-      ? 'bg-green-100 text-green-800' 
-      : 'bg-orange-100 text-orange-800';
   };
 
   const formatDate = (date: string) => {
@@ -455,6 +668,16 @@ const LawyerAppointments: React.FC = () => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  // Extract time from a datetime string like "2025-12-27 15:00:00" or "2025-12-27T15:00:00"
+  const getTimeFromDateTime = (dateTimeString: string) => {
+    if (!dateTimeString) return '';
+    // Handle both "2025-12-27 15:00:00" and "2025-12-27T15:00:00" formats
+    const timePart = dateTimeString.includes('T') 
+      ? dateTimeString.split('T')[1] 
+      : dateTimeString.split(' ')[1];
+    return timePart ? timePart.substring(0, 5) : ''; // Get HH:mm
   };
 
   // Skeleton component for appointment cards
@@ -533,50 +756,90 @@ const LawyerAppointments: React.FC = () => {
         {/* Tabs - Enhanced matching actual design */}
         <div className="bg-white rounded-2xl border-2 border-gray-100 p-2 mb-6">
           <nav className="flex gap-2 overflow-x-auto">
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm ${
-              activeTab === 'all' ? 'bg-blue-600 text-white' : 'text-gray-400 bg-gray-50'
-            }`}>
+            <button
+              onClick={() => handleTabChange('all')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+                activeTab === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200/50' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
               <FileText className="w-4 h-4" />
               All
               <span className={`py-0.5 px-2 rounded-full text-xs ${
-                activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                activeTab === 'all' ? 'bg-white/20' : 'bg-gray-100'
               }`}>
                 {allAppointments.length}
               </span>
-            </div>
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm ${
-              activeTab === 'reschedule' ? 'bg-orange-500 text-white' : 'text-gray-400 bg-gray-50'
-            }`}>
+            </button>
+            <button
+              onClick={() => handleTabChange('new')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+                activeTab === 'new' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200/50' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              New Booking
+              <span className={`py-0.5 px-2 rounded-full text-xs ${
+                activeTab === 'new' ? 'bg-white/20' : newBookingCount > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100'
+              }`}>
+                {newBookingCount}
+              </span>
+            </button>
+            <button
+              onClick={() => handleTabChange('upcoming')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+                activeTab === 'upcoming' ? 'bg-purple-600 text-white shadow-lg shadow-purple-200/50' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              Upcoming
+              <span className={`py-0.5 px-2 rounded-full text-xs ${
+                activeTab === 'upcoming' ? 'bg-white/20' : upcomingCount > 0 ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'
+              }`}>
+                {upcomingCount}
+              </span>
+            </button>
+            <button
+              onClick={() => handleTabChange('reschedule')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+                activeTab === 'reschedule' ? 'bg-orange-500 text-white shadow-lg shadow-orange-200/50' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
               <CalendarClock className="w-4 h-4" />
               Reschedule
               <span className={`py-0.5 px-2 rounded-full text-xs ${
-                activeTab === 'reschedule' ? 'bg-orange-400 text-white' : 'bg-gray-200'
+                activeTab === 'reschedule' ? 'bg-white/20' : allAppointments.filter(a => a.reschedule_status === 'pending').length > 0 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100'
               }`}>
                 {allAppointments.filter(a => a.reschedule_status === 'pending').length}
               </span>
-            </div>
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm ${
-              activeTab === 'completed' ? 'bg-green-500 text-white' : 'text-gray-400 bg-gray-50'
-            }`}>
+            </button>
+            <button
+              onClick={() => handleTabChange('completed')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+                activeTab === 'completed' ? 'bg-green-600 text-white shadow-lg shadow-green-200/50' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
               <CheckCircle2 className="w-4 h-4" />
               Completed
               <span className={`py-0.5 px-2 rounded-full text-xs ${
-                activeTab === 'completed' ? 'bg-green-400 text-white' : 'bg-gray-200'
+                activeTab === 'completed' ? 'bg-white/20' : 'bg-gray-100'
               }`}>
                 {allAppointments.filter(a => a.status === 'completed').length}
               </span>
-            </div>
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm ${
-              activeTab === 'cancelled' ? 'bg-red-500 text-white' : 'text-gray-400 bg-gray-50'
-            }`}>
+            </button>
+            <button
+              onClick={() => handleTabChange('cancelled')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+                activeTab === 'cancelled' ? 'bg-red-600 text-white shadow-lg shadow-red-200/50' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
               <XCircle className="w-4 h-4" />
               Cancelled
               <span className={`py-0.5 px-2 rounded-full text-xs ${
-                activeTab === 'cancelled' ? 'bg-red-400 text-white' : 'bg-gray-200'
+                activeTab === 'cancelled' ? 'bg-white/20' : 'bg-gray-100'
               }`}>
                 {allAppointments.filter(a => a.status === 'cancelled').length}
               </span>
-            </div>
+            </button>
           </nav>
         </div>
 
@@ -618,7 +881,7 @@ const LawyerAppointments: React.FC = () => {
 
           {/* Manual refresh button - Enhanced */}
           <button
-            onClick={() => fetchAppointments(true)}
+            onClick={() => fetchAppointments(true, true)}
             disabled={loading || isRefreshing}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 border-2 border-blue-200 rounded-xl hover:bg-blue-100 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -645,6 +908,38 @@ const LawyerAppointments: React.FC = () => {
               activeTab === 'all' ? 'bg-white/20' : 'bg-gray-100'
             }`}>
               {allAppointments.length}
+            </span>
+          </button>
+          <button
+            onClick={() => handleTabChange('new')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+              activeTab === 'new'
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200/50'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            New Booking
+            <span className={`py-0.5 px-2 rounded-full text-xs ${
+              activeTab === 'new' ? 'bg-white/20' : newBookingCount > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100'
+            }`}>
+              {newBookingCount}
+            </span>
+          </button>
+          <button
+            onClick={() => handleTabChange('upcoming')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+              activeTab === 'upcoming'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-200/50'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Zap className="w-4 h-4" />
+            Upcoming
+            <span className={`py-0.5 px-2 rounded-full text-xs ${
+              activeTab === 'upcoming' ? 'bg-white/20' : upcomingCount > 0 ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'
+            }`}>
+              {upcomingCount}
             </span>
           </button>
           <button
@@ -717,10 +1012,11 @@ const LawyerAppointments: React.FC = () => {
           <label className="text-sm text-gray-600 whitespace-nowrap font-medium">Sort by:</label>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'date' | 'name')}
+            onChange={(e) => setSortBy(e.target.value as 'date' | 'booking' | 'name')}
             className="px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           >
-            <option value="date">Date</option>
+            <option value="booking">Booking Time</option>
+            <option value="date">Appointment Date</option>
             <option value="name">Client Name</option>
           </select>
           <button
@@ -730,9 +1026,9 @@ const LawyerAppointments: React.FC = () => {
           >
             <ArrowUpDown className="w-4 h-4" />
             {sortOrder === 'asc' ? (
-              <span className="hidden sm:inline">{sortBy === 'date' ? 'Earliest' : 'A-Z'}</span>
+              <span className="hidden sm:inline">{sortBy === 'name' ? 'A-Z' : 'Oldest'}</span>
             ) : (
-              <span className="hidden sm:inline">{sortBy === 'date' ? 'Latest' : 'Z-A'}</span>
+              <span className="hidden sm:inline">{sortBy === 'name' ? 'Z-A' : 'Latest'}</span>
             )}
           </button>
         </div>
@@ -757,7 +1053,7 @@ const LawyerAppointments: React.FC = () => {
       )}
 
       {/* Bulk Reschedule Helper */}
-      {(activeTab === 'all' || activeTab === 'confirmed') && appointments.length > 0 && (() => {
+      {(activeTab === 'all' || activeTab === 'upcoming' || activeTab === 'confirmed') && appointments.length > 0 && (() => {
         // Group appointments by date (only confirmed appointments)
         const appointmentsByDate: Record<string, Appointment[]> = {};
         appointments.forEach(apt => {
@@ -820,6 +1116,8 @@ const LawyerAppointments: React.FC = () => {
               ? `No appointments found for "${filterClient}"`
               : activeTab === 'all' 
               ? 'No appointments yet. They will appear here when clients book consultations.' 
+              : activeTab === 'upcoming'
+              ? 'No upcoming appointments in the next 3 days. Check back later!'
               : activeTab === 'reschedule'
               ? 'No pending reschedule requests at the moment.'
               : `No ${activeTab} appointments to display.`}
@@ -861,19 +1159,19 @@ const LawyerAppointments: React.FC = () => {
                         Reschedule Pending
                       </span>
                     )}
-                    {/* Only show status badge if not confirmed (since all appointments are auto-confirmed) */}
-                    {appointment.status !== 'confirmed' && (
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(appointment.status)}`}>
-                        {appointment.status}
-                      </span>
-                    )}
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPaymentBadge(appointment.payment_status)}`}>
-                      {appointment.payment_status}
-                    </span>
+                    {/* Simplified smart status badge */}
+                    {(() => {
+                      const smartStatus = getSmartStatus(appointment);
+                      return (
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${smartStatus.color}`}>
+                          {smartStatus.label}
+                        </span>
+                      );
+                    })()}
                   </div>
 
-                  {/* Show selected case type / specialization */}
-                  {(appointment.specialization || appointment.confirmed_specialization) && (
+                  {/* Show selected case type / specialization OR missing notice */}
+                  {(appointment.specialization || appointment.confirmed_specialization) ? (
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-sm text-purple-700 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200 flex items-center gap-1.5 font-medium">
                         <FileText className="w-4 h-4" />
@@ -881,6 +1179,15 @@ const LawyerAppointments: React.FC = () => {
                         {appointment.confirmed_specialization && (
                           <CheckCircle2 className="w-4 h-4 text-green-600 ml-1" />
                         )}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5 font-medium">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Missing Case Type
                       </span>
                     </div>
                   )}
@@ -938,16 +1245,41 @@ const LawyerAppointments: React.FC = () => {
 
                   {/* Reschedule Request Status */}
                   {appointment.reschedule_status === 'pending' && appointment.proposed_date && (
-                    <div className="bg-orange-50 border-l-4 border-orange-500 rounded-lg p-3 mb-3">
-                      <p className="text-xs font-semibold text-orange-900 mb-2">Reschedule Request Sent</p>
-                      <p className="text-sm text-orange-800">
-                        <strong>New Date:</strong> {formatDate(appointment.proposed_date)} at {formatTime(appointment.proposed_date.split(' ')[1] || appointment.appointment_time)}
-                      </p>
-                      <p className="text-sm text-orange-800 mt-1">
-                        <strong>Reason:</strong> {appointment.reschedule_reason}
-                      </p>
-                      <p className="text-xs text-orange-700 mt-2">Waiting for client response...</p>
-                    </div>
+                    appointment.reschedule_requested_by === 'client' ? (
+                      // Client requested reschedule - lawyer needs to respond
+                      <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-3 mb-3">
+                        <p className="text-xs font-semibold text-blue-900 mb-2">Client Reschedule Request</p>
+                        <p className="text-sm text-blue-800">
+                          <strong>Requested Date:</strong> {formatDate(appointment.proposed_date)} at {formatTime(getTimeFromDateTime(appointment.proposed_date) || appointment.appointment_time)}
+                        </p>
+                        <p className="text-sm text-blue-800 mt-1">
+                          <strong>Reason:</strong> {appointment.reschedule_reason}
+                        </p>
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            onClick={() => {
+                              setSelectedAppointment(appointment);
+                              setShowClientRescheduleModal(true);
+                            }}
+                            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Review Request
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // Lawyer requested reschedule - waiting for client
+                      <div className="bg-orange-50 border-l-4 border-orange-500 rounded-lg p-3 mb-3">
+                        <p className="text-xs font-semibold text-orange-900 mb-2">Reschedule Request Sent</p>
+                        <p className="text-sm text-orange-800">
+                          <strong>New Date:</strong> {formatDate(appointment.proposed_date)} at {formatTime(getTimeFromDateTime(appointment.proposed_date) || appointment.appointment_time)}
+                        </p>
+                        <p className="text-sm text-orange-800 mt-1">
+                          <strong>Reason:</strong> {appointment.reschedule_reason}
+                        </p>
+                        <p className="text-xs text-orange-700 mt-2">Waiting for client response...</p>
+                      </div>
+                    )
                   )}
 
                   {/* Reschedule Accepted */}
@@ -962,7 +1294,7 @@ const LawyerAppointments: React.FC = () => {
                   {appointment.reschedule_status === 'declined' && (
                     <div className="bg-gray-50 border-l-4 border-gray-500 rounded-lg p-3 mb-3">
                       <p className="text-xs font-semibold text-gray-900 mb-1">Reschedule Declined</p>
-                      <p className="text-sm text-gray-800">Client declined the reschedule. Appointment cancelled and refunded.</p>
+                      <p className="text-sm text-gray-800">Client declined the reschedule. Appointment cancelled.</p>
                     </div>
                   )}
 
@@ -983,84 +1315,100 @@ const LawyerAppointments: React.FC = () => {
                 </div>
 
                 {/* Right Side - Fee and Actions */}
-                <div className="w-full lg:w-auto lg:ml-6 flex flex-col lg:items-end space-y-2 sm:space-y-3 border-t lg:border-t-0 pt-3 lg:pt-0 lg:flex-shrink-0">
-                  <div className="text-left lg:text-right mb-1">
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                      ₱{appointment.consultation_fee.toLocaleString()}
+                <div className="w-full lg:w-auto lg:ml-6 flex flex-col lg:items-end space-y-3 border-t lg:border-t-0 pt-4 lg:pt-0 lg:flex-shrink-0 lg:min-w-[200px]">
+                  {/* Fee Section */}
+                  <div className="text-left lg:text-right mb-2 pb-3 border-b border-gray-100 w-full">
+                    <p className="text-2xl font-bold text-gray-900">
+                      ₱{(appointment.reservation_fee || 100).toLocaleString()}
                     </p>
-                    {appointment.payment_status === 'paid' && appointment.reservation_fee && (
-                      <p className="text-xs text-gray-600 mt-0.5">
-                        Received: ₱{appointment.reservation_fee.toLocaleString()} |
-                        Balance: ₱{(appointment.consultation_fee - appointment.reservation_fee).toLocaleString()}
+                    <p className="text-xs text-green-600 font-medium">Reservation Fee Paid</p>
+                    {appointment.consultation_fee && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Balance Due: ₱{(appointment.consultation_fee - (appointment.reservation_fee || 100)).toLocaleString()}
                       </p>
                     )}
-                    <p className="text-xs text-gray-500">
-                      {appointment.payment_method || 'N/A'}
-                    </p>
+                    {appointment.payment_method && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        via {appointment.payment_method}
+                      </p>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[150px]">
+                  <div className="flex flex-col gap-3 w-full">
+                    {/* Primary Action - Complete */}
                     {appointment.status === 'confirmed' && !appointment.reschedule_status && (
-                      <>
+                      <button
+                        onClick={() => handleCompleteClick(appointment)}
+                        disabled={actionLoading}
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Complete
+                      </button>
+                    )}
+
+                    {/* Secondary Actions Row */}
+                    {appointment.status === 'confirmed' && !appointment.reschedule_status && (
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => handleCompleteClick(appointment)}
+                          onClick={() => handleRescheduleClick(appointment)}
                           disabled={actionLoading}
-                          className="w-full bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
+                          className="flex-1 bg-amber-500 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          Complete
+                          Resched
                         </button>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => handleRescheduleClick(appointment)}
-                            disabled={actionLoading}
-                            className="bg-yellow-500 text-white px-2 py-1.5 rounded-md text-xs font-medium hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Resched
-                          </button>
-                          <button
-                            onClick={() => handleDeclineClick(appointment)}
-                            disabled={actionLoading}
-                            className="bg-red-500 text-white px-2 py-1.5 rounded-md text-xs font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Decline
-                          </button>
-                        </div>
-                      </>
+                        <button
+                          onClick={() => handleDeclineClick(appointment)}
+                          disabled={actionLoading}
+                          className="flex-1 bg-red-500 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Decline
+                        </button>
+                      </div>
                     )}
 
                     {/* Show reschedule status */}
                     {appointment.reschedule_status === 'pending' && (
-                      <div className="w-full bg-yellow-50 border border-yellow-300 px-3 py-2 rounded-md text-xs">
-                        <p className="font-medium text-yellow-900">Awaiting Response</p>
+                      <div className="w-full bg-yellow-50 border border-yellow-300 px-4 py-2.5 rounded-xl text-xs">
+                        <p className="font-semibold text-yellow-900">Awaiting Client Response</p>
                       </div>
                     )}
 
-                    {/* Secondary action buttons */}
+                    {/* Utility Buttons Row */}
                     {appointment.status !== 'cancelled' && (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="flex gap-2">
                         <button
                           onClick={() => handleNotesClick(appointment)}
-                          className="bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors border border-gray-300 flex items-center justify-center gap-1"
+                          className="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-xl text-xs font-medium hover:bg-gray-200 transition-all border border-gray-200 flex items-center justify-center gap-1.5"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                           Notes
                         </button>
-                        {appointment.status !== 'completed' ? (
+                        {appointment.status !== 'completed' && !appointment.specialization && !appointment.confirmed_specialization ? (
                           <button
                             onClick={() => handleCaseTypeClick(appointment)}
-                            className="bg-purple-100 text-purple-700 px-2 py-1.5 rounded-md text-xs font-medium hover:bg-purple-200 transition-colors border border-purple-300 flex items-center justify-center gap-1"
+                            className="flex-1 bg-amber-100 text-amber-700 px-3 py-2 rounded-xl text-xs font-medium hover:bg-amber-200 transition-all border border-amber-200 flex items-center justify-center gap-1.5"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Assign
+                          </button>
+                        ) : appointment.status !== 'completed' ? (
+                          <button
+                            onClick={() => handleCaseTypeClick(appointment)}
+                            className="flex-1 bg-purple-100 text-purple-700 px-3 py-2 rounded-xl text-xs font-medium hover:bg-purple-200 transition-all border border-purple-200 flex items-center justify-center gap-1.5"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1068,9 +1416,30 @@ const LawyerAppointments: React.FC = () => {
                             Case
                           </button>
                         ) : (
-                          <div></div>
+                          <div className="flex-1"></div>
                         )}
                       </div>
+                    )}
+
+                    {/* Payment Proof Button */}
+                    {appointment.payment_proof && (
+                      <button
+                        onClick={() => handleViewPaymentProof(appointment)}
+                        className={`w-full px-4 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+                          appointment.payment_confirmed === true
+                            ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200'
+                            : appointment.payment_status === 'pending'
+                            ? 'bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-200 animate-pulse'
+                            : 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200'
+                        }`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {appointment.payment_confirmed === true && 'Receipt Confirmed ✓'}
+                        {appointment.payment_confirmed !== true && appointment.payment_status === 'pending' && 'Review Receipt'}
+                        {appointment.payment_confirmed === false && appointment.payment_status === 'unpaid' && 'Receipt Rejected'}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1126,26 +1495,33 @@ const LawyerAppointments: React.FC = () => {
                 : 'Client did not select a case type. Please determine the appropriate legal matter.'}
             </p>
             <div className="space-y-2 mb-4">
-              {lawyerSpecializations.map((spec) => (
-                <label
-                  key={spec.id}
-                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedCaseTypeId === spec.id
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="caseType"
-                    value={spec.id}
-                    checked={selectedCaseTypeId === spec.id}
-                    onChange={() => setSelectedCaseTypeId(spec.id)}
-                    className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
-                  />
-                  <span className="ml-3 text-sm font-medium text-gray-900">{spec.name}</span>
-                </label>
-              ))}
+              {lawyerSpecializations.length > 0 ? (
+                lawyerSpecializations.map((spec) => (
+                  <label
+                    key={spec.id}
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedCaseTypeId === spec.id
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="caseType"
+                      value={spec.id}
+                      checked={selectedCaseTypeId === spec.id}
+                      onChange={() => setSelectedCaseTypeId(spec.id)}
+                      className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                    />
+                    <span className="ml-3 text-sm font-medium text-gray-900">{spec.name}</span>
+                  </label>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  <p>You don't have any specializations set up.</p>
+                  <p className="mt-1">Please update your profile to add specializations.</p>
+                </div>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4">
               <button
@@ -1325,7 +1701,7 @@ const LawyerAppointments: React.FC = () => {
               Request Reschedule
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Propose a new date and time for this appointment with {selectedAppointment.user.name}. The client can accept or decline. If declined, they will receive a full refund.
+              Propose a new date and time for this appointment with {selectedAppointment.user.name}. The client can accept or decline.
             </p>
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
@@ -1381,7 +1757,7 @@ const LawyerAppointments: React.FC = () => {
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 <p className="text-xs text-yellow-800">
-                  <strong>Note:</strong> The client can accept the new date or decline and receive a full ₱{selectedAppointment.reservation_fee || 100} refund.
+                  <strong>Note:</strong> The client can accept the new date or decline the reschedule request.
                 </p>
               </div>
             </div>
@@ -1457,7 +1833,7 @@ const LawyerAppointments: React.FC = () => {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-xs text-blue-800">
-                  <strong>Note:</strong> All {selectedAppointmentIds.length} clients will be notified. They can individually accept the new date or decline and receive a full refund.
+                  <strong>Note:</strong> All {selectedAppointmentIds.length} clients will be notified. They can individually accept the new date or decline.
                 </p>
               </div>
             </div>
@@ -1477,6 +1853,72 @@ const LawyerAppointments: React.FC = () => {
                 {actionLoading ? 'Sending...' : `Send to ${selectedAppointmentIds.length} Client(s)`}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Client Reschedule Response Modal */}
+      {showClientRescheduleModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Client Reschedule Request
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              <strong>{selectedAppointment.user.name}</strong> has requested to reschedule their appointment.
+            </p>
+
+            {/* Current Appointment */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+              <p className="text-xs font-semibold text-gray-700 mb-1">Current Appointment:</p>
+              <p className="text-sm text-gray-900">
+                {formatDate(selectedAppointment.appointment_date)} at {formatTime(selectedAppointment.appointment_time)}
+              </p>
+            </div>
+
+            {/* Proposed New Date */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-xs font-semibold text-blue-700 mb-1">Proposed New Date:</p>
+              <p className="text-sm text-blue-900 font-semibold">
+                {formatDate(selectedAppointment.proposed_date || '')} at {formatTime(getTimeFromDateTime(selectedAppointment.proposed_date || '') || selectedAppointment.appointment_time)}
+              </p>
+            </div>
+
+            {/* Reason */}
+            <div className="mb-6">
+              <p className="text-xs font-semibold text-gray-700 mb-1">Client's Reason:</p>
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-800">{selectedAppointment.reschedule_reason}</p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleRespondToClientReschedule('decline')}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2 text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50 font-medium"
+              >
+                {actionLoading ? 'Processing...' : 'Decline'}
+              </button>
+              <button
+                onClick={() => handleRespondToClientReschedule('accept')}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 font-medium"
+              >
+                {actionLoading ? 'Processing...' : 'Accept'}
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowClientRescheduleModal(false);
+                setSelectedAppointment(null);
+              }}
+              className="w-full mt-3 px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -1518,6 +1960,129 @@ const LawyerAppointments: React.FC = () => {
                 OK
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Proof Modal */}
+      {showPaymentProofModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">
+                Payment Receipt - {selectedAppointment.user.name}
+              </h3>
+              <button
+                onClick={() => setShowPaymentProofModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Payment Info */}
+            <div className="mb-4 bg-gray-50 rounded-lg p-3">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-500">Reservation Fee:</span>
+                  <span className="ml-2 font-semibold">₱{(selectedAppointment.reservation_fee || 100).toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Status:</span>
+                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                    selectedAppointment.payment_confirmed === true
+                      ? 'bg-green-100 text-green-700'
+                      : selectedAppointment.payment_status === 'unpaid' && selectedAppointment.payment_confirmed === false
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-orange-100 text-orange-700'
+                  }`}>
+                    {selectedAppointment.payment_confirmed === true 
+                      ? 'Confirmed' 
+                      : selectedAppointment.payment_status === 'unpaid' && selectedAppointment.payment_confirmed === false
+                      ? 'Rejected'
+                      : 'Pending Confirmation'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Method:</span>
+                  <span className="ml-2 capitalize">{selectedAppointment.payment_method_used || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Uploaded:</span>
+                  <span className="ml-2">{selectedAppointment.payment_proof_uploaded_at 
+                    ? new Date(selectedAppointment.payment_proof_uploaded_at).toLocaleString() 
+                    : 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Receipt Image */}
+            {selectedAppointment.payment_proof && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Receipt:</p>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <img
+                    src={`http://localhost:8000/storage/${selectedAppointment.payment_proof}`}
+                    alt="Payment Receipt"
+                    className="w-full h-auto max-h-96 object-contain bg-gray-100"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150"><rect fill="%23f3f4f6" width="200" height="150"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af">Image not found</text></svg>';
+                    }}
+                  />
+                </div>
+                <a
+                  href={`http://localhost:8000/storage/${selectedAppointment.payment_proof}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Open in new tab
+                </a>
+              </div>
+            )}
+
+            {/* Action Buttons - Only show if not yet confirmed or rejected */}
+            {selectedAppointment.payment_confirmed !== true && !(selectedAppointment.payment_status === 'unpaid' && selectedAppointment.payment_confirmed === false) && (
+              <div className="border-t pt-4 mt-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  Please verify the payment receipt and confirm or reject the payment.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleRejectPaymentClick}
+                    disabled={actionLoading}
+                    className="flex-1 px-4 py-2 text-red-700 bg-red-100 rounded-md hover:bg-red-200 disabled:opacity-50 transition-colors font-medium"
+                  >
+                    {actionLoading ? 'Processing...' : 'Reject Payment'}
+                  </button>
+                  <button
+                    onClick={handleConfirmPayment}
+                    disabled={actionLoading}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors font-medium"
+                  >
+                    {actionLoading ? 'Processing...' : 'Confirm Payment'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Close button if already processed */}
+            {(selectedAppointment.payment_confirmed === true || (selectedAppointment.payment_status === 'unpaid' && selectedAppointment.payment_confirmed === false)) && (
+              <div className="border-t pt-4 mt-4">
+                <button
+                  onClick={() => setShowPaymentProofModal(false)}
+                  className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

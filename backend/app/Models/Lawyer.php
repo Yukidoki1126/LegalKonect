@@ -41,9 +41,10 @@ class Lawyer extends Model
         'verification_notes',
         'verified_at',
         'verified_by',
-        // Payout fields
+        // Payment info fields (for client direct payment)
         'gcash_number',
         'gcash_account_name',
+        'gcash_qr_code',
         'bank_name',
         'bank_account_number',
         'bank_account_name',

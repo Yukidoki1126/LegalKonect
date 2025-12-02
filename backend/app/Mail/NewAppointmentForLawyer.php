@@ -9,11 +9,14 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class RefundProcessed extends Mailable
+class NewAppointmentForLawyer extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $appointment;
+    public $clientName;
+    public $clientEmail;
+    public $clientPhone;
 
     /**
      * Create a new message instance.
@@ -21,6 +24,9 @@ class RefundProcessed extends Mailable
     public function __construct(Appointment $appointment)
     {
         $this->appointment = $appointment;
+        $this->clientName = $appointment->user->name ?? 'Client';
+        $this->clientEmail = $appointment->user->email ?? 'N/A';
+        $this->clientPhone = $appointment->user->phone ?? 'N/A';
     }
 
     /**
@@ -29,7 +35,7 @@ class RefundProcessed extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Refund Completed - LegalKonect',
+            subject: 'New Appointment Booking - LegalKonect',
         );
     }
 
@@ -39,14 +45,12 @@ class RefundProcessed extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.refund-processed',
+            view: 'emails.new-appointment-lawyer',
         );
     }
 
     /**
      * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
     public function attachments(): array
     {

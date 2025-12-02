@@ -6,7 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\LawyerController;
 use App\Http\Controllers\AppointmentController;
-use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ManualPaymentController;
 use App\Http\Controllers\LawyerDashboardController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\FaqController;
@@ -21,7 +21,6 @@ use App\Http\Controllers\PasswordResetController;
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook']);
 
     // Google OAuth for login/register
     Route::get('/google/url', [AuthController::class, 'googleAuthUrl']);
@@ -48,13 +47,11 @@ Route::get('/auth/google/callback', [AuthController::class, 'googleCallback']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 Route::get('/lawyers/{lawyerId}/reviews', [ReviewController::class, 'lawyerReviews']);
 
-// Payment callback - MUST be public (PayMongo redirects here without auth)
-Route::get('/payment/source-callback', [PaymentController::class, 'handleSourceCallback'])->name('payment.source.callback');
-
-// Public lawyer routes
+// Public lawyer routes - includes payment info for manual payment flow
 Route::prefix('lawyers')->group(function () {
     Route::get('/', [LawyerController::class, 'index']);
     Route::get('/{id}', [LawyerController::class, 'show']);
+    Route::get('/{id}/payment-info', [ManualPaymentController::class, 'getLawyerPaymentInfo']); // Get lawyer's payment accounts
     Route::get('/{lawyer}/available-slots', [AppointmentController::class, 'getAvailableSlots']);
     Route::get('/{lawyer}/unavailable-dates', [LawyerController::class, 'getUnavailableDates']);
 });
@@ -100,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/appointments/{id}/cancel', [AppointmentController::class, 'cancel']);
     Route::post('/appointments/{id}/reschedule/accept', [AppointmentController::class, 'acceptReschedule']);
     Route::post('/appointments/{id}/reschedule/decline', [AppointmentController::class, 'declineReschedule']);
+    Route::post('/appointments/{id}/client-reschedule', [AppointmentController::class, 'clientRequestReschedule']);
 
     // Get authenticated user
     Route::get('/user', function (Request $request) {
@@ -119,12 +117,9 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 
-    // Payment routes
-    Route::post('/appointments/{appointment}/payment-intent', [PaymentController::class, 'createPaymentIntent']);
-    Route::post('/payment-methods', [PaymentController::class, 'createPaymentMethod']);
-    Route::post('/payment-sources', [PaymentController::class, 'createSource']);
-    Route::post('/payments/attach', [PaymentController::class, 'attachPaymentMethod']);
-    Route::get('/payment/callback', [PaymentController::class, 'handleCallback'])->name('payment.callback');
+    // Manual Payment routes
+    Route::post('/appointments/{appointment}/upload-payment-proof', [ManualPaymentController::class, 'uploadPaymentProof']);
+    Route::get('/appointments/{appointment}/payment-proof', [ManualPaymentController::class, 'getPaymentProof']);
 
     // Protected Review routes - Authenticated users only
     Route::post('/reviews', [ReviewController::class, 'store']);
@@ -178,13 +173,33 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
     Route::post('/appointments/{id}/notes', [LawyerDashboardController::class, 'addNotes']);
     Route::post('/appointments/{id}/confirm-specialization', [LawyerDashboardController::class, 'confirmSpecialization']);
     Route::post('/appointments/{id}/reschedule', [AppointmentController::class, 'requestReschedule']);
+    Route::post('/appointments/{id}/respond-to-client-reschedule', [AppointmentController::class, 'lawyerRespondToReschedule']);
     Route::post('/appointments/bulk-reschedule', [AppointmentController::class, 'bulkReschedule']);
-    Route::get('/earnings', [LawyerDashboardController::class, 'earnings']);
+    
+    // Manual Payment confirmation routes (for lawyers)
+    Route::post('/appointments/{id}/confirm-payment', [ManualPaymentController::class, 'confirmPayment']);
+    Route::post('/appointments/{id}/reject-payment', [ManualPaymentController::class, 'rejectPayment']);
+    Route::get('/appointments/{id}/payment-proof', [ManualPaymentController::class, 'getPaymentProof']);
+    
+    // Transaction history (replacing old earnings/payout system)
+    Route::get('/transactions', [LawyerDashboardController::class, 'getTransactionHistory']);
+    
+    // Old payout routes - DISABLED (lawyers now receive payment directly)
+    // Route::get('/earnings', [App\\Http\\Controllers\\PayoutController::class, 'getEarnings']);
+    // Route::put('/payout-info', [App\\Http\\Controllers\\PayoutController::class, 'updatePayoutInfo']);
+    // Route::post('/payouts/request', [App\\Http\\Controllers\\PayoutController::class, 'requestPayout']);
+    // Route::get('/payouts', [App\\Http\\Controllers\\PayoutController::class, 'getPayouts']);
+    
     Route::post('/toggle-availability', [LawyerDashboardController::class, 'toggleAvailability']);
     Route::get('/profile', [LawyerDashboardController::class, 'getProfile']);
     Route::put('/profile', [LawyerDashboardController::class, 'updateProfile']);
     Route::post('/profile-photo', [LawyerDashboardController::class, 'uploadProfilePhoto']);
     Route::delete('/profile-photo', [LawyerDashboardController::class, 'deleteProfilePhoto']);
+    
+    // Payment info update (GCash/Bank details)
+    Route::put('/payment-info', [LawyerDashboardController::class, 'updatePaymentInfo']);
+    Route::post('/gcash-qr', [LawyerDashboardController::class, 'uploadGcashQr']);
+    Route::delete('/gcash-qr', [LawyerDashboardController::class, 'deleteGcashQr']);
 
     // Calendar & Availability Routes
     Route::get('/calendar/availability', [LawyerDashboardController::class, 'getCalendarAvailability']);
@@ -215,11 +230,11 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
         Route::get('/events', [GoogleCalendarController::class, 'getEvents']);
     });
 
-    // Earnings and Payout Routes
-    Route::get('/earnings', [App\Http\Controllers\PayoutController::class, 'getEarnings']);
-    Route::put('/payout-info', [App\Http\Controllers\PayoutController::class, 'updatePayoutInfo']);
-    Route::post('/payouts/request', [App\Http\Controllers\PayoutController::class, 'requestPayout']);
-    Route::get('/payouts', [App\Http\Controllers\PayoutController::class, 'getPayouts']);
+    // Old Earnings and Payout Routes - DISABLED (lawyers receive payments directly now)
+    // Route::get('/earnings', [App\Http\Controllers\PayoutController::class, 'getEarnings']);
+    // Route::put('/payout-info', [App\Http\Controllers\PayoutController::class, 'updatePayoutInfo']);
+    // Route::post('/payouts/request', [App\Http\Controllers\PayoutController::class, 'requestPayout']);
+    // Route::get('/payouts', [App\Http\Controllers\PayoutController::class, 'getPayouts']);
 });
 
 // Google Calendar OAuth callback (must be outside auth middleware for OAuth flow)
@@ -244,11 +259,6 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/analytics', [App\Http\Controllers\Admin\AdminDashboardController::class, 'analytics']);
         Route::get('/descriptive-analytics', [App\Http\Controllers\Admin\AdminDashboardController::class, 'descriptiveAnalytics']); 
 
-    // Refund Management
-    Route::get('/pending-refunds', [App\Http\Controllers\Admin\AdminDashboardController::class, 'pendingRefunds']);
-    Route::post('/refunds/{appointmentId}/approve', [App\Http\Controllers\Admin\AdminDashboardController::class, 'approveRefund']);
-    Route::post('/refunds/{appointmentId}/reject', [App\Http\Controllers\Admin\AdminDashboardController::class, 'rejectRefund']);
-
             // (debug route removed)
     
     // Lawyer Management
@@ -270,12 +280,12 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
         Route::delete('/admins/{id}', [App\Http\Controllers\Admin\AdminManagementController::class, 'destroy']);
     });
 
-    // Payout Management
-    Route::get('/payouts/pending', [App\Http\Controllers\PayoutController::class, 'getPendingPayouts']);
-    Route::get('/payouts', [App\Http\Controllers\PayoutController::class, 'getAllPayouts']);
-    Route::post('/payouts/{id}/approve', [App\Http\Controllers\PayoutController::class, 'approvePayout']);
-    Route::post('/payouts/{id}/mark-paid', [App\Http\Controllers\PayoutController::class, 'markAsPaid']);
-    Route::post('/payouts/{id}/reject', [App\Http\Controllers\PayoutController::class, 'rejectPayout']);
+    // Payout Management - DISABLED (lawyers receive payments directly now)
+    // Route::get('/payouts/pending', [App\Http\Controllers\PayoutController::class, 'getPendingPayouts']);
+    // Route::get('/payouts', [App\Http\Controllers\PayoutController::class, 'getAllPayouts']);
+    // Route::post('/payouts/{id}/approve', [App\Http\Controllers\PayoutController::class, 'approvePayout']);
+    // Route::post('/payouts/{id}/mark-paid', [App\Http\Controllers\PayoutController::class, 'markAsPaid']);
+    // Route::post('/payouts/{id}/reject', [App\Http\Controllers\PayoutController::class, 'rejectPayout']);
 
     // FAQ Management
     Route::get('/faqs', [FaqController::class, 'index']);
