@@ -2,6 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
+const STORAGE_URL = 'http://localhost:8000';
+
+// Helper to get full image URL
+const getImageUrl = (path: string | null | undefined): string | null => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/storage')) return STORAGE_URL + path;
+  return STORAGE_URL + '/storage/' + path;
+};
+
 interface PaymentMethod {
   gcash?: {
     number: string;
@@ -305,9 +315,9 @@ const ManualPaymentPage: React.FC = () => {
                     {paymentMethods.gcash.qr_code && (
                       <div className="mb-4 text-center">
                         <img
-                          src={paymentMethods.gcash.qr_code}
+                          src={getImageUrl(paymentMethods.gcash.qr_code) || ""}
                           alt="GCash QR Code"
-                          className="w-48 h-48 mx-auto rounded-lg border-2 border-blue-200 shadow-md"
+                          className="w-80 h-80 mx-auto rounded-xl border-4 border-blue-300 shadow-lg bg-white" style={{ objectFit: 'cover', objectPosition: 'center 25%' }}
                         />
                         <p className="text-sm text-gray-500 mt-2">Scan this QR code with your GCash app</p>
                       </div>

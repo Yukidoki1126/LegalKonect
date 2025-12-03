@@ -1,6 +1,16 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { lawyerApi } from '../../services/lawyerApi';
 import { CreditCard, Smartphone, Building2, Upload, Trash2, Save, CheckCircle, AlertCircle, X, Edit2 } from 'lucide-react';
+
+const STORAGE_URL = 'http://localhost:8000';
+
+// Helper to get full image URL
+const getImageUrl = (path: string | null | undefined): string | null => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/storage')) return STORAGE_URL + path;
+  return STORAGE_URL + '/storage/' + path;
+};
 
 interface PaymentInfo {
   gcash_number?: string;
@@ -290,7 +300,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({ initialData, onUpdate
                   {formData.gcash_qr_code ? (
                     <div className="relative">
                       <img
-                        src={formData.gcash_qr_code}
+                        src={getImageUrl(formData.gcash_qr_code) || ""}
                         alt="GCash QR"
                         className="w-28 h-28 object-cover rounded-lg border-2 border-gray-200"
                       />
