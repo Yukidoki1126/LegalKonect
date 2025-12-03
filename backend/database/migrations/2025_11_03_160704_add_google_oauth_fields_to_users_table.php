@@ -13,13 +13,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('google_id')->nullable()->after('email');
-            $table->string('avatar')->nullable()->after('profile_picture');
-            $table->string('auth_provider')->default('local')->after('avatar'); // 'local' or 'google'
+            if (!Schema::hasColumn('users', 'google_id')) {
+                $table->string('google_id')->nullable()->after('email');
+            }
+            if (!Schema::hasColumn('users', 'avatar')) {
+                $table->string('avatar')->nullable()->after('profile_picture');
+            }
+            if (!Schema::hasColumn('users', 'auth_provider')) {
+                $table->string('auth_provider')->default('local')->after('avatar');
+            }
         });
 
-        // Create unique index on google_id where it's not null (SQL Server compatible)
-        DB::statement('CREATE UNIQUE INDEX users_google_id_unique ON users (google_id) WHERE google_id IS NOT NULL');
+        // Create unique index on google_id (MySQL compatible - allows multiple NULLs)
+        if (!DB::select("SHOW INDEXES FROM users WHERE Key_name = 'users_google_id_unique'")) {
+            DB::statement('CREATE UNIQUE INDEX users_google_id_unique ON users (google_id)');
+        }
     }
 
     /**
