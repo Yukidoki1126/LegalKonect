@@ -57,15 +57,16 @@ RUN echo '<Directory /var/www/html/public>\n\
 
 RUN a2enconf laravel
 
-# Set PORT environment variable for Apache
-ENV PORT=8080
-RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
-
-# Expose port
+# Expose port (Railway will set $PORT dynamically)
 EXPOSE 8080
 
-# Run migrations and start Apache
-CMD php artisan migrate --force && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    apache2-foreground
+# Create startup script
+RUN echo '#!/bin/bash\n\
+sed -i "s/80/${PORT:-8080}/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf\n\
+php artisan migrate --force\n\
+php artisan config:cache\n\
+php artisan route:cache\n\
+apache2-foreground' > /start.sh && chmod +x /start.sh
+
+# Run startup script
+CMD ["/start.sh"]
