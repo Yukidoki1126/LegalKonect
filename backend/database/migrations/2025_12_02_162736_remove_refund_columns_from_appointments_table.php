@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -12,20 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop check constraint first (SQL Server specific)
-        DB::statement("IF EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_appointments_refund_status') ALTER TABLE appointments DROP CONSTRAINT CK_appointments_refund_status");
-        
         Schema::table('appointments', function (Blueprint $table) {
-            // Drop refund-related columns
-            $table->dropColumn([
-                'refund_id',
-                'refund_status',
-                'refund_amount',
-                'refund_requested_at',
-                'refund_completed_at',
-                'refund_reason',
-                'refund_notes',
-            ]);
+            // Drop refund-related columns (check if they exist first)
+            $columns = ['refund_id', 'refund_status', 'refund_amount', 'refund_requested_at',
+                       'refund_completed_at', 'refund_reason', 'refund_notes'];
+
+            foreach ($columns as $column) {
+                if (Schema::hasColumn('appointments', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
         });
     }
 
