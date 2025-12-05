@@ -21,7 +21,7 @@ return new class extends Migration
             })
             ->update([
                 'verification_status' => 'verified',
-                'verified_at' => DB::raw('GETDATE()'),
+                'verified_at' => DB::raw('NOW()'),
                 'verification_notes' => 'Auto-verified: Existing approved lawyer before verification system implementation'
             ]);
     }

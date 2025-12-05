@@ -12,9 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop check constraint first (SQL Server specific)
-        DB::statement("IF EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_appointments_refund_status') ALTER TABLE appointments DROP CONSTRAINT CK_appointments_refund_status");
-        
+        // MySQL doesn't use check constraints for ENUM columns like SQL Server does
+
         Schema::table('appointments', function (Blueprint $table) {
             // Drop refund-related columns
             $table->dropColumn([

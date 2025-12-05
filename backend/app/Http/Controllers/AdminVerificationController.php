@@ -115,9 +115,13 @@ class AdminVerificationController extends Controller
                 'notes' => 'nullable|string|max:1000'
             ]);
 
+            // Get the admin's user ID from the users table (for foreign key constraint)
+            $adminUser = \App\Models\User::where('email', $admin->email)->first();
+            $verifiedById = $adminUser ? $adminUser->id : $admin->id;
+
             $success = $this->verificationService->updateVerificationStatus(
                 $lawyer,
-                $admin->id,
+                $verifiedById,
                 'verified',
                 $validated['notes'] ?? null
             );

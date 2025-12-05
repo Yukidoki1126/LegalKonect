@@ -157,7 +157,7 @@ class AdminDashboardController extends Controller
     {
         $users = User::with('lawyer')
             ->withCount('appointments')
-            ->where('id', '!=', $request->user()->id) // Exclude currently logged-in admin
+            ->whereNotIn('role', ['admin', 'super_admin']) // Exclude admin users
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($user) {
