@@ -147,94 +147,106 @@ const LawyerSearch: React.FC = () => {
   };
 
   // Fetch lawyers and specializations with caching
+  // Fetch data function (extracted for reuse)
+  const fetchData = async (isBackgroundRefresh = false) => {
+    // Skip cache check if this is a background refresh
+    if (!isBackgroundRefresh && isCached && cachedLawyers.length > 0) {
+      console.log('✅ Using cached lawyers data');
+
+      // Just recalculate distances if needed
+      let lawyersData = cachedLawyers;
+
+      if (user?.latitude && user?.longitude) {
+        lawyersData = cachedLawyers.map((lawyer: Lawyer) => {
+          if (lawyer.office_latitude && lawyer.office_longitude) {
+            const distance = calculateDistance(
+              user.latitude!,
+              user.longitude!,
+              parseFloat(lawyer.office_latitude),
+              parseFloat(lawyer.office_longitude)
+            );
+            console.log(`📍 ${lawyer.first_name} ${lawyer.last_name}: ${distance.toFixed(2)} km from user`);
+            return { ...lawyer, distance };
+          }
+          return lawyer;
+        });
+      }
+
+      setLawyers(lawyersData);
+      setSpecializations(cachedSpecializations);
+      setLoading(false);
+      return; // Exit - don't fetch from API
+    }
+
+    // Fetch from API
+    console.log(isBackgroundRefresh ? '🔄 Auto-refreshing lawyers...' : '📡 Fetching lawyers from API...');
+    if (!isBackgroundRefresh) setLoading(true);
+    setError('');
+
+    try {
+      // Fetch both in parallel
+      const [lawyersResponse, specsResponse] = await Promise.all([
+        api.get('/lawyers'),
+        api.get('/specializations')
+      ]);
+
+      // Process lawyers
+      let lawyersData = lawyersResponse.data.lawyers || lawyersResponse.data;
+
+      // Calculate distance if user has location
+      if (user?.latitude && user?.longitude) {
+        console.log(`👤 User location: ${user.latitude}, ${user.longitude}`);
+        lawyersData = lawyersData.map((lawyer: Lawyer) => {
+          if (lawyer.office_latitude && lawyer.office_longitude) {
+            const distance = calculateDistance(
+              user.latitude!,
+              user.longitude!,
+              parseFloat(lawyer.office_latitude),
+              parseFloat(lawyer.office_longitude)
+            );
+            console.log(`📍 ${lawyer.first_name} ${lawyer.last_name} (${lawyer.office_latitude}, ${lawyer.office_longitude}): ${distance.toFixed(2)} km from user`);
+            return { ...lawyer, distance };
+          }
+          console.log(`⚠️ ${lawyer.first_name} ${lawyer.last_name}: No coordinates`);
+          return lawyer;
+        });
+      }
+
+      // Update both local and cached state
+      setLawyers(lawyersData);
+      setCachedLawyers(lawyersData);
+
+      // Process specializations
+      const specsData = specsResponse.data.specializations || specsResponse.data;
+      const specsArray = Array.isArray(specsData) ? specsData : [];
+
+      setSpecializations(specsArray);
+      setCachedSpecializations(specsArray);
+
+      console.log('✅ Data fetched and cached');
+
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      setError(err.response?.data?.message || 'Failed to load lawyers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial data fetch
   useEffect(() => {
-    const fetchData = async () => {
-      // Check if we have cached data
-      if (isCached && cachedLawyers.length > 0) {
-        console.log('✅ Using cached lawyers data');
-        
-        // Just recalculate distances if needed
-        let lawyersData = cachedLawyers;
-        
-        if (user?.latitude && user?.longitude) {
-          lawyersData = cachedLawyers.map((lawyer: Lawyer) => {
-            if (lawyer.office_latitude && lawyer.office_longitude) {
-              const distance = calculateDistance(
-                user.latitude!,
-                user.longitude!,
-                parseFloat(lawyer.office_latitude),
-                parseFloat(lawyer.office_longitude)
-              );
-              console.log(`📍 ${lawyer.first_name} ${lawyer.last_name}: ${distance.toFixed(2)} km from user`);
-              return { ...lawyer, distance };
-            }
-            return lawyer;
-          });
-        }
-        
-        setLawyers(lawyersData);
-        setSpecializations(cachedSpecializations);
-        setLoading(false);
-        return; // Exit - don't fetch from API
-      }
-
-      // No cache - fetch from API
-      console.log('📡 Fetching lawyers from API...');
-      setLoading(true);
-      setError('');
-
-      try {
-        // Fetch both in parallel
-        const [lawyersResponse, specsResponse] = await Promise.all([
-          api.get('/lawyers'),
-          api.get('/specializations')
-        ]);
-
-        // Process lawyers
-        let lawyersData = lawyersResponse.data.lawyers || lawyersResponse.data;
-
-        // Calculate distance if user has location
-        if (user?.latitude && user?.longitude) {
-          console.log(`👤 User location: ${user.latitude}, ${user.longitude}`);
-          lawyersData = lawyersData.map((lawyer: Lawyer) => {
-            if (lawyer.office_latitude && lawyer.office_longitude) {
-              const distance = calculateDistance(
-                user.latitude!,
-                user.longitude!,
-                parseFloat(lawyer.office_latitude),
-                parseFloat(lawyer.office_longitude)
-              );
-              console.log(`📍 ${lawyer.first_name} ${lawyer.last_name} (${lawyer.office_latitude}, ${lawyer.office_longitude}): ${distance.toFixed(2)} km from user`);
-              return { ...lawyer, distance };
-            }
-            console.log(`⚠️ ${lawyer.first_name} ${lawyer.last_name}: No coordinates`);
-            return lawyer;
-          });
-        }
-
-        // Update both local and cached state
-        setLawyers(lawyersData);
-        setCachedLawyers(lawyersData);
-
-        // Process specializations
-        const specsData = specsResponse.data.specializations || specsResponse.data;
-        const specsArray = Array.isArray(specsData) ? specsData : [];
-        
-        setSpecializations(specsArray);
-        setCachedSpecializations(specsArray);
-        
-        console.log('✅ Data fetched and cached');
-        
-      } catch (err: any) {
-        console.error('Error fetching data:', err);
-        setError(err.response?.data?.message || 'Failed to load lawyers');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [user?.latitude, user?.longitude]); // Only re-run if user location changes
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      fetchData(true); // Background refresh (doesn't show loading state)
+    }, 30000); // 30 seconds
+
+    // Cleanup on unmount
+    return () => clearInterval(refreshInterval);
+  }, [user?.latitude, user?.longitude]);
 
   // Filter and sort lawyers
   const filteredLawyers = (lawyers || [])

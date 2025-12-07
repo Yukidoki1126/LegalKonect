@@ -191,282 +191,282 @@ const ManualPaymentPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pt-20 pb-10">
-      <div className="max-w-3xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Payment</h1>
           <p className="text-gray-600">
             Pay directly to the lawyer's account and upload your receipt
           </p>
         </div>
 
-        {/* Appointment Summary Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="text-2xl">📅</span> Appointment Details
-          </h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Lawyer</p>
-              <p className="font-medium text-gray-900">
-                Atty. {appointment.lawyer.first_name} {appointment.lawyer.last_name}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Date & Time</p>
-              <p className="font-medium text-gray-900">
-                {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-                <span className="text-gray-600 ml-2">{appointment.appointment_time}</span>
-              </p>
-            </div>
-          </div>
-          
-          {/* Fee Summary */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-gray-600">Total Consultation Fee</span>
-              <span className="text-lg font-semibold">₱{appointment.consultation_fee.toLocaleString()}</span>
-            </div>
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-semibold text-gray-900">Reservation Fee (Pay Now)</p>
-                  <p className="text-sm text-gray-600">Balance of ₱{(appointment.consultation_fee - (appointment.lawyer.reservation_fee || 100)).toLocaleString()} due at office</p>
-                </div>
-                <span className="text-2xl font-bold text-green-600">
-                  ₱{(appointment.lawyer.reservation_fee || 100).toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {noPaymentMethods ? (
-          /* No Payment Methods Set Up */
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-amber-800 mb-2">Payment Information Not Available</h3>
-            <p className="text-amber-700 mb-4">
-              The lawyer hasn't set up their payment accounts yet. Please contact them directly or try again later.
-            </p>
-            <button
-              onClick={() => navigate('/appointments')}
-              className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition"
-            >
-              Go Back
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Payment Method Selection */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        {/* Two Column Layout */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* LEFT COLUMN - Appointment & Payment Method */}
+          <div className="space-y-6">
+            {/* Appointment Summary Card */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-2xl">💳</span> Select Payment Method
+                <span className="text-2xl">📅</span> Appointment Details
               </h2>
-              
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {hasGcash && (
-                  <button
-                    onClick={() => setSelectedMethod('gcash')}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      selectedMethod === 'gcash'
-                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    <div className="text-3xl mb-2">📱</div>
-                    <p className="font-semibold text-gray-900">GCash</p>
-                    <p className="text-sm text-gray-500">Mobile wallet</p>
-                  </button>
-                )}
-                {hasBank && (
-                  <button
-                    onClick={() => setSelectedMethod('bank')}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      selectedMethod === 'bank'
-                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    <div className="text-3xl mb-2">🏦</div>
-                    <p className="font-semibold text-gray-900">Bank Transfer</p>
-                    <p className="text-sm text-gray-500">Direct deposit</p>
-                  </button>
-                )}
-              </div>
-
-              {/* Payment Details */}
-              <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
-                {selectedMethod === 'gcash' && paymentMethods?.gcash && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <span className="text-xl">📱</span> GCash Details
-                    </h3>
-                    
-                    {paymentMethods.gcash.qr_code && (
-                      <div className="mb-4 text-center">
-                        <img
-                          src={getImageUrl(paymentMethods.gcash.qr_code) || ""}
-                          alt="GCash QR Code"
-                          className="w-80 h-80 mx-auto rounded-xl border-4 border-blue-300 shadow-lg bg-white" style={{ objectFit: 'cover', objectPosition: 'center 25%' }}
-                        />
-                        <p className="text-sm text-gray-500 mt-2">Scan this QR code with your GCash app</p>
-                      </div>
-                    )}
-                    
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
-                        <span className="text-gray-600">GCash Number</span>
-                        <span className="font-mono font-semibold text-lg">{paymentMethods.gcash.number}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
-                        <span className="text-gray-600">Account Name</span>
-                        <span className="font-semibold">{paymentMethods.gcash.account_name}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedMethod === 'bank' && paymentMethods?.bank && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <span className="text-xl">🏦</span> Bank Transfer Details
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
-                        <span className="text-gray-600">Bank</span>
-                        <span className="font-semibold">{paymentMethods.bank.bank_name}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
-                        <span className="text-gray-600">Account Number</span>
-                        <span className="font-mono font-semibold text-lg">{paymentMethods.bank.account_number}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
-                        <span className="text-gray-600">Account Name</span>
-                        <span className="font-semibold">{paymentMethods.bank.account_name}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-sm text-amber-800">
-                    <strong>Amount to send:</strong> ₱{(appointment.lawyer.reservation_fee || 100).toLocaleString()}
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-500">Lawyer</p>
+                  <p className="font-medium text-gray-900">
+                    Atty. {appointment.lawyer.first_name} {appointment.lawyer.last_name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Date & Time</p>
+                  <p className="font-medium text-gray-900">
+                    {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                    <span className="text-gray-600 ml-2">{appointment.appointment_time}</span>
                   </p>
                 </div>
               </div>
-            </div>
 
-            {/* Upload Payment Proof */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-2xl">📤</span> Upload Payment Proof
-              </h2>
-              <p className="text-gray-600 mb-4">
-                After completing your payment, take a screenshot of the receipt and upload it here.
-              </p>
-
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                  proofPreview
-                    ? 'border-green-300 bg-green-50'
-                    : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-                }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                
-                {proofPreview ? (
-                  <div>
-                    <img
-                      src={proofPreview}
-                      alt="Payment proof preview"
-                      className="max-h-64 mx-auto rounded-lg shadow-md mb-4"
-                    />
-                    <p className="text-green-600 font-medium">✓ Receipt uploaded</p>
-                    <p className="text-sm text-gray-500 mt-1">Click to change</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+              {/* Fee Summary */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-600 text-sm">Total Fee</span>
+                  <span className="font-semibold">₱{appointment.consultation_fee.toLocaleString()}</span>
+                </div>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">Pay Now</p>
+                      <p className="text-xs text-gray-600">₱{(appointment.consultation_fee - (appointment.lawyer.reservation_fee || 100)).toLocaleString()} due at office</p>
                     </div>
-                    <p className="text-gray-600 font-medium">Click or drag to upload receipt</p>
-                    <p className="text-sm text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                    <span className="text-xl font-bold text-green-600">
+                      ₱{(appointment.lawyer.reservation_fee || 100).toLocaleString()}
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-                <p className="text-red-700 flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            {/* Payment Method Selection */}
+            {noPaymentMethods ? (
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  {error}
+                </div>
+                <h3 className="text-lg font-semibold text-amber-800 mb-2">Payment Info Not Available</h3>
+                <p className="text-amber-700 text-sm mb-4">
+                  The lawyer hasn't set up payment accounts yet.
                 </p>
+                <button
+                  onClick={() => navigate('/appointments')}
+                  className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm"
+                >
+                  Go Back
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">💳</span> Payment Method
+                </h2>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {hasGcash && (
+                    <button
+                      onClick={() => setSelectedMethod('gcash')}
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        selectedMethod === 'gcash'
+                          ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">📱</div>
+                      <p className="font-semibold text-gray-900 text-sm">GCash</p>
+                    </button>
+                  )}
+                  {hasBank && (
+                    <button
+                      onClick={() => setSelectedMethod('bank')}
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        selectedMethod === 'bank'
+                          ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">🏦</div>
+                      <p className="font-semibold text-gray-900 text-sm">Bank</p>
+                    </button>
+                  )}
+                </div>
+
+                {/* Payment Details */}
+                <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-200">
+                  {selectedMethod === 'gcash' && paymentMethods?.gcash && (
+                    <div>
+                      {paymentMethods.gcash.qr_code && (
+                        <div className="mb-3 text-center">
+                          <img
+                            src={getImageUrl(paymentMethods.gcash.qr_code) || ""}
+                            alt="GCash QR Code"
+                            className="w-48 h-48 mx-auto rounded-lg border-2 border-blue-300 shadow-md bg-white"
+                            style={{ objectFit: 'cover', objectPosition: 'center 25%' }}
+                          />
+                          <p className="text-xs text-gray-500 mt-2">Scan with GCash app</p>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center p-2 bg-white rounded-lg">
+                          <span className="text-gray-600 text-sm">Number</span>
+                          <span className="font-mono font-semibold text-sm">{paymentMethods.gcash.number}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-white rounded-lg">
+                          <span className="text-gray-600 text-sm">Name</span>
+                          <span className="font-semibold text-sm">{paymentMethods.gcash.account_name}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedMethod === 'bank' && paymentMethods?.bank && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-2 bg-white rounded-lg">
+                        <span className="text-gray-600 text-sm">Bank</span>
+                        <span className="font-semibold text-sm">{paymentMethods.bank.bank_name}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-white rounded-lg">
+                        <span className="text-gray-600 text-sm">Account #</span>
+                        <span className="font-mono font-semibold text-sm">{paymentMethods.bank.account_number}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-white rounded-lg">
+                        <span className="text-gray-600 text-sm">Name</span>
+                        <span className="font-semibold text-sm">{paymentMethods.bank.account_name}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-800">
+                      <strong>Send:</strong> ₱{(appointment.lawyer.reservation_fee || 100).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button
-                onClick={() => navigate('/appointments')}
-                className="flex-1 px-6 py-4 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUploadProof}
-                disabled={!proofFile || uploading}
-                className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
-              >
-                {uploading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Submit Payment Proof
-                  </>
+          {/* RIGHT COLUMN - Upload & Actions */}
+          <div className="space-y-6">
+            {/* Upload Payment Proof */}
+            {!noPaymentMethods && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">📤</span> Upload Payment Proof
+                </h2>
+                <p className="text-gray-600 text-sm mb-4">
+                  After payment, upload a screenshot of your receipt.
+                </p>
+
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+                    proofPreview
+                      ? 'border-green-300 bg-green-50'
+                      : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+
+                  {proofPreview ? (
+                    <div>
+                      <img
+                        src={proofPreview}
+                        alt="Payment proof preview"
+                        className="max-h-48 mx-auto rounded-lg shadow-md mb-3"
+                      />
+                      <p className="text-green-600 font-medium text-sm">✓ Receipt uploaded</p>
+                      <p className="text-xs text-gray-500 mt-1">Click to change</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-600 font-medium text-sm">Click to upload receipt</p>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+                    <p className="text-red-700 text-sm flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {error}
+                    </p>
+                  </div>
                 )}
-              </button>
-            </div>
 
-            {/* Help Text */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-500">
-                Having trouble? Contact us at{' '}
-                <a href="mailto:support@legalkonect.com" className="text-blue-600 hover:underline">
-                  support@legalkonect.com
-                </a>
-              </p>
-            </div>
-          </>
-        )}
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3 mt-6">
+                  <button
+                    onClick={handleUploadProof}
+                    disabled={!proofFile || uploading}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+                  >
+                    {uploading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Submit Payment Proof
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => navigate('/appointments')}
+                    className="w-full px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Pay Later
+                  </button>
+                </div>
+
+                {/* Help Text */}
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-gray-500">
+                    Need help?{' '}
+                    <a href="mailto:support@legalkonect.com" className="text-blue-600 hover:underline">
+                      support@legalkonect.com
+                    </a>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

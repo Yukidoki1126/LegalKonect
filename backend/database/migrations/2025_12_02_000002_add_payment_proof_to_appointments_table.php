@@ -22,8 +22,8 @@ return new class extends Migration
             // When the payment proof was uploaded
             $table->timestamp('payment_proof_uploaded_at')->nullable()->after('payment_method_used');
             
-            // Lawyer's confirmation of payment
-            $table->boolean('payment_confirmed')->default(false)->after('payment_proof_uploaded_at');
+            // Lawyer's confirmation of payment (null = pending, true = confirmed, false = rejected)
+            $table->boolean('payment_confirmed')->nullable()->after('payment_proof_uploaded_at');
             $table->timestamp('payment_confirmed_at')->nullable()->after('payment_confirmed');
         });
     }

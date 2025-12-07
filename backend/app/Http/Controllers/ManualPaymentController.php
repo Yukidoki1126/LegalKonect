@@ -96,7 +96,7 @@ class ManualPaymentController extends Controller
                 'payment_proof' => $path,
                 'payment_method_used' => $request->payment_method_used,
                 'payment_proof_uploaded_at' => now(),
-                'payment_status' => 'pending', // Mark as pending verification
+                'payment_status' => 'unpaid', // Keep as unpaid until admin verifies
             ]);
 
             // Send notification to lawyer

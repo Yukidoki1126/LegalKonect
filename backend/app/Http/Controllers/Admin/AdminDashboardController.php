@@ -18,7 +18,7 @@ class AdminDashboardController extends Controller
         $startDate = now()->subDays($days);
 
         $totalLawyers = Lawyer::count();
-        $totalUsers = User::count();
+        $totalUsers = User::whereNotIn('role', ['admin', 'super_admin'])->count();
         // Scope appointment stats/revenue to the chosen period to match analytics expectations
         $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
         $pendingAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'pending')->count();
@@ -166,7 +166,7 @@ class AdminDashboardController extends Controller
                 if ($user->lawyer) {
                     $lawyerAppointments = Appointment::where('lawyer_id', $user->lawyer->id)->count();
                 }
-                
+
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -181,7 +181,13 @@ class AdminDashboardController extends Controller
                 ];
             });
 
-        return response()->json($users);
+        return response()->json([
+            'data' => $users,
+            'total' => $users->count(),
+            'current_page' => 1,
+            'last_page' => 1,
+            'per_page' => $users->count()
+        ]);
     }
 
     public function payments(Request $request)
@@ -200,8 +206,8 @@ class AdminDashboardController extends Controller
         $summary = Appointment::where('payment_status', 'paid')
             ->selectRaw('
                 COUNT(*) as total_payments,
-                SUM(CASE WHEN payment_method = \'card\' OR payment_method = \'bank\' THEN 1 ELSE 0 END) as card_payments,
-                SUM(CASE WHEN payment_method = \'gcash\' THEN 1 ELSE 0 END) as gcash_payments
+                SUM(CASE WHEN payment_method_used = \'bank\' THEN 1 ELSE 0 END) as card_payments,
+                SUM(CASE WHEN payment_method_used = \'gcash\' THEN 1 ELSE 0 END) as gcash_payments
             ')
             ->first();
         
@@ -229,7 +235,7 @@ class AdminDashboardController extends Controller
                     : 'Unknown',
                 'amount' => $reservationFee,
                 'platform_fee' => $platformFee,
-                'payment_method' => $appointment->payment_method,
+                'payment_method' => $appointment->payment_method_used ?? $appointment->payment_method,
                 'payment_status' => $appointment->payment_status,
                 'payment_reference' => $appointment->payment_reference,
                 'payment_date' => $appointment->created_at,

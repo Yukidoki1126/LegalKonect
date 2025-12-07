@@ -452,14 +452,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                           <p className="text-gray-600 mt-4 text-sm font-medium">Loading available slots...</p>
                         </div>
                       ) : availableSlots.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
+                        <div className="grid grid-cols-2 gap-3">
                           {availableSlots.map((slot) => (
                             <button
                               key={slot.time}
                               type="button"
                               onClick={() => slot.available && setSelectedTime(slot.time)}
                               disabled={!slot.available}
-                              className={`px-4 py-3.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                              className={`px-4 py-3.5 rounded-2xl border-2 text-sm font-semibold transition-all ${
                                 !slot.available
                                   ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed line-through opacity-60'
                                   : selectedTime === slot.time

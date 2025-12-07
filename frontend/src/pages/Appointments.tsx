@@ -13,7 +13,8 @@ interface Appointment {
   status: string;
   consultation_fee: number;
   payment_status: string;
-  payment_confirmed?: boolean;
+  payment_confirmed?: boolean | null;
+  payment_proof?: string | null;
   meeting_type: string;
   client_notes: string;
   lawyer_notes: string;
@@ -344,15 +345,22 @@ const Appointments: React.FC = () => {
     if (appointment.status === 'no_show') {
       return { label: 'No Show', color: 'bg-gray-100 text-gray-800 border border-gray-300' };
     }
-    
+
     // For active appointments:
     // - Payment confirmed by lawyer = Partially Paid (green)
-    // - Payment made but not yet confirmed = For Confirmation (orange)
+    // - Payment proof uploaded but not yet reviewed = For Confirmation (orange)
+    // - Payment proof rejected = Unpaid (gray)
+    // - Payment not made yet = Unpaid (gray)
     if (appointment.payment_confirmed === true) {
       return { label: 'Partially Paid', color: 'bg-green-100 text-green-800 border border-green-300' };
     }
-    
-    return { label: 'For Confirmation', color: 'bg-orange-100 text-orange-800 border border-orange-300' };
+
+    // Check if payment proof was uploaded and is pending review
+    if (appointment.payment_proof && appointment.payment_confirmed === null) {
+      return { label: 'For Confirmation', color: 'bg-orange-100 text-orange-800 border border-orange-300' };
+    }
+
+    return { label: 'Unpaid', color: 'bg-gray-100 text-gray-800 border border-gray-300' };
   };
 
   const getStatusColor = (status: string) => {
@@ -820,7 +828,10 @@ const Appointments: React.FC = () => {
                         View Lawyer
                       </button>
 
-                      {appointment.payment_status === 'unpaid' && appointment.status !== 'cancelled' && (
+                      {/* Show Pay Now only if payment not made yet AND no proof uploaded */}
+                      {appointment.payment_status === 'unpaid' &&
+                       appointment.status !== 'cancelled' &&
+                       !appointment.payment_proof && (
                         <button
                           onClick={() => navigate(`/appointments/${appointment.id}/payment`)}
                           className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-600 hover:shadow-lg transition-all flex items-center gap-2"
@@ -851,7 +862,10 @@ const Appointments: React.FC = () => {
                         </button>
                       )}
 
-                      {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
+                      {/* Only show cancel for unpaid appointments WITHOUT payment proof uploaded */}
+                      {(appointment.status === 'pending' || appointment.status === 'confirmed') &&
+                       appointment.payment_status === 'unpaid' &&
+                       !appointment.payment_proof && (
                         <button
                           onClick={() => handleCancelClick(appointment)}
                           disabled={cancellingId === appointment.id}
