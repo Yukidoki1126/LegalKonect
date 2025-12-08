@@ -26,6 +26,23 @@ Route::get('/health', function () {
     ]);
 });
 
+// TEMPORARY: One-time seed endpoint - DELETE AFTER USE
+Route::get('/seed-specializations', function () {
+    try {
+        \Artisan::call('db:seed', ['--class' => 'SpecializationsTableSeeder', '--force' => true]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Specializations seeded successfully',
+            'output' => \Artisan::output()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
+
 // Public routes - No authentication required
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
