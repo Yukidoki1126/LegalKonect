@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Scale, MapPin, Phone, Mail, Lock, User, FileText, Clock, Award, Upload, CheckCircle, XCircle, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 
 // Extend Window interface for Google Maps
 declare global {
@@ -162,7 +163,7 @@ const LawyerRegister = () => {
 
  const fetchSpecializations = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/specializations');
+    const response = await fetch(`${API_BASE_URL}/specializations`);
     const data = await response.json();
     // Fix: Handle the response structure
     setSpecializations(data.specializations || data || []);
@@ -331,7 +332,7 @@ const LawyerRegister = () => {
 
     try {
       // First, try to register the user account
-      const userResponse = await fetch('http://localhost:8000/api/auth/register', {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -437,7 +438,7 @@ const LawyerRegister = () => {
         }
       });
 
-      const lawyerResponse = await fetch('http://localhost:8000/api/lawyer/profile', {
+      const lawyerResponse = await fetch(`${API_BASE_URL}/lawyer/profile`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -456,7 +457,7 @@ const LawyerRegister = () => {
 
         try {
           // Delete the orphaned user account using cleanup endpoint
-          const cleanupResponse = await fetch('http://localhost:8000/api/auth/cleanup', {
+          const cleanupResponse = await fetch(`${API_BASE_URL}/auth/cleanup`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
