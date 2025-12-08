@@ -71,10 +71,6 @@ done\n\
 echo "Database connection successful!"\n\
 echo "Running migrations..."\n\
 php artisan migrate --force\n\
-echo "Caching configuration..."\n\
-php artisan config:cache\n\
-echo "Caching routes..."\n\
-php artisan route:cache\n\
 echo "Starting Apache..."\n\
 apache2-foreground' > /start.sh && chmod +x /start.sh
 
