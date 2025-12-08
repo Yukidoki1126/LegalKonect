@@ -44,6 +44,7 @@ Route::get('/seed-specializations', function () {
 });
 
 // TEMPORARY: One-time admin creation endpoint - DELETE AFTER USE
+// Updated: Force Railway redeploy
 Route::get('/create-admin', function () {
     try {
         $admin = \App\Models\User::create([
