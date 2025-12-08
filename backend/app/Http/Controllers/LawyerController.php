@@ -255,9 +255,22 @@ public function createProfile(Request $request)
         ], 500);
     }
 
+    // Refresh user data with lawyer relationship
+    $user = $request->user()->fresh('lawyer');
+
     return response()->json([
         'message' => 'Lawyer profile created successfully. Your application is pending admin verification.',
-        'lawyer' => $lawyer->load('specializations')
+        'lawyer' => $lawyer->load('specializations'),
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'lawyer' => [
+                'id' => $lawyer->id,
+                'status' => $lawyer->status,
+            ]
+        ]
     ], 201);
 }
 
