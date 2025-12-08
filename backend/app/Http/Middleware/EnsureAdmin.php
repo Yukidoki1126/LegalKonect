@@ -22,19 +22,28 @@ class EnsureAdmin
         }
 
         // Check if user is an Admin model instance
-        if (!($user instanceof Admin)) {
-            return response()->json([
-                'message' => 'Unauthorized. Admin access required.'
-            ], 403);
+        if ($user instanceof Admin) {
+            // Admin model - check if active
+            if (!$user->is_active) {
+                return response()->json([
+                    'message' => 'Your admin account has been suspended.'
+                ], 403);
+            }
+            return $next($request);
         }
 
-        // Check if admin account is active
-        if (!$user->is_active) {
-            return response()->json([
-                'message' => 'Your admin account has been suspended.'
-            ], 403);
+        // Check if user is a User model with admin role (legacy support)
+        if ($user instanceof \App\Models\User) {
+            // Check if user has admin role
+            if ($user->role === 'admin' || $user->role === 'super_admin') {
+                // User with admin role - allow access
+                return $next($request);
+            }
         }
 
-        return $next($request);
+        // Neither Admin model nor User with admin role
+        return response()->json([
+            'message' => 'Unauthorized. Admin access required.'
+        ], 403);
     }
 }
