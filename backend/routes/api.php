@@ -17,6 +17,15 @@ use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\AdminVerificationController;
 use App\Http\Controllers\PasswordResetController;
 
+// Health check endpoint for Railway/monitoring
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String(),
+        'service' => 'LegalKonect API'
+    ]);
+});
+
 // Public routes - No authentication required
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
