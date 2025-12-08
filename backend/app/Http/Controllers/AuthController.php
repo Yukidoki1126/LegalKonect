@@ -104,6 +104,24 @@ class AuthController extends Controller
         ]);
     }
 
+    // Check if user has admin role in users table (legacy support)
+    if ($user->role === 'admin' || $user->role === 'super_admin') {
+        // This is a legacy admin in users table - treat as admin
+        $token = $user->createToken('admin-token')->plainTextToken;
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'is_admin' => true,
+            ],
+            'token' => $token,
+            'redirect' => '/admin',
+        ]);
+    }
+
     // Check if user is suspended
     if ($user->status === 'suspended') {
         throw ValidationException::withMessages([
