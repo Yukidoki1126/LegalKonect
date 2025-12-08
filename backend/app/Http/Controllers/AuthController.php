@@ -114,7 +114,24 @@ class AuthController extends Controller
     // Load lawyer relationship with status
     $user->load('lawyer');
 
+    // Check if lawyer is rejected - block login
+    if ($user->lawyer && $user->lawyer->status === 'rejected') {
+        throw ValidationException::withMessages([
+            'email' => ['Your lawyer application has been rejected. Please contact support for more information.'],
+        ]);
+    }
+
     $token = $user->createToken('auth-token')->plainTextToken;
+
+    // Determine redirect based on lawyer status
+    $redirect = '/lawyers'; // Default for regular clients
+    if ($user->lawyer) {
+        if ($user->lawyer->status === 'pending') {
+            $redirect = '/pending-approval'; // Pending lawyers go to pending page
+        } elseif ($user->lawyer->status === 'approved') {
+            $redirect = '/lawyer/dashboard'; // Approved lawyers go to dashboard
+        }
+    }
 
     return response()->json([
         'user' => [
@@ -137,7 +154,7 @@ class AuthController extends Controller
             ] : null
         ],
         'token' => $token,
-        'redirect' => $user->lawyer ? '/lawyer/dashboard' : '/lawyers',
+        'redirect' => $redirect,
     ]);
 }
 

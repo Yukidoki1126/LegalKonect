@@ -44,24 +44,24 @@ Route::get('/seed-specializations', function () {
 });
 
 // TEMPORARY: One-time admin creation endpoint - DELETE AFTER USE
-// Updated: Force Railway redeploy
 Route::get('/create-admin', function () {
     try {
-        $admin = \App\Models\User::create([
-            'name' => 'Admin',
+        // Create in admins table, not users table
+        $admin = \App\Models\Admin::create([
+            'name' => 'Super Admin',
             'email' => 'admin@legalkonect.com',
             'password' => \Hash::make('Admin123!@#'),
-            'phone' => '09123456789',
-            'role' => 'admin',
-            'email_verified_at' => now(),
+            'role' => 'super_admin',
+            'is_active' => true,
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Admin account created successfully',
+            'message' => 'Admin account created successfully in admins table',
             'credentials' => [
                 'email' => 'admin@legalkonect.com',
-                'password' => 'Admin123!@#'
+                'password' => 'Admin123!@#',
+                'note' => 'Login at /admin/login'
             ]
         ]);
     } catch (\Exception $e) {
