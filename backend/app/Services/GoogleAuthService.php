@@ -15,14 +15,22 @@ class GoogleAuthService
     public function __construct()
     {
         $this->client = new Google_Client();
-        $this->client->setClientId(config('google.client_id'));
-        $this->client->setClientSecret(config('google.client_secret'));
-        $this->client->setRedirectUri(config('google.auth_redirect_uri'));
-        $this->client->setScopes([
-            'email',
-            'profile',
-        ]);
-        $this->client->setAccessType('online');
+
+        $clientId = config('google.client_id');
+        $clientSecret = config('google.client_secret');
+        $redirectUri = config('google.auth_redirect_uri');
+
+        // Only configure if credentials are present
+        if ($clientId && $clientSecret && $redirectUri) {
+            $this->client->setClientId($clientId);
+            $this->client->setClientSecret($clientSecret);
+            $this->client->setRedirectUri($redirectUri);
+            $this->client->setScopes([
+                'email',
+                'profile',
+            ]);
+            $this->client->setAccessType('online');
+        }
     }
 
     /**
