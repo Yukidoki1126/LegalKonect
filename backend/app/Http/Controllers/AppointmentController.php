@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use App\Mail\AppointmentBooked;
 use App\Mail\NewAppointmentForLawyer;
 use App\Mail\RescheduleRequest;
+use App\Mail\RescheduleConfirmed;
 use Illuminate\Support\Facades\Mail;
 use App\Services\GoogleCalendarService;
 use App\Services\NotificationService;
@@ -742,7 +743,19 @@ class AppointmentController extends Controller
             Log::error('Failed to create reschedule acceptance notification: ' . $e->getMessage());
         }
 
-        // TODO: Send confirmation email to both parties
+        // Send confirmation emails to both parties
+        try {
+            // Email to client
+            Mail::to($appointment->user->email)->send(new RescheduleConfirmed($appointment));
+
+            // Email to lawyer
+            Mail::to($appointment->lawyer->email)->send(new RescheduleConfirmed($appointment));
+
+            Log::info('Reschedule confirmation emails sent for appointment ' . $appointment->id);
+        } catch (\Exception $e) {
+            Log::error('Failed to send reschedule confirmation emails: ' . $e->getMessage());
+            // Don't fail the request if email fails
+        }
 
         return response()->json([
             'message' => 'Reschedule accepted successfully',

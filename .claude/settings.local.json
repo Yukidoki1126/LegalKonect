@@ -36,7 +36,8 @@
       "Bash(rmdir:*)",
       "Bash(git reset:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -9,6 +9,8 @@ use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\IsSuperAdmin;
 use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\TrustProxies;
+use App\Http\Middleware\ForceHttps;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,6 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Trust proxies for Railway deployment
+        $middleware->trustProxies(at: '*');
+
+        // Force HTTPS in production
+        $middleware->append(ForceHttps::class);
+
         // Register custom middleware aliases
         $middleware->alias([
             'lawyer' => EnsureLawyer::class,

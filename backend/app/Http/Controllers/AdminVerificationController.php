@@ -7,6 +7,9 @@ use App\Services\LawyerVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\LawyerVerificationApproved;
+use App\Mail\LawyerVerificationRejected;
 
 class AdminVerificationController extends Controller
 {
@@ -130,7 +133,14 @@ class AdminVerificationController extends Controller
                 // Also update the lawyer's status to 'approved'
                 $lawyer->update(['status' => 'approved']);
 
-                // TODO: Send email notification to lawyer
+                // Send approval email notification to lawyer
+                try {
+                    Mail::to($lawyer->email)->send(new LawyerVerificationApproved($lawyer, $validated['notes'] ?? null));
+                    Log::info('Verification approval email sent to lawyer ' . $lawyer->id);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send verification approval email: ' . $e->getMessage());
+                    // Don't fail the request if email fails
+                }
 
                 return response()->json([
                     'message' => 'Lawyer verified and approved successfully',
@@ -182,7 +192,14 @@ class AdminVerificationController extends Controller
                 // Also update the lawyer's status to 'rejected'
                 $lawyer->update(['status' => 'rejected']);
 
-                // TODO: Send email notification to lawyer with rejection reason
+                // Send rejection email notification to lawyer with reason
+                try {
+                    Mail::to($lawyer->email)->send(new LawyerVerificationRejected($lawyer, $validated['notes']));
+                    Log::info('Verification rejection email sent to lawyer ' . $lawyer->id);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send verification rejection email: ' . $e->getMessage());
+                    // Don't fail the request if email fails
+                }
 
                 return response()->json([
                     'message' => 'Lawyer verification rejected',

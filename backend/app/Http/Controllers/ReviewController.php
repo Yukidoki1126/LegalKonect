@@ -87,15 +87,13 @@ class ReviewController extends Controller
 
     $appointment = Appointment::findOrFail($validated['appointment_id']);
 
-    // ADD MORE DEBUG INFO
-    \Log::info('Appointment User ID: ' . $appointment->user_id);
-    \Log::info('Current User ID: ' . auth()->id());
-    \Log::info('Appointment Status: ' . $appointment->status);
-    \Log::info('Has Review: ' . ($appointment->review ? 'Yes' : 'No'));
-
     // Verify user owns the appointment
-   if ($appointment->user_id != auth()->id()) {
-        \Log::error('UNAUTHORIZED: Appointment user_id=' . $appointment->user_id . ' but current user=' . auth()->id());
+    if ($appointment->user_id != auth()->id()) {
+        \Log::warning('Unauthorized review attempt', [
+            'appointment_id' => $appointment->id,
+            'appointment_user_id' => $appointment->user_id,
+            'current_user_id' => auth()->id()
+        ]);
         return response()->json(['message' => 'Unauthorized - This appointment does not belong to you'], 403);
     }
 

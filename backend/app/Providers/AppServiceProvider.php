@@ -21,8 +21,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // TEMPORARY: Disable Google services in production until app is deployed
-        // TODO: Re-enable after successful deployment
+        // Google services (Auth & Calendar) are configured with graceful degradation
+        // They will work when credentials are provided via environment variables:
+        // - GOOGLE_CLIENT_ID
+        // - GOOGLE_CLIENT_SECRET
+        // - GOOGLE_REDIRECT_URI
+        // - GOOGLE_AUTH_REDIRECT_URI
+        // If credentials are missing, Google features will be disabled automatically
 
         // Register model observers
         Lawyer::observe(LawyerObserver::class);
