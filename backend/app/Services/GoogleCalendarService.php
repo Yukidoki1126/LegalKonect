@@ -13,25 +13,29 @@ use Illuminate\Support\Facades\Log;
 
 class GoogleCalendarService
 {
-    private Google_Client $client;
+    private ?Google_Client $client = null;
 
-    public function __construct()
+    private function getClient(): Google_Client
     {
-        $this->client = new Google_Client();
+        if ($this->client === null) {
+            $this->client = new Google_Client();
 
-        $clientId = config('google.client_id');
-        $clientSecret = config('google.client_secret');
-        $redirectUri = config('google.redirect_uri');
+            $clientId = config('google.client_id');
+            $clientSecret = config('google.client_secret');
+            $redirectUri = config('google.redirect_uri');
 
-        // Only configure if credentials are present
-        if ($clientId && $clientSecret && $redirectUri) {
-            $this->client->setClientId($clientId);
-            $this->client->setClientSecret($clientSecret);
-            $this->client->setRedirectUri($redirectUri);
-            $this->client->setScopes(config('google.scopes'));
-            $this->client->setAccessType('offline');
-            $this->client->setPrompt('consent');
+            // Only configure if credentials are present
+            if ($clientId && $clientSecret && $redirectUri) {
+                $this->getClient()->setClientId($clientId);
+                $this->getClient()->setClientSecret($clientSecret);
+                $this->getClient()->setRedirectUri($redirectUri);
+                $this->getClient()->setScopes(config('google.scopes'));
+                $this->getClient()->setAccessType('offline');
+                $this->getClient()->setPrompt('consent');
+            }
         }
+
+        return $this->client;
     }
 
     /**
@@ -45,10 +49,10 @@ class GoogleCalendarService
                 'user_id' => $userId,
                 'timestamp' => time(),
             ]));
-            $this->client->setState($state);
+            $this->getClient()->setState($state);
         }
 
-        return $this->client->createAuthUrl();
+        return $this->getClient()->createAuthUrl();
     }
 
     /**
@@ -56,7 +60,7 @@ class GoogleCalendarService
      */
     public function exchangeCodeForToken(string $code): array
     {
-        return $this->client->fetchAccessTokenWithAuthCode($code);
+        return $this->getClient()->fetchAccessTokenWithAuthCode($code);
     }
 
     /**
@@ -64,7 +68,7 @@ class GoogleCalendarService
      */
     public function setAccessToken(array $token): void
     {
-        $this->client->setAccessToken($token);
+        $this->getClient()->setAccessToken($token);
     }
 
     /**
@@ -79,10 +83,10 @@ class GoogleCalendarService
 
             $accessToken = json_decode($lawyer->google_access_token, true);
 
-            $this->client->setAccessToken($accessToken);
+            $this->getClient()->setAccessToken($accessToken);
 
             // Check if token is expired
-            if ($this->client->isAccessTokenExpired()) {
+            if ($this->getClient()->isAccessTokenExpired()) {
                 Log::info('Access token expired, refreshing...', ['lawyer_id' => $lawyer->id]);
 
                 $refreshToken = $lawyer->google_refresh_token;
@@ -92,8 +96,8 @@ class GoogleCalendarService
                     return false;
                 }
 
-                $this->client->refreshToken($refreshToken);
-                $newAccessToken = $this->client->getAccessToken();
+                $this->getClient()->refreshToken($refreshToken);
+                $newAccessToken = $this->getClient()->getAccessToken();
 
                 // Update lawyer's tokens
                 $lawyer->update([
@@ -448,7 +452,7 @@ class GoogleCalendarService
             // Revoke the token if possible
             if ($lawyer->google_access_token) {
                 $accessToken = json_decode($lawyer->google_access_token, true);
-                $this->client->revokeToken($accessToken);
+                $this->getClient()->revokeToken($accessToken);
             }
         } catch (\Exception $e) {
             Log::warning('Failed to revoke Google token', [

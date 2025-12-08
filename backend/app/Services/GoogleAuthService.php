@@ -10,27 +10,31 @@ use Illuminate\Support\Facades\Log;
 
 class GoogleAuthService
 {
-    private Google_Client $client;
+    private ?Google_Client $client = null;
 
-    public function __construct()
+    private function getClient(): Google_Client
     {
-        $this->client = new Google_Client();
+        if ($this->client === null) {
+            $this->client = new Google_Client();
 
-        $clientId = config('google.client_id');
-        $clientSecret = config('google.client_secret');
-        $redirectUri = config('google.auth_redirect_uri');
+            $clientId = config('google.client_id');
+            $clientSecret = config('google.client_secret');
+            $redirectUri = config('google.auth_redirect_uri');
 
-        // Only configure if credentials are present
-        if ($clientId && $clientSecret && $redirectUri) {
-            $this->client->setClientId($clientId);
-            $this->client->setClientSecret($clientSecret);
-            $this->client->setRedirectUri($redirectUri);
-            $this->client->setScopes([
-                'email',
-                'profile',
-            ]);
-            $this->client->setAccessType('online');
+            // Only configure if credentials are present
+            if ($clientId && $clientSecret && $redirectUri) {
+                $this->getClient()->setClientId($clientId);
+                $this->getClient()->setClientSecret($clientSecret);
+                $this->getClient()->setRedirectUri($redirectUri);
+                $this->getClient()->setScopes([
+                    'email',
+                    'profile',
+                ]);
+                $this->getClient()->setAccessType('online');
+            }
         }
+
+        return $this->client;
     }
 
     /**
@@ -38,7 +42,7 @@ class GoogleAuthService
      */
     public function getAuthUrl(): string
     {
-        return $this->client->createAuthUrl();
+        return $this->getClient()->createAuthUrl();
     }
 
     /**
@@ -48,17 +52,17 @@ class GoogleAuthService
     {
         try {
             // Exchange code for access token
-            $token = $this->client->fetchAccessTokenWithAuthCode($code);
+            $token = $this->getClient()->fetchAccessTokenWithAuthCode($code);
 
             if (isset($token['error'])) {
                 Log::error('Google OAuth token error', ['error' => $token['error']]);
                 return null;
             }
 
-            $this->client->setAccessToken($token);
+            $this->getClient()->setAccessToken($token);
 
             // Get user info from Google
-            $oauth = new \Google_Service_Oauth2($this->client);
+            $oauth = new \Google_Service_Oauth2($this->getClient());
             $googleUser = $oauth->userinfo->get();
 
             // Find or create user
@@ -129,7 +133,7 @@ class GoogleAuthService
     public function verifyIdToken(string $idToken): ?array
     {
         try {
-            $payload = $this->client->verifyIdToken($idToken);
+            $payload = $this->getClient()->verifyIdToken($idToken);
 
             if (!$payload) {
                 return null;
