@@ -58,6 +58,11 @@ EXPOSE 80
 # Create startup script that runs migrations and starts Apache
 RUN echo '#!/bin/bash\n\
 set -e\n\
+echo "Clearing all Laravel caches..."\n\
+php artisan config:clear\n\
+php artisan route:clear\n\
+php artisan cache:clear\n\
+php artisan view:clear\n\
 echo "Waiting for database connection..."\n\
 until php artisan db:show 2>/dev/null; do\n\
   echo "Database is unavailable - sleeping"\n\
