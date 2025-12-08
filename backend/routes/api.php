@@ -43,6 +43,34 @@ Route::get('/seed-specializations', function () {
     }
 });
 
+// TEMPORARY: One-time admin creation endpoint - DELETE AFTER USE
+Route::get('/create-admin', function () {
+    try {
+        $admin = \App\Models\User::create([
+            'name' => 'Admin',
+            'email' => 'admin@legalkonect.com',
+            'password' => \Hash::make('Admin123!@#'),
+            'phone' => '09123456789',
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Admin account created successfully',
+            'credentials' => [
+                'email' => 'admin@legalkonect.com',
+                'password' => 'Admin123!@#'
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
+
 // Public routes - No authentication required
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
