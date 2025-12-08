@@ -12,17 +12,21 @@ class GoogleAuthService
 {
     private ?Google_Client $client = null;
 
-    private function getClient(): Google_Client
+    private function getClient(): ?Google_Client
     {
         if ($this->client === null) {
-            $this->client = new Google_Client();
-
             $clientId = config('google.client_id');
             $clientSecret = config('google.client_secret');
             $redirectUri = config('google.auth_redirect_uri');
 
-            // Only configure if credentials are present
-            if ($clientId && $clientSecret && $redirectUri) {
+            // Return null if credentials not configured (deployment phase)
+            if (!$clientId || !$clientSecret || !$redirectUri) {
+                Log::info('Google Auth disabled - credentials not configured');
+                return null;
+            }
+
+            try {
+                $this->client = new Google_Client();
                 $this->client->setClientId($clientId);
                 $this->client->setClientSecret($clientSecret);
                 $this->client->setRedirectUri($redirectUri);
@@ -31,6 +35,9 @@ class GoogleAuthService
                     'profile',
                 ]);
                 $this->client->setAccessType('online');
+            } catch (\Exception $e) {
+                Log::error('Failed to initialize Google Auth Client', ['error' => $e->getMessage()]);
+                return null;
             }
         }
 
@@ -42,7 +49,11 @@ class GoogleAuthService
      */
     public function getAuthUrl(): string
     {
-        return $this->getClient()->createAuthUrl();
+        $client = $this->getClient();
+        if (!$client) {
+            throw new \Exception('Google Auth not configured');
+        }
+        return $client->createAuthUrl();
     }
 
     /**
@@ -51,18 +62,24 @@ class GoogleAuthService
     public function handleCallback(string $code): ?User
     {
         try {
+            $client = $this->getClient();
+            if (!$client) {
+                Log::error('Google Auth not configured');
+                return null;
+            }
+
             // Exchange code for access token
-            $token = $this->getClient()->fetchAccessTokenWithAuthCode($code);
+            $token = $client->fetchAccessTokenWithAuthCode($code);
 
             if (isset($token['error'])) {
                 Log::error('Google OAuth token error', ['error' => $token['error']]);
                 return null;
             }
 
-            $this->getClient()->setAccessToken($token);
+            $client->setAccessToken($token);
 
             // Get user info from Google
-            $oauth = new \Google_Service_Oauth2($this->getClient());
+            $oauth = new \Google_Service_Oauth2($client);
             $googleUser = $oauth->userinfo->get();
 
             // Find or create user
@@ -133,7 +150,13 @@ class GoogleAuthService
     public function verifyIdToken(string $idToken): ?array
     {
         try {
-            $payload = $this->getClient()->verifyIdToken($idToken);
+            $client = $this->getClient();
+            if (!$client) {
+                Log::error('Google Auth not configured');
+                return null;
+            }
+
+            $payload = $client->verifyIdToken($idToken);
 
             if (!$payload) {
                 return null;

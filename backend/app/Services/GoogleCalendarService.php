@@ -15,23 +15,30 @@ class GoogleCalendarService
 {
     private ?Google_Client $client = null;
 
-    private function getClient(): Google_Client
+    private function getClient(): ?Google_Client
     {
         if ($this->client === null) {
-            $this->client = new Google_Client();
-
             $clientId = config('google.client_id');
             $clientSecret = config('google.client_secret');
             $redirectUri = config('google.redirect_uri');
 
-            // Only configure if credentials are present
-            if ($clientId && $clientSecret && $redirectUri) {
+            // Return null if credentials not configured (deployment phase)
+            if (!$clientId || !$clientSecret || !$redirectUri) {
+                Log::info('Google Calendar disabled - credentials not configured');
+                return null;
+            }
+
+            try {
+                $this->client = new Google_Client();
                 $this->client->setClientId($clientId);
                 $this->client->setClientSecret($clientSecret);
                 $this->client->setRedirectUri($redirectUri);
                 $this->client->setScopes(config('google.scopes'));
                 $this->client->setAccessType('offline');
                 $this->client->setPrompt('consent');
+            } catch (\Exception $e) {
+                Log::error('Failed to initialize Google Client', ['error' => $e->getMessage()]);
+                return null;
             }
         }
 
@@ -43,16 +50,21 @@ class GoogleCalendarService
      */
     public function getAuthUrl(?int $userId = null): string
     {
+        $client = $this->getClient();
+        if (!$client) {
+            throw new \Exception('Google Calendar not configured');
+        }
+
         // Add user ID to state parameter to identify the user after OAuth callback
         if ($userId) {
             $state = base64_encode(json_encode([
                 'user_id' => $userId,
                 'timestamp' => time(),
             ]));
-            $this->getClient()->setState($state);
+            $client->setState($state);
         }
 
-        return $this->getClient()->createAuthUrl();
+        return $client->createAuthUrl();
     }
 
     /**
@@ -60,7 +72,11 @@ class GoogleCalendarService
      */
     public function exchangeCodeForToken(string $code): array
     {
-        return $this->getClient()->fetchAccessTokenWithAuthCode($code);
+        $client = $this->getClient();
+        if (!$client) {
+            throw new \Exception('Google Calendar not configured');
+        }
+        return $client->fetchAccessTokenWithAuthCode($code);
     }
 
     /**
@@ -68,7 +84,11 @@ class GoogleCalendarService
      */
     public function setAccessToken(array $token): void
     {
-        $this->getClient()->setAccessToken($token);
+        $client = $this->getClient();
+        if (!$client) {
+            throw new \Exception('Google Calendar not configured');
+        }
+        $client->setAccessToken($token);
     }
 
     /**
@@ -77,16 +97,22 @@ class GoogleCalendarService
     public function refreshTokenIfNeeded(Lawyer $lawyer): bool
     {
         try {
+            $client = $this->getClient();
+            if (!$client) {
+                Log::info('Google Calendar not configured, skipping token refresh');
+                return false;
+            }
+
             if (!$lawyer->google_access_token) {
                 return false;
             }
 
             $accessToken = json_decode($lawyer->google_access_token, true);
 
-            $this->getClient()->setAccessToken($accessToken);
+            $client->setAccessToken($accessToken);
 
             // Check if token is expired
-            if ($this->getClient()->isAccessTokenExpired()) {
+            if ($client->isAccessTokenExpired()) {
                 Log::info('Access token expired, refreshing...', ['lawyer_id' => $lawyer->id]);
 
                 $refreshToken = $lawyer->google_refresh_token;
@@ -96,8 +122,8 @@ class GoogleCalendarService
                     return false;
                 }
 
-                $this->getClient()->refreshToken($refreshToken);
-                $newAccessToken = $this->getClient()->getAccessToken();
+                $client->refreshToken($refreshToken);
+                $newAccessToken = $client->getAccessToken();
 
                 // Update lawyer's tokens
                 $lawyer->update([
