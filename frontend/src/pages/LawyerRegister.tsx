@@ -508,6 +508,14 @@ const LawyerRegister = () => {
         throw new Error(errorData.message || 'Lawyer profile creation failed');
       }
 
+      // Lawyer profile created successfully - update user data in localStorage
+      const lawyerData = await lawyerResponse.json();
+      if (lawyerData.user) {
+        // Update localStorage with the new user data that includes lawyer relationship
+        localStorage.setItem('user', JSON.stringify(lawyerData.user));
+        console.log('✅ Updated user data in localStorage with lawyer profile');
+      }
+
       setSuccess(true);
 
     } catch (error: any) {
