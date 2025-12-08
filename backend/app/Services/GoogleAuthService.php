@@ -23,14 +23,14 @@ class GoogleAuthService
 
             // Only configure if credentials are present
             if ($clientId && $clientSecret && $redirectUri) {
-                $this->getClient()->setClientId($clientId);
-                $this->getClient()->setClientSecret($clientSecret);
-                $this->getClient()->setRedirectUri($redirectUri);
-                $this->getClient()->setScopes([
+                $this->client->setClientId($clientId);
+                $this->client->setClientSecret($clientSecret);
+                $this->client->setRedirectUri($redirectUri);
+                $this->client->setScopes([
                     'email',
                     'profile',
                 ]);
-                $this->getClient()->setAccessType('online');
+                $this->client->setAccessType('online');
             }
         }
 

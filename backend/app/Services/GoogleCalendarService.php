@@ -26,12 +26,12 @@ class GoogleCalendarService
 
             // Only configure if credentials are present
             if ($clientId && $clientSecret && $redirectUri) {
-                $this->getClient()->setClientId($clientId);
-                $this->getClient()->setClientSecret($clientSecret);
-                $this->getClient()->setRedirectUri($redirectUri);
-                $this->getClient()->setScopes(config('google.scopes'));
-                $this->getClient()->setAccessType('offline');
-                $this->getClient()->setPrompt('consent');
+                $this->client->setClientId($clientId);
+                $this->client->setClientSecret($clientSecret);
+                $this->client->setRedirectUri($redirectUri);
+                $this->client->setScopes(config('google.scopes'));
+                $this->client->setAccessType('offline');
+                $this->client->setPrompt('consent');
             }
         }
 
