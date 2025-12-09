@@ -15,6 +15,13 @@ RUN apt-get update && apt-get install -y \
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl
 
+# Configure PHP - Disable OPcache and increase limits
+RUN echo "opcache.enable=0" > /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memory.ini \
+    && echo "upload_max_filesize=25M" >> /usr/local/etc/php/conf.d/memory.ini \
+    && echo "post_max_size=25M" >> /usr/local/etc/php/conf.d/memory.ini \
+    && echo "max_execution_time=300" >> /usr/local/etc/php/conf.d/memory.ini
+
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -55,22 +62,21 @@ RUN echo '<Directory /var/www/html/public>\n\
 # Expose port 80 (Render will handle external port mapping)
 EXPOSE 80
 
-# Create startup script that runs migrations and starts Apache
+# Copy and use our init script
+COPY railway/init-app.sh /init-app.sh
+RUN chmod +x /init-app.sh
+
+# Create startup script
 RUN echo '#!/bin/bash\n\
 set -e\n\
-echo "Clearing all Laravel caches..."\n\
-php artisan config:clear\n\
-php artisan route:clear\n\
-php artisan cache:clear\n\
-php artisan view:clear\n\
 echo "Waiting for database connection..."\n\
 until php artisan db:show 2>/dev/null; do\n\
   echo "Database is unavailable - sleeping"\n\
   sleep 2\n\
 done\n\
 echo "Database connection successful!"\n\
-echo "Running migrations..."\n\
-php artisan migrate --force\n\
+echo "Running init script..."\n\
+/init-app.sh\n\
 echo "Starting Apache..."\n\
 apache2-foreground' > /start.sh && chmod +x /start.sh
 
