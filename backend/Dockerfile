@@ -1,4 +1,4 @@
-FROM php:8.1-fpm
+FROM php:8.2-fpm
 
 # Install system dependencies including Nginx and Supervisor
 RUN apt-get update && apt-get install -y \
