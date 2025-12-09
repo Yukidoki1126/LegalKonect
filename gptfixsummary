@@ -1,0 +1,71 @@
+✅ Laravel + React CORS Issue Summary (For Claude)
+Problem
+
+CORS errors occur because Laravel is only applying CORS rules to:
+
+'paths' => ['api/*', 'sanctum/csrf-cookie'],
+
+
+But the frontend (React on Vercel) is calling routes like:
+
+/auth/register
+
+
+Since auth/* is NOT included in the paths, Laravel does not send CORS headers for these routes → browser blocks the request.
+
+Required Fix in config/cors.php
+Option A — Proper fix
+'paths' => [
+    'api/*',
+    'auth/*',
+    'sanctum/csrf-cookie',
+],
+
+Option B — Apply CORS to everything
+'paths' => ['*'],
+
+
+Either one resolves the issue.
+
+Other CORS settings (correct as-is)
+'allowed_methods' => ['*'],
+'allowed_headers' => ['*'],
+
+'allowed_origins' => [
+    'https://legalkonect.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+],
+
+'supports_credentials' => true,
+
+
+These should NOT be changed.
+
+After modifying CORS, MUST run:
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan optimize:clear
+
+
+Then redeploy to Railway.
+
+If cache is not cleared, CORS changes will not take effect.
+
+Route Location Check
+
+If the route is in routes/api.php, frontend must call:
+
+/api/auth/register
+
+
+If it’s in routes/web.php, either move it to api.php
+or keep it in web.php but use:
+
+'paths' => ['*']
+
+Final Summary
+
+The CORS issue is caused by missing auth/* in the paths list.
+Add it (or use '*'), clear the cache, redeploy, and the CORS error is resolved.
