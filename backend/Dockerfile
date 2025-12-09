@@ -12,11 +12,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PostgreSQL dependencies
-RUN apt-get update && apt-get install -y libpq-dev && apt-get clean
-
-# Install PHP extensions (including both MySQL and PostgreSQL)
-RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd intl
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl
 
 # Configure PHP - Disable OPcache and increase limits
 RUN echo "opcache.enable=0" > /usr/local/etc/php/conf.d/opcache.ini \
