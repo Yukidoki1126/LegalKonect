@@ -73,11 +73,11 @@ RUN mkdir -p storage/framework/sessions \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Configure Nginx
+# Configure Nginx (listen on port 8080 for Railway)
 RUN rm -f /etc/nginx/sites-enabled/default
 COPY <<'EOF' /etc/nginx/sites-available/laravel
 server {
-    listen 80;
+    listen 8080;
     server_name _;
     root /var/www/html/public;
 
@@ -156,6 +156,6 @@ echo "Running init script..."\n\
 echo "Starting Nginx + PHP-FPM via Supervisor..."\n\
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf' > /start.sh && chmod +x /start.sh
 
-EXPOSE 80
+EXPOSE 8080
 
 CMD ["/start.sh"]
