@@ -10,14 +10,16 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        Admin::create([
-            'name' => 'Super Admin',
-            'email' => 'admin@legalkonect.com',
-            'password' => Hash::make('admin123'),
-            'is_active' => true,
-        ]);
+        Admin::firstOrCreate(
+            ['email' => 'admin@legalkonect.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('admin123'),
+                'is_active' => true,
+            ]
+        );
 
-        echo "Admin created successfully!\n";
+        echo "Admin seeded successfully!\n";
         echo "Email: admin@legalkonect.com\n";
         echo "Password: admin123\n";
     }

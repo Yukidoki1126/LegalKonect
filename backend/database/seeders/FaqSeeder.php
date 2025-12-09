@@ -21,15 +21,24 @@ class FaqSeeder extends Seeder
 
         $categoryIds = [];
         foreach ($categoryNames as $name => $data) {
-            $id = DB::table('faq_categories')->insertGetId([
-                'name' => $name,
-                'slug' => $data['slug'],
-                'description' => $data['description'],
-                'order' => $data['order'],
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-            $categoryIds[$data['slug']] = $id;
+            // Check if category already exists
+            $existing = DB::table('faq_categories')
+                ->where('slug', $data['slug'])
+                ->first();
+
+            if ($existing) {
+                $categoryIds[$data['slug']] = $existing->id;
+            } else {
+                $id = DB::table('faq_categories')->insertGetId([
+                    'name' => $name,
+                    'slug' => $data['slug'],
+                    'description' => $data['description'],
+                    'order' => $data['order'],
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]);
+                $categoryIds[$data['slug']] = $id;
+            }
         }
 
         $this->command->info('FAQ categories seeded successfully!');
@@ -202,18 +211,25 @@ class FaqSeeder extends Seeder
         ];
 
         foreach ($faqs as $faq) {
-            DB::table('faqs')->insert([
-                'category_id' => $categoryIds[$faq['category']],
-                'question' => $faq['question'],
-                'answer' => $faq['answer'],
-                'type' => $faq['type'],
-                'dynamic_endpoint' => null,
-                'order' => $faq['order'],
-                'is_active' => true,
-                'views' => 0,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
+            // Check if FAQ already exists by question
+            $exists = DB::table('faqs')
+                ->where('question', $faq['question'])
+                ->exists();
+
+            if (!$exists) {
+                DB::table('faqs')->insert([
+                    'category_id' => $categoryIds[$faq['category']],
+                    'question' => $faq['question'],
+                    'answer' => $faq['answer'],
+                    'type' => $faq['type'],
+                    'dynamic_endpoint' => null,
+                    'order' => $faq['order'],
+                    'is_active' => true,
+                    'views' => 0,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]);
+            }
         }
 
         $this->command->info('FAQs seeded successfully!');
