@@ -1,5 +1,0 @@
-[phases.setup]
-nixPkgs = ['php82', 'php82Extensions.bcmath', 'php82Extensions.ctype', 'php82Extensions.curl', 'php82Extensions.dom', 'php82Extensions.fileinfo', 'php82Extensions.filter', 'php82Extensions.hash', 'php82Extensions.mbstring', 'php82Extensions.openssl', 'php82Extensions.pcre', 'php82Extensions.pdo', 'php82Extensions.pdo_mysql', 'php82Extensions.session', 'php82Extensions.tokenizer', 'php82Extensions.xml']
-
-[start]
-cmd = "bash railway/init-app.sh && /bin/heroku-php-apache2 -C apache.conf public/"

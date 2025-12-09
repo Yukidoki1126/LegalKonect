@@ -28,19 +28,28 @@ RUN docker-php-ext-install \
     sodium \
     opcache
 
-# Configure PHP-FPM and OPcache (enable OPcache but disable JIT)
-RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memory.ini \
+# Configure PHP-FPM and OPcache (optimized for Railway's resource limits)
+RUN echo "memory_limit=256M" > /usr/local/etc/php/conf.d/memory.ini \
     && echo "upload_max_filesize=25M" >> /usr/local/etc/php/conf.d/memory.ini \
     && echo "post_max_size=25M" >> /usr/local/etc/php/conf.d/memory.ini \
     && echo "max_execution_time=300" >> /usr/local/etc/php/conf.d/memory.ini \
     && echo "opcache.enable=1" > /usr/local/etc/php/conf.d/opcache.ini \
     && echo "opcache.enable_cli=0" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.interned_strings_buffer=16" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.memory_consumption=64" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=5000" >> /usr/local/etc/php/conf.d/opcache.ini \
     && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini \
     && echo "opcache.jit=off" >> /usr/local/etc/php/conf.d/opcache.ini \
     && echo "opcache.jit_buffer_size=0" >> /usr/local/etc/php/conf.d/opcache.ini
+
+# Configure PHP-FPM worker limits to prevent memory exhaustion
+RUN echo "[www]" > /usr/local/etc/php-fpm.d/zz-railway.conf \
+    && echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/zz-railway.conf \
+    && echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/zz-railway.conf \
+    && echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/zz-railway.conf \
+    && echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/zz-railway.conf \
+    && echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/zz-railway.conf \
+    && echo "pm.max_requests = 500" >> /usr/local/etc/php-fpm.d/zz-railway.conf
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
