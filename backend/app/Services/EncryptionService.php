@@ -31,8 +31,9 @@ class EncryptionService
             $filename = uniqid() . '_' . time() . '.' . $originalExtension . '.encrypted';
             $fullPath = $path . '/' . $filename;
 
-            // Store the encrypted file
-            Storage::disk('private')->put($fullPath, $encryptedContent);
+            // Store the encrypted file (use R2 in production, local in development)
+            $disk = config('app.env') === 'production' ? 'r2' : 'private';
+            Storage::disk($disk)->put($fullPath, $encryptedContent);
 
             Log::info('File encrypted and stored successfully', [
                 'original_name' => $file->getClientOriginalName(),
@@ -60,8 +61,9 @@ class EncryptionService
     public function decryptFile($path)
     {
         try {
-            // Get encrypted content from storage
-            $encryptedContent = Storage::disk('private')->get($path);
+            // Get encrypted content from storage (use R2 in production, local in development)
+            $disk = config('app.env') === 'production' ? 'r2' : 'private';
+            $encryptedContent = Storage::disk($disk)->get($path);
 
             // Decrypt the content
             $decryptedContent = Crypt::decrypt($encryptedContent);
@@ -89,8 +91,9 @@ class EncryptionService
     public function deleteEncryptedFile($path)
     {
         try {
-            if (Storage::disk('private')->exists($path)) {
-                Storage::disk('private')->delete($path);
+            $disk = config('app.env') === 'production' ? 'r2' : 'private';
+            if (Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->delete($path);
 
                 Log::info('Encrypted file deleted', [
                     'path' => $path
