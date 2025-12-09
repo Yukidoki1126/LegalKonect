@@ -17,7 +17,14 @@ php artisan view:clear
 php artisan cache:clear
 
 echo "Running migrations..."
-php artisan migrate --force --isolated
+php artisan migrate --force --isolated 2>&1 || {
+    echo "Migration failed, attempting to continue..."
+    echo "Checking migration status..."
+    php artisan migrate:status
+}
+
+echo "Ensuring personal_access_tokens table exists..."
+php artisan migrate --path=database/migrations/2025_09_21_195012_create_personal_access_tokens_table.php --force 2>&1 || echo "personal_access_tokens migration already exists or failed"
 
 echo "Seeding database..."
 php artisan db:seed --class=AdminSeeder --force
