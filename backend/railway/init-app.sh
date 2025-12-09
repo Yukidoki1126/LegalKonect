@@ -15,13 +15,4 @@ php artisan route:clear
 php artisan view:clear
 php artisan cache:clear
 
-echo "Caching config..."
-php artisan config:cache
-
-echo "Caching routes..."
-php artisan route:cache
-
-echo "Caching views..."
-php artisan view:cache
-
 echo "Application initialized successfully!"
