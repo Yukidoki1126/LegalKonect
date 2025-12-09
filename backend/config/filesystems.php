@@ -13,7 +13,8 @@ return [
     |
     */
 
-    'default' => env('FILESYSTEM_DISK', 'local'),
+    // Temporarily disable R2 to test if AWS SDK causes segfaults
+    'default' => env('APP_ENV') === 'production' ? 'local' : env('FILESYSTEM_DISK', 'local'),
 
     /*
     |--------------------------------------------------------------------------
