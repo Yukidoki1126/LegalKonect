@@ -11,6 +11,7 @@ use App\Http\Middleware\IsSuperAdmin;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\TrustProxies;
 use App\Http\Middleware\ForceHttps;
+use App\Http\Middleware\HandleCors;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Trust proxies for Railway deployment
         $middleware->trustProxies(at: '*');
+
+        // Handle CORS for API requests
+        $middleware->append(HandleCors::class);
 
         // Force HTTPS in production
         $middleware->append(ForceHttps::class);
