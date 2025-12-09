@@ -6,6 +6,10 @@ rm -rf bootstrap/cache/*.php
 mkdir -p bootstrap/cache
 chmod -R 775 bootstrap/cache
 
+echo "Setting up session storage..."
+mkdir -p storage/framework/sessions
+chmod -R 775 storage/framework/sessions
+
 echo "Clearing all caches..."
 php artisan config:clear
 php artisan route:clear
