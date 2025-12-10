@@ -10,7 +10,7 @@ const api = axios.create({
     'Accept': 'application/json',
   },
   timeout: 10000, // 10 second timeout
-  withCredentials: true,
+  // withCredentials removed - using Bearer token auth, not cookies
 });
 
 // Add token to every request
