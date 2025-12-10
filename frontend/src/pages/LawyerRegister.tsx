@@ -381,6 +381,11 @@ const LawyerRegister = () => {
       const userData = await userResponse.json();
       const token = userData.token;
       const userId = userData.user?.id;
+
+      // Save token to localStorage for authenticated requests
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData.user));
+      console.log('✅ Token saved to localStorage');
       console.log('User registered successfully, creating lawyer profile...');
 
       // Create FormData for multipart upload
