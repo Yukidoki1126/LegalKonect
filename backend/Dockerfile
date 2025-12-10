@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     nginx \
     supervisor \
+    gettext-base \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions (including sodium for Sanctum)
@@ -73,11 +74,11 @@ RUN mkdir -p storage/framework/sessions \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Configure Nginx (listen on port 8080 for Railway)
+# Configure Nginx template (will be processed with envsubst at runtime)
 RUN rm -f /etc/nginx/sites-enabled/default
-COPY <<'EOF' /etc/nginx/sites-available/laravel
+COPY <<'EOF' /etc/nginx/sites-available/laravel.template
 server {
-    listen 8080;
+    listen ${PORT};
     server_name _;
     root /var/www/html/public;
 
@@ -107,7 +108,7 @@ server {
 }
 EOF
 
-RUN ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
+# Symlink will be created at runtime after envsubst processes the template
 
 # Configure Supervisor to manage both Nginx and PHP-FPM
 COPY <<'EOF' /etc/supervisor/conf.d/supervisord.conf
@@ -142,9 +143,12 @@ EOF
 COPY railway/init-app.sh /init-app.sh
 RUN chmod +x /init-app.sh
 
-# Create startup script that runs init then starts supervisor
+# Create startup script that configures nginx, runs init, then starts supervisor
 RUN echo '#!/bin/bash\n\
 set -e\n\
+echo "Configuring Nginx with PORT=${PORT:-8080}..."\n\
+envsubst "\$PORT" < /etc/nginx/sites-available/laravel.template > /etc/nginx/sites-available/laravel\n\
+ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/\n\
 echo "Waiting for database connection..."\n\
 until php artisan db:show 2>/dev/null; do\n\
   echo "Database is unavailable - sleeping"\n\
