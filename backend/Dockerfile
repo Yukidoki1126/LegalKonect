@@ -75,4 +75,6 @@ echo "Running init script..."\n\
 echo "Starting Laravel on port ${PORT:-8000}..."\n\
 exec php artisan serve --host=0.0.0.0 --port=${PORT:-8000}' > /start.sh && chmod +x /start.sh
 
+EXPOSE 8080
+
 CMD ["/start.sh"]
