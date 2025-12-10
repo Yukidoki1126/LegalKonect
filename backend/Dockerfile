@@ -160,6 +160,6 @@ echo "Running init script..."\n\
 echo "Starting Nginx + PHP-FPM via Supervisor..."\n\
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf' > /start.sh && chmod +x /start.sh
 
-EXPOSE 8080
+# No hardcoded EXPOSE - Railway will auto-detect from PORT environment variable
 
 CMD ["/start.sh"]
