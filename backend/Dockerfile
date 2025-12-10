@@ -39,7 +39,9 @@ RUN echo "memory_limit=256M" > /usr/local/etc/php/conf.d/custom.ini \
     && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "opcache.revalidate_freq=2" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/custom.ini
+    && echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "opcache.jit=off" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "opcache.jit_buffer_size=0" >> /usr/local/etc/php/conf.d/custom.ini
 
 # Configure PHP-FPM to listen on TCP port 9000
 RUN sed -i 's/listen = .*/listen = 127.0.0.1:9000/' /usr/local/etc/php-fpm.d/www.conf \
