@@ -73,6 +73,8 @@ RUN mkdir -p storage/framework/sessions \
     storage/framework/views \
     storage/framework/cache \
     storage/logs \
+    storage/app/private \
+    storage/app/public \
     bootstrap/cache \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
