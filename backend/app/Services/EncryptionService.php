@@ -31,8 +31,9 @@ class EncryptionService
             $filename = uniqid() . '_' . time() . '.' . $originalExtension . '.encrypted';
             $fullPath = $path . '/' . $filename;
 
-            // Store the encrypted file (use R2 in production, local in development)
-            $disk = config('app.env') === 'production' ? 'r2' : 'private';
+            // Store the encrypted file (use local storage for now, R2 later)
+            // TODO: Configure R2 credentials in Railway and switch to R2
+            $disk = 'private'; // Temporarily use local storage until R2 is configured
             Storage::disk($disk)->put($fullPath, $encryptedContent);
 
             Log::info('File encrypted and stored successfully', [
@@ -61,8 +62,9 @@ class EncryptionService
     public function decryptFile($path)
     {
         try {
-            // Get encrypted content from storage (use R2 in production, local in development)
-            $disk = config('app.env') === 'production' ? 'r2' : 'private';
+            // Get encrypted content from storage (use local storage for now, R2 later)
+            // TODO: Configure R2 credentials in Railway and switch to R2
+            $disk = 'private'; // Temporarily use local storage until R2 is configured
             $encryptedContent = Storage::disk($disk)->get($path);
 
             // Decrypt the content
@@ -91,7 +93,8 @@ class EncryptionService
     public function deleteEncryptedFile($path)
     {
         try {
-            $disk = config('app.env') === 'production' ? 'r2' : 'private';
+            // TODO: Configure R2 credentials in Railway and switch to R2
+            $disk = 'private'; // Temporarily use local storage until R2 is configured
             if (Storage::disk($disk)->exists($path)) {
                 Storage::disk($disk)->delete($path);
 
