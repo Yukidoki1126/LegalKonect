@@ -10,3 +10,6 @@ Route::get('/', function () {
         'version' => '1.0.0'
     ]);
 });
+
+// Ultra-simple health check for Railway (no dependencies, instant response)
+Route::get('/health', fn() => 'ok');
