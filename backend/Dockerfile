@@ -59,11 +59,14 @@ WORKDIR /var/www/html
 # Copy composer files first for better layer caching
 COPY composer.json composer.lock ./
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install dependencies without running scripts (artisan not available yet)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Copy application files
 COPY . /var/www/html
+
+# Run composer scripts now that artisan is available
+RUN composer run-script post-autoload-dump
 
 # Create storage directories and set permissions
 RUN mkdir -p storage/framework/sessions \
