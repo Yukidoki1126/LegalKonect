@@ -23,6 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust proxies for Railway deployment
         $middleware->trustProxies(at: '*');
 
+       
+
         // Force HTTPS in production
         $middleware->append(ForceHttps::class);
 
