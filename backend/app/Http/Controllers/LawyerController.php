@@ -137,6 +137,18 @@ class LawyerController extends Controller
 
 public function createProfile(Request $request)
 {
+    \Log::info('=== LAWYER PROFILE CREATION STARTED ===', [
+        'user_id' => $request->user()->id,
+        'has_files' => [
+            'ibp_card' => $request->hasFile('ibp_card'),
+            'government_id' => $request->hasFile('government_id'),
+            'prc_license' => $request->hasFile('prc_license'),
+            'good_standing_cert' => $request->hasFile('good_standing_cert'),
+        ],
+        'app_key_set' => !empty(config('app.key')),
+        'storage_path_writable' => is_writable(storage_path('app/private')),
+    ]);
+
     try {
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -243,15 +255,30 @@ public function createProfile(Request $request)
         $documents['good_standing_cert'] = $request->file('good_standing_cert');
     }
 
+    \Log::info('Starting document upload', [
+        'lawyer_id' => $lawyer->id,
+        'document_count' => count($documents),
+    ]);
+
     try {
         $uploadedPaths = $verificationService->uploadVerificationDocuments($documents, $lawyer->id);
+        \Log::info('Documents uploaded successfully', ['paths' => $uploadedPaths]);
+
         $lawyer->update(['verification_documents' => $uploadedPaths]);
+        \Log::info('Lawyer profile updated with verification documents');
     } catch (\Exception $e) {
         // If document upload fails, delete the lawyer profile and return error
+        \Log::error('Document upload failed', [
+            'lawyer_id' => $lawyer->id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
         $lawyer->delete();
         return response()->json([
             'message' => 'Failed to upload verification documents',
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+            'debug' => config('app.debug') ? $e->getTraceAsString() : null,
         ], 500);
     }
 
