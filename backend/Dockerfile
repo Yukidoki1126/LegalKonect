@@ -147,7 +147,8 @@ RUN chmod +x /init-app.sh
 RUN echo '#!/bin/bash\n\
 set -e\n\
 echo "Configuring Nginx with PORT=${PORT:-8080}..."\n\
-envsubst "\$PORT" < /etc/nginx/sites-available/laravel.template > /etc/nginx/sites-available/laravel\n\
+export PORT=${PORT:-8080}\n\
+envsubst < /etc/nginx/sites-available/laravel.template > /etc/nginx/sites-available/laravel\n\
 ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/\n\
 echo "Waiting for database connection..."\n\
 until php artisan db:show 2>/dev/null; do\n\
