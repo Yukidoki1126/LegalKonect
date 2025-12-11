@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Search, Home, ChevronLeft, ThumbsUp, ThumbsDown } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api.config';
 
 interface FAQ {
   id: number;
@@ -118,7 +119,7 @@ const FAQChatbot: React.FC = () => {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/faqs/categories');
+      const response = await axios.get(`${API_BASE_URL}/faqs/categories`);
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -134,7 +135,7 @@ const FAQChatbot: React.FC = () => {
   const fetchCategoryFaqs = async (slug: string) => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8000/api/faqs/category/${slug}`);
+      const response = await axios.get(`${API_BASE_URL}/faqs/category/${slug}`);
       setCategoryFaqs(response.data.faqs);
     } catch (error) {
       console.error('Error fetching FAQs:', error);
@@ -148,7 +149,7 @@ const FAQChatbot: React.FC = () => {
       // Clean up the query - remove question marks and extra spaces
       const cleanQuery = query.replace(/\?/g, '').trim();
 
-      const response = await axios.get('http://localhost:8000/api/faqs/search', {
+      const response = await axios.get(`${API_BASE_URL}/faqs/search`, {
         params: { q: cleanQuery }
       });
 
@@ -357,7 +358,7 @@ const FAQChatbot: React.FC = () => {
     addUserMessage(faq.question);
 
     try {
-      await axios.get(`http://localhost:8000/api/faqs/${faq.id}`);
+      await axios.get(`${API_BASE_URL}/faqs/${faq.id}`);
     } catch (error) {
       console.error('Error tracking FAQ view:', error);
     }

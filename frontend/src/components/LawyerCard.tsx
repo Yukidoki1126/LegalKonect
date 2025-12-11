@@ -4,6 +4,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Lawyer } from '../types/lawyer';
 import { MapPin, Briefcase, Star, Shield, Clock } from 'lucide-react';
+import { STORAGE_URL } from '../config/api.config';
 
 interface LawyerCardProps {
   lawyer: Lawyer;
@@ -20,7 +21,7 @@ const LawyerCard: React.FC<LawyerCardProps> = ({ lawyer }) => {
   const getProfilePhotoUrl = () => {
     if (!lawyer.profile_photo) return null;
     if (lawyer.profile_photo.startsWith('http')) return lawyer.profile_photo;
-    return `http://localhost:8000/storage/${lawyer.profile_photo}`;
+    return `${STORAGE_URL}/storage/${lawyer.profile_photo}`;
   };
 
   const profilePhotoUrl = getProfilePhotoUrl();

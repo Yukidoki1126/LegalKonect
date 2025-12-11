@@ -3,6 +3,7 @@ import { lawyerApi } from '../../services/lawyerApi';
 import { useSearchParams } from 'react-router-dom';
 import { cacheService } from '../../services/cacheService';
 import { notificationService } from '../../services/notificationService';
+import { STORAGE_URL } from '../../config/api.config';
 import {
   Calendar,
   Clock,
@@ -2025,7 +2026,7 @@ const LawyerAppointments: React.FC = () => {
                 <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Receipt:</p>
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <img
-                    src={`http://localhost:8000/storage/${selectedAppointment.payment_proof}`}
+                    src={`${STORAGE_URL}/storage/${selectedAppointment.payment_proof}`}
                     alt="Payment Receipt"
                     className="w-full h-auto max-h-96 object-contain bg-gray-100"
                     onError={(e) => {
@@ -2034,7 +2035,7 @@ const LawyerAppointments: React.FC = () => {
                   />
                 </div>
                 <a
-                  href={`http://localhost:8000/storage/${selectedAppointment.payment_proof}`}
+                  href={`${STORAGE_URL}/storage/${selectedAppointment.payment_proof}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2"

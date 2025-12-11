@@ -1,5 +1,6 @@
 import React, { useState, useRef, memo, useEffect } from 'react';
 import { User, Camera, Trash2, Upload, CheckCircle } from 'lucide-react';
+import { STORAGE_URL } from '../config/api.config';
 
 interface ProfilePictureUploadProps {
   currentPicture?: string | null;
@@ -41,7 +42,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   const getImageUrl = (path: string | null | undefined) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    return `http://localhost:8000/storage/${path}`;
+    return `${STORAGE_URL}/storage/${path}`;
   };
 
   const showSuccess = (message: string) => {

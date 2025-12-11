@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { STORAGE_URL } from '../config/api.config';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -177,7 +178,7 @@ const Dashboard: React.FC = () => {
                         src={
                           user.profile_picture.startsWith('http')
                             ? user.profile_picture
-                            : `http://localhost:8000/storage/${user.profile_picture}`
+                            : `${STORAGE_URL}/storage/${user.profile_picture}`
                         }
                         alt={user.name}
                         className="w-full h-full object-cover"

@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { lawyerApi } from '../../services/lawyerApi';
 import { CreditCard, Smartphone, Building2, Upload, Trash2, Save, CheckCircle, AlertCircle, X, Edit2 } from 'lucide-react';
-
-const STORAGE_URL = 'http://localhost:8000';
+import { STORAGE_URL } from '../../config/api.config';
 
 // Helper to get full image URL
 const getImageUrl = (path: string | null | undefined): string | null => {

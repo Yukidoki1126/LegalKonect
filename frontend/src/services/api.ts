@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { cacheService } from './cacheService';
-
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '../config/api.config';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

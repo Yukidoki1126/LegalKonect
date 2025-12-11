@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-
-const STORAGE_URL = 'http://localhost:8000';
+import { STORAGE_URL } from '../config/api.config';
 
 // Helper to get full image URL
 const getImageUrl = (path: string | null | undefined): string | null => {

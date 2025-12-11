@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api.config';
 
 interface ClientOnlyRouteProps {
   children: React.ReactNode;
@@ -20,7 +21,7 @@ const ClientOnlyRoute: React.FC<ClientOnlyRouteProps> = ({ children }) => {
       }
 
       try {
-        const response = await axios.get('http://localhost:8000/api/user', {
+        const response = await axios.get(`${API_BASE_URL}/user`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 

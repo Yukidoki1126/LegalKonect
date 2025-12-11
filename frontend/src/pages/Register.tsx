@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import { Scale, Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, Briefcase, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api.config';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -111,7 +112,7 @@ const Register: React.FC = () => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/google', {
+      const response = await axios.post(`${API_BASE_URL}/auth/google`, {
         access_token: token,
         email: userData.email,
         name: userData.name,

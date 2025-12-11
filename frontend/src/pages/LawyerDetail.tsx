@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { MapPin, Phone, Mail, ChevronLeft, Calendar, Shield } from 'lucide-react';
 import api from '../services/api';
 import BookingModal from '../components/BookingModal';
+import { STORAGE_URL } from '../config/api.config';
 
 interface Review {
   id: number;
@@ -217,7 +218,7 @@ const LawyerDetail: React.FC = () => {
                         src={
                           lawyer.profile_photo.startsWith('http')
                             ? lawyer.profile_photo
-                            : `http://localhost:8000/storage/${lawyer.profile_photo}`
+                            : `${STORAGE_URL}/storage/${lawyer.profile_photo}`
                         }
                         alt={fullName}
                         className="w-full h-full object-cover"

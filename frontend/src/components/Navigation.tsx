@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { STORAGE_URL } from '../config/api.config';
 
 const Navigation: React.FC = () => {
   const { user, logout } = useAuth();
@@ -36,12 +37,12 @@ const Navigation: React.FC = () => {
     if (user?.profile_picture) {
       return user.profile_picture.startsWith('http')
         ? user.profile_picture
-        : `http://localhost:8000/storage/${user.profile_picture}`;
+        : `${STORAGE_URL}/storage/${user.profile_picture}`;
     }
     if (user?.lawyer?.profile_photo) {
       return user.lawyer.profile_photo.startsWith('http')
         ? user.lawyer.profile_photo
-        : `http://localhost:8000/storage/${user.lawyer.profile_photo}`;
+        : `${STORAGE_URL}/storage/${user.lawyer.profile_photo}`;
     }
     return null;
   };

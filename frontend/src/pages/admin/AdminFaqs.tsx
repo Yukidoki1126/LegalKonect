@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, Search, Eye, MessageCircle, TrendingUp, AlertCircle } from 'lucide-react';
 import adminApi from '../../services/adminApi';
 import PageTransition from '../../components/PageTransition';
+import { API_BASE_URL } from '../../config/api.config';
 
 interface FAQ {
   id: number;
@@ -85,7 +86,7 @@ const AdminFaqs = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/faqs/categories');
+      const response = await fetch(`${API_BASE_URL}/faqs/categories`);
       const data = await response.json();
       setCategories(data);
     } catch (error) {
@@ -124,8 +125,8 @@ const AdminFaqs = () => {
 
     const token = sessionStorage.getItem('admin_token');
     const url = editingFaq
-      ? `http://localhost:8000/api/admin/faqs/${editingFaq.id}`
-      : 'http://localhost:8000/api/admin/faqs';
+      ? `${API_BASE_URL}/admin/faqs/${editingFaq.id}`
+      : `${API_BASE_URL}/admin/faqs`;
 
     const method = editingFaq ? 'PUT' : 'POST';
 
@@ -153,7 +154,7 @@ const AdminFaqs = () => {
 
     const token = sessionStorage.getItem('admin_token');
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/faqs/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/faqs/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
