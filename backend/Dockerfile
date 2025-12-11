@@ -1,5 +1,5 @@
 # Production-grade Dockerfile with Nginx + PHP-FPM
-FROM php:8.2-fpm
+FROM php:8.3-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -34,7 +34,11 @@ RUN echo "memory_limit=256M" > /usr/local/etc/php/conf.d/custom.ini \
     && echo "upload_max_filesize=25M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "post_max_size=25M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "max_execution_time=300" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "opcache.enable=0" >> /usr/local/etc/php/conf.d/custom.ini
+    && echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/custom.ini
 
 # Configure PHP-FPM to listen on TCP port 9000
 RUN sed -i 's/listen = .*/listen = 127.0.0.1:9000/' /usr/local/etc/php-fpm.d/www.conf \
