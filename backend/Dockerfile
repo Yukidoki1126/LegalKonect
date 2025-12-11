@@ -61,7 +61,7 @@ set -e\n\
 echo "Running migrations..."\n\
 php artisan migrate --force --no-interaction\n\
 echo "Seeding specializations..."\n\
-php artisan db:seed --class=Database\\Seeders\\SpecializationsTableSeeder\n\
+php artisan db:seed --class=Database\\Seeders\\SpecializationsTableSeeder --force\n\
 echo "Caching configuration..."\n\
 php artisan config:cache\n\
 echo "Caching routes..."\n\
