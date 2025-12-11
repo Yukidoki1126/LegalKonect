@@ -1,7 +1,5 @@
 <?php
 
-use Laravel\Sanctum\Sanctum;
-
 return [
 
     /*
@@ -15,12 +13,9 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
-        Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    // DISABLED: Using token-based auth, not stateful SPA cookies
+    // Stateful auth causes infinite recursion with large file uploads
+    'stateful' => [],
 
     /*
     |--------------------------------------------------------------------------
@@ -34,7 +29,9 @@ return [
     |
     */
 
-    'guard' => ['web', 'api'],
+    // CRITICAL: Use ONLY 'api' guard for token authentication
+    // Using 'web' causes infinite recursion (Sanctum tries cookies + tokens simultaneously)
+    'guard' => ['api'],
 
     /*
     |--------------------------------------------------------------------------
