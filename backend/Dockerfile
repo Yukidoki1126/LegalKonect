@@ -34,7 +34,8 @@ RUN echo "memory_limit=256M" > /usr/local/etc/php/conf.d/custom.ini \
     && echo "upload_max_filesize=25M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "post_max_size=25M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "max_execution_time=300" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "opcache.enable=0" >> /usr/local/etc/php/conf.d/custom.ini
+    && echo "opcache.enable=0" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "zend.max_allowed_stack_size=32M" >> /usr/local/etc/php/conf.d/custom.ini
 
 # Configure PHP-FPM to listen on TCP port 9000
 RUN sed -i 's/listen = .*/listen = 127.0.0.1:9000/' /usr/local/etc/php-fpm.d/www.conf \
