@@ -2,8 +2,7 @@
 
 return [
 
-    // DISABLED: CORS is handled by Nginx to avoid duplicate headers
-    'paths' => [],
+    'paths' => ['api/*', 'auth/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
