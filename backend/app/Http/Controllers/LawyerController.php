@@ -264,7 +264,10 @@ public function createProfile(Request $request)
         $uploadedPaths = $verificationService->uploadVerificationDocuments($documents, $lawyer->id);
         \Log::info('Documents uploaded successfully', ['paths' => $uploadedPaths]);
 
-        $lawyer->update(['verification_documents' => $uploadedPaths]);
+        // Use direct DB update to avoid triggering model events (prevents infinite recursion with PHP 8.3 + OPcache)
+        \DB::table('lawyers')
+            ->where('id', $lawyer->id)
+            ->update(['verification_documents' => json_encode($uploadedPaths)]);
         \Log::info('Lawyer profile updated with verification documents');
     } catch (\Exception $e) {
         // If document upload fails, delete the lawyer profile and return error
