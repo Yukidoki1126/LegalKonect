@@ -60,6 +60,8 @@ RUN echo '#!/bin/bash\n\
 set -e\n\
 echo "Running migrations..."\n\
 php artisan migrate --force --no-interaction\n\
+echo "Dumping autoload..."\n\
+composer dump-autoload\n\
 echo "Seeding specializations..."\n\
 php artisan db:seed --class=Database\\Seeders\\SpecializationsTableSeeder --force\n\
 echo "Caching configuration..."\n\
