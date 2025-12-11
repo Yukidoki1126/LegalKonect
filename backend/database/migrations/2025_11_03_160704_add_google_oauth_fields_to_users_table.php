@@ -24,9 +24,18 @@ return new class extends Migration
             }
         });
 
-        // Create unique index on google_id (MySQL compatible - allows multiple NULLs)
-        if (!DB::select("SHOW INDEXES FROM users WHERE Key_name = 'users_google_id_unique'")) {
-            DB::statement('CREATE UNIQUE INDEX users_google_id_unique ON users (google_id)');
+        // Create unique index on google_id (compatible with MySQL and PostgreSQL)
+        $connection = DB::getDriverName();
+        if ($connection === 'pgsql') {
+            $indexExists = DB::select("SELECT 1 FROM pg_indexes WHERE tablename = 'users' AND indexname = 'users_google_id_unique'");
+            if (!$indexExists) {
+                DB::statement('CREATE UNIQUE INDEX users_google_id_unique ON users (google_id)');
+            }
+        } else {
+            $indexExists = DB::select("SHOW INDEXES FROM users WHERE Key_name = 'users_google_id_unique'");
+            if (!$indexExists) {
+                DB::statement('CREATE UNIQUE INDEX users_google_id_unique ON users (google_id)');
+            }
         }
     }
 
@@ -35,8 +44,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Drop the unique index first
-        DB::statement('DROP INDEX IF EXISTS users_google_id_unique ON users');
+        // Drop the unique index first (compatible with MySQL and PostgreSQL)
+        $connection = DB::getDriverName();
+        if ($connection === 'pgsql') {
+            DB::statement('DROP INDEX IF EXISTS users_google_id_unique');
+        } else {
+            DB::statement('DROP INDEX IF EXISTS users_google_id_unique ON users');
+        }
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn(['google_id', 'avatar', 'auth_provider']);
