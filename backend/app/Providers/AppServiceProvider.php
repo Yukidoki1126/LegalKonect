@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Models\Lawyer;
-use App\Observers\LawyerObserver;
+// use App\Models\Lawyer;
+// use App\Observers\LawyerObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
         // If credentials are missing, Google features will be disabled automatically
 
         // Register model observers
-        Lawyer::observe(LawyerObserver::class);
+        // TEMPORARILY DISABLED: LawyerObserver causes infinite recursion with encrypted casts in PHP 8.3
+        // Name sync is already handled in LawyerController::createProfile (lines 224-235)
+        // Lawyer::observe(LawyerObserver::class);
     }
 }
