@@ -137,8 +137,11 @@ class LawyerController extends Controller
 
 public function createProfile(Request $request)
 {
+    // Cache authenticated user ONCE to avoid Sanctum Guard infinite recursion
+    $authenticatedUser = $request->user();
+
     \Log::info('=== LAWYER PROFILE CREATION STARTED ===', [
-        'user_id' => $request->user()->id,
+        'user_id' => $authenticatedUser->id,
         'has_files' => [
             'ibp_card' => $request->hasFile('ibp_card'),
             'government_id' => $request->hasFile('government_id'),
@@ -194,7 +197,7 @@ public function createProfile(Request $request)
     }
 
     // Check if user already has a lawyer profile
-    if ($request->user()->lawyer) {
+    if ($authenticatedUser->lawyer) {
         return response()->json([
             'message' => 'User already has a lawyer profile'
         ], 422);
@@ -202,7 +205,7 @@ public function createProfile(Request $request)
 
     // Create lawyer profile first
     $lawyer = Lawyer::create([
-        'user_id' => $request->user()->id,
+        'user_id' => $authenticatedUser->id,
         'first_name' => $validated['first_name'],
         'last_name' => $validated['last_name'],
         'bio' => $validated['bio'] ?? null,
@@ -222,16 +225,13 @@ public function createProfile(Request $request)
 
     // Keep the authenticated user's name in sync with the lawyer profile
     try {
-        $user = $request->user();
-        if ($user) {
-            $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
-            if ($user->name !== $fullName) {
-                $user->name = $fullName;
-                $user->save();
-            }
+        $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
+        if ($authenticatedUser->name !== $fullName) {
+            $authenticatedUser->name = $fullName;
+            $authenticatedUser->save();
         }
     } catch (\Exception $e) {
-        \Log::warning('Failed to sync user.name after creating lawyer profile', ['user_id' => $request->user()?->id, 'error' => $e->getMessage()]);
+        \Log::warning('Failed to sync user.name after creating lawyer profile', ['user_id' => $authenticatedUser->id, 'error' => $e->getMessage()]);
     }
 
     // Attach specializations
@@ -285,17 +285,15 @@ public function createProfile(Request $request)
         ], 500);
     }
 
-    // Refresh user data with lawyer relationship
-    $user = $request->user()->fresh('lawyer');
-
+    // Return response WITHOUT reloading user (avoids Sanctum Guard recursion)
     return response()->json([
         'message' => 'Lawyer profile created successfully. Your application is pending admin verification.',
         'lawyer' => $lawyer->load('specializations'),
         'user' => [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'phone' => $user->phone,
+            'id' => $authenticatedUser->id,
+            'name' => $authenticatedUser->name,
+            'email' => $authenticatedUser->email,
+            'phone' => $authenticatedUser->phone,
             'lawyer' => [
                 'id' => $lawyer->id,
                 'status' => $lawyer->status,
