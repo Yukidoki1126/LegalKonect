@@ -45,7 +45,8 @@ const LawyerSearch: React.FC = () => {
     specializations: cachedSpecializations,
     setLawyers: setCachedLawyers,
     setSpecializations: setCachedSpecializations,
-    isCached 
+    isCached,
+    invalidateCache,
   } = useLawyers();
 
   // Local state
@@ -185,8 +186,9 @@ const LawyerSearch: React.FC = () => {
 
     try {
       // Fetch both in parallel
+      const cacheBust = `t=${Date.now()}`;
       const [lawyersResponse, specsResponse] = await Promise.all([
-        api.get('/lawyers'),
+        api.get(`/lawyers?fresh=1&${cacheBust}`),
         api.get('/specializations')
       ]);
 
@@ -238,15 +240,50 @@ const LawyerSearch: React.FC = () => {
     fetchData();
   }, [user?.latitude, user?.longitude]); // Only re-run if user location changes
 
-  // Auto-refresh every 30 seconds
+  // Refetch immediately if cache is invalidated elsewhere (e.g., after profile/location save)
+  useEffect(() => {
+    if (!isCached) {
+      fetchData(true);
+    }
+  }, [isCached]);
+
+  // Optional: expose a manual refresh request for other pages via a custom event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail === 'lawyers:refresh') {
+        fetchData(true);
+      }
+    };
+    window.addEventListener('lawyers:event', handler as EventListener);
+    return () => window.removeEventListener('lawyers:event', handler as EventListener);
+  }, []);
+
+  // Auto-refresh every 10 seconds (was 30 seconds)
   useEffect(() => {
     const refreshInterval = setInterval(() => {
       fetchData(true); // Background refresh (doesn't show loading state)
-    }, 30000); // 30 seconds
+    }, 10000); // 10 seconds
 
     // Cleanup on unmount
     return () => clearInterval(refreshInterval);
   }, [user?.latitude, user?.longitude]);
+
+  // Refresh immediately when the tab regains focus or becomes visible
+  useEffect(() => {
+    const onFocus = () => fetchData(true);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData(true);
+      }
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, []);
 
   // Filter and sort lawyers
   const filteredLawyers = (lawyers || [])

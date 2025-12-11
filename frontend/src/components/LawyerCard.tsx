@@ -116,16 +116,18 @@ const LawyerCard: React.FC<LawyerCardProps> = ({ lawyer }) => {
         </div>
       </div>
 
-      {/* Location */}
-      {(lawyer.user?.city || lawyer.office_address) && (
+      {/* Location: prefer lawyer's office address if available */}
+      {(lawyer.office_address || lawyer.user?.city) && (
         <div className="flex items-start gap-2 mb-4 text-sm text-gray-600 relative z-10">
           <div className="w-6 h-6 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
             <MapPin className="w-3.5 h-3.5 text-orange-600" />
           </div>
           <span className="flex-1 line-clamp-2">
-            {lawyer.user?.city
-              ? `${lawyer.user.city}, ${lawyer.user.province}`
-              : lawyer.office_address
+            {lawyer.office_address
+              ? lawyer.office_address
+              : lawyer.user?.city
+                ? `${lawyer.user.city}, ${lawyer.user.province}`
+                : ''
             }
           </span>
           {lawyer.distance !== undefined && (

@@ -15,10 +15,54 @@ class LawyerController extends Controller
     // Get all approved lawyers
     public function index(Request $request)
     {
+        // Allow bypassing cache for freshest data (e.g., after updates)
+        $fresh = $request->query('fresh') === '1';
+
         // Cache the lawyers list for 5 minutes to speed up repeated requests
         $cacheKey = 'lawyers_list_v1';
         $cacheDuration = 300; // 5 minutes
 
+        if ($fresh) {
+            // Fetch without cache
+            $lawyers = Lawyer::with(['user', 'specializations'])
+                ->approved()
+                ->available()
+                ->get();
+
+            $transformedLawyers = $lawyers->map(function ($lawyer) {
+                return [
+                    'id' => $lawyer->id,
+                    'first_name' => $lawyer->first_name,
+                    'last_name' => $lawyer->last_name,
+                    'bio' => $lawyer->bio,
+                    'profile_photo' => $lawyer->profile_photo,
+                    'specialization' => $lawyer->specializations->pluck('name')->join(', '),
+                    'specializations' => $lawyer->specializations,
+                    'status' => $lawyer->status,
+                    'is_available' => $lawyer->is_available,
+                    'rating' => $lawyer->rating ?? 0,
+                    'total_reviews' => $lawyer->total_reviews ?? 0,
+                    'consultation_fee' => $lawyer->hourly_rate,
+                    'years_experience' => $lawyer->years_experience,
+                    'office_address' => $lawyer->office_address,
+                    'office_latitude' => $lawyer->office_latitude,
+                    'office_longitude' => $lawyer->office_longitude,
+                    'created_at' => $lawyer->created_at,
+                ];
+            });
+
+            $data = [
+                'lawyers' => $transformedLawyers,
+                'total' => $transformedLawyers->count()
+            ];
+
+            // Send headers to discourage intermediary caching for fresh request
+            return response()->json($data)
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                ->header('Pragma', 'no-cache');
+        }
+
+        // Use cache for normal requests
         $data = \Cache::remember($cacheKey, $cacheDuration, function () {
             $lawyers = Lawyer::with(['user', 'specializations'])
                 ->approved()

@@ -1,12 +1,14 @@
 // src/pages/Profile.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLawyers } from '../context/LawyersContext';
 import LocationPickerWithMap from '../components/LocationPickerWithMap';
 import ProfilePictureUpload from '../components/ProfilePictureUpload';
 import api, { authAPI } from '../services/api';
 
 const Profile: React.FC = () => {
   const { user, updateUser } = useAuth();
+  const { invalidateCache } = useLawyers();
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingPicture, setUploadingPicture] = useState(false);
@@ -65,6 +67,10 @@ const Profile: React.FC = () => {
       // Update user context with new location data
       updateUser(response.data.user);
 
+      // Request immediate refresh of lawyers list (search page)
+      invalidateCache();
+      window.dispatchEvent(new CustomEvent('lawyers:event', { detail: 'lawyers:refresh' }));
+
       setSuccess('Location updated successfully!');
       setShowLocationPicker(false);
       setTempLocation(null);
@@ -91,6 +97,9 @@ const Profile: React.FC = () => {
     try {
       const response = await api.put('/auth/profile', formData);
       updateUser(response.data.user);
+      // Request immediate refresh of lawyers list (search page)
+      invalidateCache();
+      window.dispatchEvent(new CustomEvent('lawyers:event', { detail: 'lawyers:refresh' }));
       setSuccess('Profile updated successfully!');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update profile');

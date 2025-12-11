@@ -405,6 +405,9 @@ class LawyerDashboardController extends Controller
         $lawyer->is_available = !$lawyer->is_available;
         $lawyer->save();
 
+        // Invalidate cached lawyers list so client search reflects availability immediately
+        \Cache::forget('lawyers_list_v1');
+
         return response()->json([
             'message' => 'Availability updated',
             'is_available' => $lawyer->is_available

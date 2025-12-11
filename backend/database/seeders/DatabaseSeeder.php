@@ -12,11 +12,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
        
-$this->call([
+        $this->call([
             SpecializationsTableSeeder::class,
             LawyersTableSeeder::class,
             LawyerAvailabilitySeeder::class,
             FaqSeeder::class,
+            SuperAdminSeeder::class,
+            AppointmentSeeder::class,
+            TestAppointmentsSeeder::class,
         ]);
         User::factory()->create([
             'name' => 'Test User',

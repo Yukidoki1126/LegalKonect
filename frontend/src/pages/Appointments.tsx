@@ -738,8 +738,8 @@ const Appointments: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Reschedule Request Notification */}
-                    {appointment.reschedule_status === 'pending' && appointment.proposed_date && (
+                    {/* Reschedule Request Notification (from lawyer) */}
+                    {appointment.reschedule_status === 'pending' && appointment.proposed_date && appointment.reschedule_requested_by === 'lawyer' && (
                       <div className="mb-4 p-4 bg-orange-50 border-l-4 border-orange-500 rounded-lg">
                         <div className="flex items-start gap-3">
                           <svg className="w-6 h-6 text-orange-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

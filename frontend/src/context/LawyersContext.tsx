@@ -7,6 +7,7 @@ interface LawyersContextType {
   setLawyers: (lawyers: Lawyer[]) => void;
   setSpecializations: (specs: Specialization[]) => void;
   isCached: boolean;
+  invalidateCache: () => void;
 }
 
 const LawyersContext = createContext<LawyersContextType | undefined>(undefined);
@@ -15,6 +16,7 @@ export const LawyersProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [specializations, setSpecializations] = useState<Specialization[]>([]);
   const [isCached, setIsCached] = useState(false);
+  const [version, setVersion] = useState(0); // bump to signal invalidation
 
   const handleSetLawyers = (newLawyers: Lawyer[]) => {
     setLawyers(newLawyers);
@@ -25,6 +27,11 @@ export const LawyersProvider: React.FC<{ children: ReactNode }> = ({ children })
     setSpecializations(newSpecs);
   };
 
+  const invalidateCache = () => {
+    setIsCached(false);
+    setVersion(v => v + 1);
+  };
+
   return (
     <LawyersContext.Provider
       value={{
@@ -33,6 +40,7 @@ export const LawyersProvider: React.FC<{ children: ReactNode }> = ({ children })
         setLawyers: handleSetLawyers,
         setSpecializations: handleSetSpecializations,
         isCached,
+        invalidateCache,
       }}
     >
       {children}

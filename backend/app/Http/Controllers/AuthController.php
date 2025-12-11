@@ -180,6 +180,22 @@ class AuthController extends Controller
         'province' => $request->province,
     ]);
 
+    // Also update lawyer's office location if user is a lawyer
+    $lawyerUpdated = false;
+    if ($user->lawyer) {
+        $user->lawyer->update([
+            'office_address' => $request->address,
+            'office_latitude' => $request->latitude,
+            'office_longitude' => $request->longitude,
+        ]);
+        $lawyerUpdated = true;
+    }
+
+    // Invalidate lawyers list cache if lawyer was updated
+    if ($lawyerUpdated) {
+        \Cache::forget('lawyers_list_v1');
+    }
+
     return response()->json([
         'message' => 'Location updated successfully',
         'user' => $user
@@ -220,6 +236,11 @@ public function updateProfile(Request $request)
     }
 
     $user->save();
+
+    // Invalidate lawyers list cache if user is a lawyer
+    if ($user->lawyer) {
+        \Cache::forget('lawyers_list_v1');
+    }
 
     return response()->json([
         'message' => 'Profile updated successfully',
