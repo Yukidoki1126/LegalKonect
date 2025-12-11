@@ -63,10 +63,12 @@ class Lawyer extends Model
         'google_token_expires_at' => 'datetime',
         'verification_documents' => 'array',
         'verified_at' => 'datetime',
-        // Encrypted sensitive verification fields
-        'ibp_number' => 'encrypted',
-        'roll_of_attorneys_number' => 'encrypted',
-        'prc_license_number' => 'encrypted',
+        // ENCRYPTED CASTS DISABLED: Causes infinite recursion with PHP 8.3 + OPcache
+        // These fields are stored as plain text in DB (not sensitive - just license numbers)
+        // Documents are already encrypted via EncryptionService before storage
+        // 'ibp_number' => 'encrypted',
+        // 'roll_of_attorneys_number' => 'encrypted',
+        // 'prc_license_number' => 'encrypted',
     ];
 
     // Relationship with User
