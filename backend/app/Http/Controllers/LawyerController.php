@@ -232,9 +232,24 @@ public function createProfile(Request $request)
         ], 422);
     }
 
-    // Create lawyer profile first
+    // CRITICAL: Update user role to lawyer BEFORE creating lawyer profile
+    $user = $request->user();
+    $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
+    
+    $user->name = $fullName;
+    $user->role = 'lawyer';
+    $user->save();
+    
+    \Log::info('User role updated to lawyer BEFORE lawyer profile creation', [
+        'user_id' => $user->id,
+        'email' => $user->email,
+        'role' => $user->role,
+        'name' => $user->name
+    ]);
+
+    // Create lawyer profile
     $lawyer = Lawyer::create([
-        'user_id' => $request->user()->id,
+        'user_id' => $user->id,
         'first_name' => $validated['first_name'],
         'last_name' => $validated['last_name'],
         'bio' => $validated['bio'] ?? null,
@@ -251,28 +266,6 @@ public function createProfile(Request $request)
         'roll_of_attorneys_number' => $validated['roll_of_attorneys_number'] ?? null,
         'prc_license_number' => $validated['prc_license_number'] ?? null,
     ]);
-
-    // Keep the authenticated user's name in sync with the lawyer profile and set role to lawyer
-    $user = $request->user();
-    if ($user) {
-        $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
-        
-        // Update user name
-        if ($user->name !== $fullName) {
-            $user->name = $fullName;
-        }
-        
-        // CRITICAL: Set role to lawyer when creating lawyer profile
-        $user->role = 'lawyer';
-        $user->save();
-        
-        \Log::info('User role updated to lawyer', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'role' => $user->role,
-            'name' => $user->name
-        ]);
-    }
 
     // Attach specializations
     $lawyer->specializations()->sync($validated['specialization_ids']);
