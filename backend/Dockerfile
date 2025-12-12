@@ -15,6 +15,13 @@ RUN apt-get update && apt-get install -y \
 # Install PHP extensions (MySQL, PostgreSQL, and others)
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_pgsql pgsql
 
+# Configure PHP for larger file uploads
+RUN echo "upload_max_filesize = 25M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 30M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_execution_time = 120" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_input_time = 120" >> /usr/local/etc/php/conf.d/uploads.ini
+
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
