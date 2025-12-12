@@ -33,6 +33,7 @@ interface User {
   province?: string;
   latitude?: number;
   longitude?: number;
+  role?: string;
   lawyer?: Lawyer;
 }
 
