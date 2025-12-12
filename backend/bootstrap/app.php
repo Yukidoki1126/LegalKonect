@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\IsSuperAdmin;
 use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\Authenticate;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,8 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Register custom middleware aliases
+        // Use custom Authenticate middleware that returns JSON for API routes
         $middleware->alias([
+            'auth' => Authenticate::class,
             'lawyer' => EnsureLawyer::class,
             'admin' => IsAdmin::class, // Changed to use IsAdmin for User model with role check
             'role' => CheckRole::class,
@@ -33,7 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (AuthenticationException $e, $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
-                    'message' => 'Unauthenticated.'
+                    'message' => 'Unauthenticated.',
+                    'error' => 'Token missing or invalid'
                 ], 401);
             }
         });
