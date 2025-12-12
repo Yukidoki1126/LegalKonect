@@ -119,4 +119,13 @@ class User extends Authenticatable
     {
         return $this->isAdmin();
     }
+
+    // Helper: Get profile picture URL
+    public function getProfilePictureUrlAttribute()
+    {
+        if (!$this->profile_picture) {
+            return null;
+        }
+        return \Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($this->profile_picture);
+    }
 }

@@ -235,4 +235,22 @@ public function getPendingPayoutsAttribute()
         ->where('status', 'pending')
         ->sum('amount');
 }
+
+// Helper: Get profile photo URL
+public function getProfilePhotoUrlAttribute()
+{
+    if (!$this->profile_photo) {
+        return null;
+    }
+    return \Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($this->profile_photo);
+}
+
+// Helper: Get GCash QR URL
+public function getGcashQrUrlAttribute()
+{
+    if (!$this->gcash_qr_code) {
+        return null;
+    }
+    return \Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($this->gcash_qr_code);
+}
 }

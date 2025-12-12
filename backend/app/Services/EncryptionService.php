@@ -9,6 +9,16 @@ use Illuminate\Support\Facades\Log;
 class EncryptionService
 {
     /**
+     * Get the disk to use for private/encrypted files
+     */
+    private function getPrivateDisk(): string
+    {
+        $disk = env('FILESYSTEM_DISK', 'public');
+        // Use r2-private for cloud storage, local private disk otherwise
+        return $disk === 'r2' ? 'r2-private' : 'private';
+    }
+
+    /**
      * Encrypt and store a file
      *
      * @param \Illuminate\Http\UploadedFile $file
@@ -32,13 +42,14 @@ class EncryptionService
             $fullPath = $path . '/' . $filename;
 
             // Store the encrypted file
-            Storage::disk('private')->put($fullPath, $encryptedContent);
+            Storage::disk($this->getPrivateDisk())->put($fullPath, $encryptedContent);
 
             Log::info('File encrypted and stored successfully', [
                 'original_name' => $file->getClientOriginalName(),
                 'original_extension' => $originalExtension,
                 'stored_path' => $fullPath,
-                'size' => $file->getSize()
+                'size' => $file->getSize(),
+                'disk' => $this->getPrivateDisk()
             ]);
 
             return $fullPath;
@@ -61,7 +72,7 @@ class EncryptionService
     {
         try {
             // Get encrypted content from storage
-            $encryptedContent = Storage::disk('private')->get($path);
+            $encryptedContent = Storage::disk($this->getPrivateDisk())->get($path);
 
             // Decrypt the content
             $decryptedContent = Crypt::decrypt($encryptedContent);
@@ -89,8 +100,8 @@ class EncryptionService
     public function deleteEncryptedFile($path)
     {
         try {
-            if (Storage::disk('private')->exists($path)) {
-                Storage::disk('private')->delete($path);
+            if (Storage::disk($this->getPrivateDisk())->exists($path)) {
+                Storage::disk($this->getPrivateDisk())->delete($path);
 
                 Log::info('Encrypted file deleted', [
                     'path' => $path

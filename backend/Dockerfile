@@ -70,6 +70,8 @@ php artisan cache:clear || true\n\
 php artisan config:clear || true\n\
 php artisan route:clear || true\n\
 php artisan view:clear || true\n\
+echo "Creating storage symlink..."\n\
+php artisan storage:link || true\n\
 echo "Running migrations..."\n\
 php artisan migrate --force --no-interaction\n\
 echo "Dumping autoload..."\n\

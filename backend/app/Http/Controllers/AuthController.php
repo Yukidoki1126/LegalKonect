@@ -238,11 +238,11 @@ public function updateProfile(Request $request)
     if ($request->hasFile('profile_picture')) {
         // Delete old profile picture if exists
         if ($user->profile_picture) {
-            Storage::disk('public')->delete($user->profile_picture);
+            Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($user->profile_picture);
         }
 
         // Store new profile picture
-        $path = $request->file('profile_picture')->store('users/' . $user->id, 'public');
+        $path = $request->file('profile_picture')->store('users/' . $user->id, env('FILESYSTEM_DISK', 'public'));
         $user->profile_picture = $path;
     }
 
@@ -280,11 +280,11 @@ public function updateProfile(Request $request)
 
         // Delete old profile picture if exists
         if ($user->profile_picture) {
-            Storage::disk('public')->delete($user->profile_picture);
+            Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($user->profile_picture);
         }
 
         // Store new profile picture
-        $path = $request->file('profile_picture')->store('users/' . $user->id, 'public');
+        $path = $request->file('profile_picture')->store('users/' . $user->id, env('FILESYSTEM_DISK', 'public'));
 
         $user->profile_picture = $path;
         $user->save();
@@ -292,7 +292,7 @@ public function updateProfile(Request $request)
         return response()->json([
             'message' => 'Profile picture uploaded successfully',
             'user' => $user,
-            'profile_picture_url' => Storage::disk('public')->url($path)
+            'profile_picture_url' => Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($path)
         ]);
     }
 
@@ -301,7 +301,7 @@ public function updateProfile(Request $request)
         $user = $request->user();
 
         if ($user->profile_picture) {
-            Storage::disk('public')->delete($user->profile_picture);
+            Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($user->profile_picture);
             $user->profile_picture = null;
             $user->save();
         }

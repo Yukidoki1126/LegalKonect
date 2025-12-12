@@ -459,7 +459,7 @@ class LawyerDashboardController extends Controller
             // Payment info for direct client payments
             'gcash_number' => $lawyer->gcash_number,
             'gcash_account_name' => $lawyer->gcash_account_name,
-            'gcash_qr_code' => $lawyer->gcash_qr_code ? Storage::url($lawyer->gcash_qr_code) : null,
+            'gcash_qr_code' => $lawyer->gcash_qr_code ? Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($lawyer->gcash_qr_code) : null,
             'bank_name' => $lawyer->bank_name,
             'bank_account_number' => $lawyer->bank_account_number,
             'bank_account_name' => $lawyer->bank_account_name,
@@ -505,11 +505,11 @@ class LawyerDashboardController extends Controller
         if ($request->hasFile('profile_photo')) {
             // Delete old profile photo if exists
             if ($lawyer->profile_photo) {
-                Storage::disk('public')->delete($lawyer->profile_photo);
+                Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->profile_photo);
             }
 
             // Store new profile photo
-            $path = $request->file('profile_photo')->store('lawyers/' . $lawyer->id, 'public');
+            $path = $request->file('profile_photo')->store('lawyers/' . $lawyer->id, env('FILESYSTEM_DISK', 'public'));
             $lawyer->profile_photo = $path;
         }
 
@@ -592,11 +592,11 @@ class LawyerDashboardController extends Controller
 
         // Delete old profile photo if exists
         if ($lawyer->profile_photo) {
-            Storage::disk('public')->delete($lawyer->profile_photo);
+            Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->profile_photo);
         }
 
         // Store new profile photo
-        $path = $request->file('profile_photo')->store('lawyers/' . $lawyer->id, 'public');
+        $path = $request->file('profile_photo')->store('lawyers/' . $lawyer->id, env('FILESYSTEM_DISK', 'public'));
 
         $lawyer->profile_photo = $path;
         $lawyer->save();
@@ -604,7 +604,7 @@ class LawyerDashboardController extends Controller
         return response()->json([
             'message' => 'Profile photo uploaded successfully',
             'lawyer' => $lawyer,
-            'profile_photo_url' => Storage::disk('public')->url($path)
+            'profile_photo_url' => Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($path)
         ]);
     }
 
@@ -622,7 +622,7 @@ class LawyerDashboardController extends Controller
         }
 
         if ($lawyer->profile_photo) {
-            Storage::disk('public')->delete($lawyer->profile_photo);
+            Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->profile_photo);
             $lawyer->profile_photo = null;
             $lawyer->save();
         }
@@ -836,7 +836,7 @@ class LawyerDashboardController extends Controller
                 'payment_info' => [
                     'gcash_number' => $lawyer->gcash_number,
                     'gcash_account_name' => $lawyer->gcash_account_name,
-                    'gcash_qr_code' => $lawyer->gcash_qr_code ? Storage::url($lawyer->gcash_qr_code) : null,
+                    'gcash_qr_code' => $lawyer->gcash_qr_code ? Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($lawyer->gcash_qr_code) : null,
                     'bank_name' => $lawyer->bank_name,
                     'bank_account_number' => $lawyer->bank_account_number,
                     'bank_account_name' => $lawyer->bank_account_name,
@@ -867,13 +867,13 @@ class LawyerDashboardController extends Controller
 
             // Delete old QR if exists
             if ($lawyer->gcash_qr_code) {
-                Storage::disk('public')->delete($lawyer->gcash_qr_code);
+                Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->gcash_qr_code);
             }
 
             // Store new QR
             $file = $request->file('gcash_qr');
             $filename = 'gcash_qr_' . $lawyer->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('gcash_qr_codes', $filename, 'public');
+            $path = $file->storeAs('gcash_qr_codes', $filename, env('FILESYSTEM_DISK', 'public'));
 
             $lawyer->update(['gcash_qr_code' => $path]);
 
@@ -881,7 +881,7 @@ class LawyerDashboardController extends Controller
 
             return response()->json([
                 'message' => 'GCash QR code uploaded successfully',
-                'gcash_qr_url' => Storage::url($path),
+                'gcash_qr_url' => Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($path),
             ]);
         } catch (\Exception $e) {
             Log::error('Error uploading GCash QR: ' . $e->getMessage());
@@ -902,7 +902,7 @@ class LawyerDashboardController extends Controller
             }
 
             if ($lawyer->gcash_qr_code) {
-                Storage::disk('public')->delete($lawyer->gcash_qr_code);
+                Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->gcash_qr_code);
                 $lawyer->update(['gcash_qr_code' => null]);
             }
 

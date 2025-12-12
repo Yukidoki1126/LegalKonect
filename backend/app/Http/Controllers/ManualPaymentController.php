@@ -37,7 +37,7 @@ class ManualPaymentController extends Controller
                 $paymentMethods['gcash'] = [
                     'number' => $lawyer->gcash_number,
                     'account_name' => $lawyer->gcash_account_name,
-                    'qr_code' => $lawyer->gcash_qr_code ? Storage::url($lawyer->gcash_qr_code) : null,
+                    'qr_code' => $lawyer->gcash_qr_code ? Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($lawyer->gcash_qr_code) : null,
                 ];
             }
 
@@ -89,7 +89,7 @@ class ManualPaymentController extends Controller
             // Store the payment proof
             $file = $request->file('payment_proof');
             $filename = 'payment_proof_' . $appointmentId . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('payment_proofs', $filename, 'public');
+            $path = $file->storeAs('payment_proofs', $filename, env('FILESYSTEM_DISK', 'public'));
 
             // Update appointment
             $appointment->update([
@@ -297,7 +297,7 @@ class ManualPaymentController extends Controller
             }
 
             return response()->json([
-                'payment_proof_url' => Storage::url($appointment->payment_proof),
+                'payment_proof_url' => Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($appointment->payment_proof),
                 'payment_method_used' => $appointment->payment_method_used,
                 'uploaded_at' => $appointment->payment_proof_uploaded_at,
                 'confirmed' => $appointment->payment_confirmed,
