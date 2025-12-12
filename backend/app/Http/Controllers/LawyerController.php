@@ -135,6 +135,7 @@ class LawyerController extends Controller
             'last_name' => $lawyer->last_name,
             'bio' => $lawyer->bio,
             'profile_photo' => $lawyer->profile_photo,
+            'profile_photo_url' => $lawyer->profile_photo_url,
             'license_number' => $lawyer->license_number,
             'years_experience' => $lawyer->years_experience,
             'hourly_rate' => $lawyer->hourly_rate,

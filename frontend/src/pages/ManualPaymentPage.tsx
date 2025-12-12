@@ -199,10 +199,10 @@ const ManualPaymentPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Two Column Layout */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* LEFT COLUMN - Appointment & Payment Method */}
-          <div className="space-y-6">
+        {/* Conditional Layout: Single column when no payment methods, Two columns otherwise */}
+        {noPaymentMethods ? (
+          /* Centered Single Column for No Payment Methods */
+          <div className="max-w-2xl mx-auto space-y-6">
             {/* Appointment Summary Card */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -248,26 +248,76 @@ const ManualPaymentPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Payment Method Selection */}
-            {noPaymentMethods ? (
-              <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center">
-                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-amber-800 mb-2">Payment Info Not Available</h3>
-                <p className="text-amber-700 text-sm mb-4">
-                  The lawyer hasn't set up payment accounts yet.
-                </p>
-                <button
-                  onClick={() => navigate('/appointments')}
-                  className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm"
-                >
-                  Go Back
-                </button>
+            {/* Payment Info Not Available */}
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center">
+              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
               </div>
-            ) : (
+              <h3 className="text-lg font-semibold text-amber-800 mb-2">Payment Info Not Available</h3>
+              <p className="text-amber-700 text-sm mb-4">
+                The lawyer hasn't set up payment accounts yet.
+              </p>
+              <button
+                onClick={() => navigate('/appointments')}
+                className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Two Column Layout when payment methods exist */
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* LEFT COLUMN - Appointment & Payment Method */}
+            <div className="space-y-6">
+              {/* Appointment Summary Card */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">📅</span> Appointment Details
+                </h2>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500">Lawyer</p>
+                    <p className="font-medium text-gray-900">
+                      Atty. {appointment.lawyer.first_name} {appointment.lawyer.last_name}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Date & Time</p>
+                    <p className="font-medium text-gray-900">
+                      {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                      <span className="text-gray-600 ml-2">{appointment.appointment_time}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Fee Summary */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600 text-sm">Total Fee</span>
+                    <span className="font-semibold">₱{appointment.consultation_fee.toLocaleString()}</span>
+                  </div>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">Pay Now</p>
+                        <p className="text-xs text-gray-600">₱{(appointment.consultation_fee - (appointment.lawyer.reservation_fee || 100)).toLocaleString()} due at office</p>
+                      </div>
+                      <span className="text-xl font-bold text-green-600">
+                        ₱{(appointment.lawyer.reservation_fee || 100).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method Selection */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <span className="text-2xl">💳</span> Payment Method
@@ -355,13 +405,11 @@ const ManualPaymentPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* RIGHT COLUMN - Upload & Actions */}
-          <div className="space-y-6">
-            {/* Upload Payment Proof */}
-            {!noPaymentMethods && (
+            {/* RIGHT COLUMN - Upload & Actions */}
+            <div className="space-y-6">
+              {/* Upload Payment Proof */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <span className="text-2xl">📤</span> Upload Payment Proof
@@ -463,9 +511,9 @@ const ManualPaymentPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
