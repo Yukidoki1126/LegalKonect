@@ -233,18 +233,29 @@ public function createProfile(Request $request)
     }
 
     // CRITICAL: Update user role to lawyer BEFORE creating lawyer profile
+    // Using DB::update to bypass any Eloquent caching issues
     $user = $request->user();
+    $userId = $user->id;
     $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
     
-    $user->name = $fullName;
-    $user->role = 'lawyer';
-    $user->save();
+    // Direct DB update to ensure role change is committed
+    DB::table('users')
+        ->where('id', $userId)
+        ->update([
+            'name' => $fullName,
+            'role' => 'lawyer',
+            'updated_at' => now()
+        ]);
     
-    \Log::info('User role updated to lawyer BEFORE lawyer profile creation', [
-        'user_id' => $user->id,
+    // Refresh user from database to get updated values
+    $user->refresh();
+    
+    \Log::info('User role updated to lawyer via DB::update', [
+        'user_id' => $userId,
         'email' => $user->email,
         'role' => $user->role,
-        'name' => $user->name
+        'name' => $user->name,
+        'db_role_check' => DB::table('users')->where('id', $userId)->value('role')
     ]);
 
     // Create lawyer profile
