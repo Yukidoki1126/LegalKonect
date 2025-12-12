@@ -111,6 +111,27 @@ class AuthController extends Controller
         ]);
     }
 
+    // Check if this user is an admin or super_admin
+    if (in_array($user->role, ['admin', 'super_admin'])) {
+        // Update last login
+        $user->update(['last_login_at' => now()]);
+
+        // Create token
+        $token = $user->createToken('admin-token')->plainTextToken;
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'is_admin' => true,
+            ],
+            'token' => $token,
+            'redirect' => '/admin',
+        ]);
+    }
+
     // Load lawyer relationship with status
     $user->load('lawyer');
 
@@ -128,6 +149,7 @@ class AuthController extends Controller
             'latitude' => $user->latitude,
             'longitude' => $user->longitude,
             'profile_picture' => $user->profile_picture,
+            'role' => $user->role,
             'is_admin' => false,
             'lawyer' => $user->lawyer ? [
                 'id' => $user->lawyer->id,
