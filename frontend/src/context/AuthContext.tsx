@@ -143,8 +143,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await api.post('/auth/login', { email, password });
       const { token: newToken, user: newUser, redirect } = response.data;
 
-      // Check if this is an admin login
-      if (newUser.is_admin) {
+      // Check if this is an admin or super admin login
+      if (newUser.role === 'admin' || newUser.role === 'super_admin') {
         // Store admin data in sessionStorage (admin uses separate storage)
         sessionStorage.setItem('admin_token', newToken);
         sessionStorage.setItem('admin', JSON.stringify({
