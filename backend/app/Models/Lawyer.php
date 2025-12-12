@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Lawyer extends Model
 {
@@ -68,6 +69,8 @@ class Lawyer extends Model
         'roll_of_attorneys_number' => 'encrypted',
         'prc_license_number' => 'encrypted',
     ];
+
+    protected $appends = ['profile_photo_url', 'gcash_qr_url'];
 
     // Relationship with User
     public function user()
@@ -242,7 +245,20 @@ public function getProfilePhotoUrlAttribute()
     if (!$this->profile_photo) {
         return null;
     }
-    return \Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($this->profile_photo);
+    
+    $disk = env('FILESYSTEM_DISK', 'public');
+    
+    // For R2 storage, construct the full public URL
+    if ($disk === 'r2' || $disk === 'r2-private') {
+        $publicUrl = env('R2_PUBLIC_URL');
+        if ($publicUrl) {
+            $publicUrl = rtrim($publicUrl, '/');
+            $path = ltrim($this->profile_photo, '/');
+            return $publicUrl . '/' . $path;
+        }
+    }
+    
+    return Storage::disk($disk)->url($this->profile_photo);
 }
 
 // Helper: Get GCash QR URL
@@ -251,6 +267,19 @@ public function getGcashQrUrlAttribute()
     if (!$this->gcash_qr_code) {
         return null;
     }
-    return \Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($this->gcash_qr_code);
+    
+    $disk = env('FILESYSTEM_DISK', 'public');
+    
+    // For R2 storage, construct the full public URL
+    if ($disk === 'r2' || $disk === 'r2-private') {
+        $publicUrl = env('R2_PUBLIC_URL');
+        if ($publicUrl) {
+            $publicUrl = rtrim($publicUrl, '/');
+            $path = ltrim($this->gcash_qr_code, '/');
+            return $publicUrl . '/' . $path;
+        }
+    }
+    
+    return Storage::disk($disk)->url($this->gcash_qr_code);
 }
 }

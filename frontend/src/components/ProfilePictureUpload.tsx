@@ -41,7 +41,9 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
   const getImageUrl = (path: string | null | undefined) => {
     if (!path) return null;
-    if (path.startsWith('http')) return path;
+    // If it's already a full URL (http/https), use it directly
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    // Otherwise, construct the URL using STORAGE_URL
     return `${STORAGE_URL}/storage/${path}`;
   };
 

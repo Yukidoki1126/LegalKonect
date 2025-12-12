@@ -5,6 +5,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -48,6 +49,8 @@ class User extends Authenticatable
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
     ];
+
+    protected $appends = ['profile_picture_url'];
 
     public function lawyer()
     {
@@ -126,6 +129,21 @@ class User extends Authenticatable
         if (!$this->profile_picture) {
             return null;
         }
-        return \Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($this->profile_picture);
+        
+        $disk = env('FILESYSTEM_DISK', 'public');
+        
+        // For R2 storage, construct the full public URL
+        if ($disk === 'r2' || $disk === 'r2-private') {
+            $publicUrl = env('R2_PUBLIC_URL');
+            if ($publicUrl) {
+                // Remove any trailing slash from public URL and leading slash from path
+                $publicUrl = rtrim($publicUrl, '/');
+                $path = ltrim($this->profile_picture, '/');
+                return $publicUrl . '/' . $path;
+            }
+        }
+        
+        // Fallback to Storage::url for local/public disk
+        return Storage::disk($disk)->url($this->profile_picture);
     }
 }

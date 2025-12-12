@@ -149,6 +149,7 @@ class AuthController extends Controller
             'latitude' => $user->latitude,
             'longitude' => $user->longitude,
             'profile_picture' => $user->profile_picture,
+            'profile_picture_url' => $user->profile_picture_url,
             'role' => $user->role,
             'is_admin' => false,
             'lawyer' => $user->lawyer ? [
@@ -289,10 +290,12 @@ public function updateProfile(Request $request)
         $user->profile_picture = $path;
         $user->save();
 
+        // Refresh the user to get the appended attributes
+        $user->refresh();
+
         return response()->json([
             'message' => 'Profile picture uploaded successfully',
-            'user' => $user,
-            'profile_picture_url' => Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($path)
+            'user' => $user
         ]);
     }
 

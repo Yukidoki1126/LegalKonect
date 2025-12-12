@@ -42,11 +42,17 @@ const Navigation: React.FC = () => {
   };
 
   const getProfilePictureUrl = () => {
+    // Prioritize profile_picture_url which contains the full URL
+    if (user?.profile_picture_url) {
+      return user.profile_picture_url;
+    }
+    // Fallback to profile_picture (for backwards compatibility)
     if (user?.profile_picture) {
       return user.profile_picture.startsWith('http')
         ? user.profile_picture
         : `${STORAGE_URL}/storage/${user.profile_picture}`;
     }
+    // Check for lawyer profile photo
     if (user?.lawyer?.profile_photo) {
       return user.lawyer.profile_photo.startsWith('http')
         ? user.lawyer.profile_photo

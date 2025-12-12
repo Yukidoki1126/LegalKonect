@@ -173,12 +173,13 @@ const Dashboard: React.FC = () => {
               <div className="relative flex flex-col items-center text-center pt-4">
                 <div className="relative mb-4">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg border-4 border-white overflow-hidden">
-                    {user?.profile_picture ? (
+                    {(user?.profile_picture_url || user?.profile_picture) ? (
                       <img
                         src={
-                          user.profile_picture.startsWith('http')
+                          user.profile_picture_url ||
+                          (user.profile_picture?.startsWith('http')
                             ? user.profile_picture
-                            : `${STORAGE_URL}/storage/${user.profile_picture}`
+                            : `${STORAGE_URL}/storage/${user.profile_picture}`)
                         }
                         alt={user.name}
                         className="w-full h-full object-cover"

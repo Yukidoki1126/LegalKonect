@@ -28,6 +28,7 @@ interface User {
   email: string;
   phone?: string;
   profile_picture?: string | null;
+  profile_picture_url?: string | null;
   address?: string;
   city?: string;
   province?: string;

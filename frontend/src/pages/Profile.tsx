@@ -227,7 +227,7 @@ const Profile: React.FC = () => {
           <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-purple-50/20">
             <div className="flex items-center gap-6">
               <ProfilePictureUpload
-                currentPicture={user?.profile_picture}
+                currentPicture={user?.profile_picture_url || user?.profile_picture}
                 onUpload={handleProfilePictureUpload}
                 onDelete={handleProfilePictureDelete}
                 isUploading={uploadingPicture}
