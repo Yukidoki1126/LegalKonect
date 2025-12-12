@@ -58,6 +58,11 @@ EXPOSE 80
 # Create startup script that runs migrations and starts Apache
 RUN echo '#!/bin/bash\n\
 set -e\n\
+echo "Clearing all caches..."\n\
+php artisan cache:clear || true\n\
+php artisan config:clear || true\n\
+php artisan route:clear || true\n\
+php artisan view:clear || true\n\
 echo "Running migrations..."\n\
 php artisan migrate --force --no-interaction\n\
 echo "Dumping autoload..."\n\
