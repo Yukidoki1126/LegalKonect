@@ -252,18 +252,30 @@ public function createProfile(Request $request)
         'prc_license_number' => $validated['prc_license_number'] ?? null,
     ]);
 
-    // Keep the authenticated user's name in sync with the lawyer profile
+    // Keep the authenticated user's name in sync with the lawyer profile and set role to lawyer
     try {
         $user = $request->user();
         if ($user) {
             $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
+            $needsUpdate = false;
+            
             if ($user->name !== $fullName) {
                 $user->name = $fullName;
+                $needsUpdate = true;
+            }
+            
+            // Set role to lawyer when creating lawyer profile
+            if ($user->role !== 'lawyer') {
+                $user->role = 'lawyer';
+                $needsUpdate = true;
+            }
+            
+            if ($needsUpdate) {
                 $user->save();
             }
         }
     } catch (\Exception $e) {
-        \Log::warning('Failed to sync user.name after creating lawyer profile', ['user_id' => $request->user()?->id, 'error' => $e->getMessage()]);
+        \Log::warning('Failed to sync user data after creating lawyer profile', ['user_id' => $request->user()?->id, 'error' => $e->getMessage()]);
     }
 
     // Attach specializations
