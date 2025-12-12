@@ -635,13 +635,20 @@ const LawyerAppointments: React.FC = () => {
     }
     
     // For active appointments:
-    // - Payment confirmed = Partially Paid (green)
-    // - Payment not confirmed = Pending (yellow/orange)
+    // - Payment confirmed by lawyer = Partially Paid (green)
+    // - Payment proof uploaded but not yet reviewed = For Confirmation (orange)
+    // - Payment proof rejected = Unpaid (gray)
+    // - Payment not made yet = Unpaid (gray)
     if (appointment.payment_confirmed === true) {
       return { label: 'Partially Paid', color: 'bg-green-100 text-green-800 border border-green-300' };
     }
     
-    return { label: 'Pending', color: 'bg-orange-100 text-orange-800 border border-orange-300' };
+    // Check if payment proof was uploaded and is pending review
+    if (appointment.payment_proof && appointment.payment_confirmed === null) {
+      return { label: 'For Confirmation', color: 'bg-orange-100 text-orange-800 border border-orange-300' };
+    }
+    
+    return { label: 'Unpaid', color: 'bg-gray-100 text-gray-800 border border-gray-300' };
   };
 
   const getStatusBadge = (status: string) => {
@@ -1322,7 +1329,13 @@ const LawyerAppointments: React.FC = () => {
                     <p className="text-2xl font-bold text-gray-900">
                       ₱{(appointment.reservation_fee || 100).toLocaleString()}
                     </p>
-                    <p className="text-xs text-green-600 font-medium">Reservation Fee Paid</p>
+                    {appointment.payment_status === 'paid' ? (
+                      <p className="text-xs text-green-600 font-medium">Reservation Fee Paid</p>
+                    ) : appointment.payment_proof ? (
+                      <p className="text-xs text-orange-600 font-medium">Payment Proof Pending Review</p>
+                    ) : (
+                      <p className="text-xs text-red-600 font-medium">Reservation Fee Unpaid</p>
+                    )}
                     {appointment.consultation_fee && (
                       <p className="text-xs text-gray-500 mt-1">
                         Balance Due: ₱{(appointment.consultation_fee - (appointment.reservation_fee || 100)).toLocaleString()}
