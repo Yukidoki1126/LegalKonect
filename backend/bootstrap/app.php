@@ -21,10 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register custom middleware aliases
         $middleware->alias([
             'lawyer' => EnsureLawyer::class,
-            'admin' => EnsureAdmin::class,
+            'admin' => IsAdmin::class, // Changed to use IsAdmin for User model with role check
             'role' => CheckRole::class,
             'superadmin' => IsSuperAdmin::class,
             'isadmin' => IsAdmin::class,
+            'ensureadmin' => EnsureAdmin::class, // Keep old middleware available if needed
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
