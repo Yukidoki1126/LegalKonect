@@ -37,6 +37,7 @@ interface Lawyer {
   last_name: string;
   bio: string;
   profile_photo?: string | null;
+  profile_photo_url?: string | null;
   experience_years: number;
   hourly_rate: number;
   office_address: string;
@@ -213,12 +214,13 @@ const LawyerDetail: React.FC = () => {
                 {/* Profile Photo */}
                 <div className="flex-shrink-0">
                   <div className="w-28 h-28 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl overflow-hidden border-2 border-white shadow-lg ring-4 ring-blue-50">
-                    {lawyer.profile_photo ? (
+                    {(lawyer.profile_photo_url || lawyer.profile_photo) ? (
                       <img
                         src={
-                          lawyer.profile_photo.startsWith('http')
+                          lawyer.profile_photo_url ||
+                          (lawyer.profile_photo?.startsWith('http')
                             ? lawyer.profile_photo
-                            : `${STORAGE_URL}/storage/${lawyer.profile_photo}`
+                            : `${STORAGE_URL}/storage/${lawyer.profile_photo}`)
                         }
                         alt={fullName}
                         className="w-full h-full object-cover"
