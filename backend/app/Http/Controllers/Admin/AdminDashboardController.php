@@ -173,7 +173,7 @@ class AdminDashboardController extends Controller
                     'email' => $user->email,
                     'phone' => $user->phone,
                     'status' => $user->status,
-                    'is_lawyer' => $user->lawyer !== null,
+                    'is_lawyer' => $user->role === 'lawyer', // Use role field instead of lawyer relationship
                     'lawyer_id' => $user->lawyer ? $user->lawyer->id : null,
                     'total_appointments' => $user->lawyer ? $lawyerAppointments : $user->appointments_count,
                     'created_at' => $user->created_at,
