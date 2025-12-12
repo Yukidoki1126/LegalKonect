@@ -27,6 +27,14 @@ const Navigation: React.FC = () => {
   const isLawyer = !!user?.lawyer;
   const isApprovedLawyer = user?.lawyer?.status === 'approved';
 
+  const getRoleDisplay = () => {
+    if (!user) return 'Guest';
+    if (user.role === 'super_admin') return 'Super Admin';
+    if (user.role === 'admin') return 'Admin';
+    if (isLawyer) return isApprovedLawyer ? 'Verified Lawyer' : 'Pending Approval';
+    return 'Client';
+  };
+
   const handleLogout = () => {
     logout();
     setShowDropdown(false);
@@ -150,7 +158,7 @@ const Navigation: React.FC = () => {
                         {user.name}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {isLawyer ? 'Lawyer' : 'Client'}
+                        {getRoleDisplay()}
                       </span>
                     </div>
                     <div className="w-8 h-8 rounded-md border border-gray-200 overflow-hidden bg-blue-50">
@@ -205,16 +213,15 @@ const Navigation: React.FC = () => {
                         </p>
                         <div className="flex items-center mt-2">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
-                            isLawyer
+                            user.role === 'super_admin' || user.role === 'admin'
+                              ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                              : isLawyer
                               ? isApprovedLawyer
                                 ? 'bg-green-50 text-green-700 border border-green-200'
                                 : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
                               : 'bg-blue-50 text-blue-700 border border-blue-200'
                           }`}>
-                            {isLawyer
-                              ? isApprovedLawyer ? 'Verified Lawyer' : 'Pending Approval'
-                              : 'Client'
-                            }
+                            {getRoleDisplay()}
                           </span>
                         </div>
                       </div>
@@ -321,16 +328,15 @@ const Navigation: React.FC = () => {
                           {user.email}
                         </p>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium mt-1 ${
-                          isLawyer
+                          user.role === 'super_admin' || user.role === 'admin'
+                            ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                            : isLawyer
                             ? isApprovedLawyer
                               ? 'bg-green-50 text-green-700 border border-green-200'
                               : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
                             : 'bg-blue-50 text-blue-700 border border-blue-200'
                         }`}>
-                          {isLawyer
-                            ? isApprovedLawyer ? 'Verified Lawyer' : 'Pending Approval'
-                            : 'Client'
-                          }
+                          {getRoleDisplay()}
                         </span>
                       </div>
                     </div>
