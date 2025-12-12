@@ -16,6 +16,7 @@ export interface Lawyer {
   rating?: number;
   total_reviews?: number;
   profile_photo?: string | null;
+  profile_photo_url?: string | null;
   office_address?: string;
   office_latitude?: string;
   office_longitude?: string;

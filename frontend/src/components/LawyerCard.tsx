@@ -17,8 +17,13 @@ const LawyerCard: React.FC<LawyerCardProps> = ({ lawyer }) => {
   const rate = lawyer.consultation_fee || lawyer.hourly_rate || 0;
   const specs = lawyer.specializations || [];
 
-  // Get profile photo URL
+  // Get profile photo URL - prioritize the full URL from backend
   const getProfilePhotoUrl = () => {
+    // If backend provides full URL, use it
+    if (lawyer.profile_photo_url) {
+      return lawyer.profile_photo_url;
+    }
+    // Fallback to manual construction for backward compatibility
     if (!lawyer.profile_photo) return null;
     if (lawyer.profile_photo.startsWith('http')) return lawyer.profile_photo;
     return `${STORAGE_URL}/storage/${lawyer.profile_photo}`;
