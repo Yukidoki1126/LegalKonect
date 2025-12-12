@@ -232,89 +232,98 @@ public function createProfile(Request $request)
         ], 422);
     }
 
-    // CRITICAL: Update user role to lawyer BEFORE creating lawyer profile
-    // Using DB::update to bypass any Eloquent caching issues
-    $user = $request->user();
-    $userId = $user->id;
-    $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
-    
-    // Direct DB update to ensure role change is committed
-    DB::table('users')
-        ->where('id', $userId)
-        ->update([
-            'name' => $fullName,
-            'role' => 'lawyer',
-            'updated_at' => now()
-        ]);
-    
-    // Refresh user from database to get updated values
-    $user->refresh();
-    
-    \Log::info('User role updated to lawyer via DB::update', [
-        'user_id' => $userId,
-        'email' => $user->email,
-        'role' => $user->role,
-        'name' => $user->name,
-        'db_role_check' => DB::table('users')->where('id', $userId)->value('role')
-    ]);
-
-    // Create lawyer profile
-    $lawyer = Lawyer::create([
-        'user_id' => $user->id,
-        'first_name' => $validated['first_name'],
-        'last_name' => $validated['last_name'],
-        'bio' => $validated['bio'] ?? null,
-        'license_number' => $validated['license_number'],
-        'years_experience' => $validated['years_experience'],
-        'hourly_rate' => $validated['hourly_rate'],
-        'office_address' => $validated['office_address'],
-        'office_phone' => $validated['office_phone'] ?? null,
-        'office_latitude' => $validated['office_latitude'] ?? 0,
-        'office_longitude' => $validated['office_longitude'] ?? 0,
-        'status' => 'pending',
-        'verification_status' => 'pending',
-        'ibp_number' => $validated['ibp_number'],
-        'roll_of_attorneys_number' => $validated['roll_of_attorneys_number'] ?? null,
-        'prc_license_number' => $validated['prc_license_number'] ?? null,
-    ]);
-
-    // Attach specializations
-    $lawyer->specializations()->sync($validated['specialization_ids']);
-
-    // Upload verification documents
-    $encryptionService = app(EncryptionService::class);
-    $verificationService = new LawyerVerificationService($encryptionService);
-    $documents = [];
-
-    if ($request->hasFile('ibp_card')) {
-        $documents['ibp_card'] = $request->file('ibp_card');
-    }
-    if ($request->hasFile('prc_license')) {
-        $documents['prc_license'] = $request->file('prc_license');
-    }
-    if ($request->hasFile('government_id')) {
-        $documents['government_id'] = $request->file('government_id');
-    }
-    if ($request->hasFile('good_standing_cert')) {
-        $documents['good_standing_cert'] = $request->file('good_standing_cert');
-    }
-
+    // Wrap everything in a database transaction
     try {
-        $uploadedPaths = $verificationService->uploadVerificationDocuments($documents, $lawyer->id);
-        $lawyer->update(['verification_documents' => $uploadedPaths]);
+        return DB::transaction(function() use ($request, $validated) {
+            $user = $request->user();
+            $userId = $user->id;
+            $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
+            
+            // Update user role to lawyer
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'name' => $fullName,
+                    'role' => 'lawyer',
+                    'updated_at' => now()
+                ]);
+            
+            $user->refresh();
+            
+            \Log::info('User role updated to lawyer', [
+                'user_id' => $userId,
+                'email' => $user->email,
+                'role' => $user->role,
+                'name' => $user->name
+            ]);
+
+            // Create lawyer profile
+            $lawyer = Lawyer::create([
+                'user_id' => $userId,
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'bio' => $validated['bio'] ?? null,
+                'license_number' => $validated['license_number'],
+                'years_experience' => $validated['years_experience'],
+                'hourly_rate' => $validated['hourly_rate'],
+                'office_address' => $validated['office_address'],
+                'office_phone' => $validated['office_phone'] ?? null,
+                'office_latitude' => $validated['office_latitude'] ?? 0,
+                'office_longitude' => $validated['office_longitude'] ?? 0,
+                'status' => 'pending',
+                'verification_status' => 'pending',
+                'ibp_number' => $validated['ibp_number'],
+                'roll_of_attorneys_number' => $validated['roll_of_attorneys_number'] ?? null,
+                'prc_license_number' => $validated['prc_license_number'] ?? null,
+            ]);
+
+            // Attach specializations
+            $lawyer->specializations()->sync($validated['specialization_ids']);
+
+            // Upload verification documents
+            $encryptionService = app(EncryptionService::class);
+            $verificationService = new LawyerVerificationService($encryptionService);
+            $documents = [];
+
+            if ($request->hasFile('ibp_card')) {
+                $documents['ibp_card'] = $request->file('ibp_card');
+            }
+            if ($request->hasFile('prc_license')) {
+                $documents['prc_license'] = $request->file('prc_license');
+            }
+            if ($request->hasFile('government_id')) {
+                $documents['government_id'] = $request->file('government_id');
+            }
+            if ($request->hasFile('good_standing_cert')) {
+                $documents['good_standing_cert'] = $request->file('good_standing_cert');
+            }
+
+            $uploadedPaths = $verificationService->uploadVerificationDocuments($documents, $lawyer->id);
+            $lawyer->update(['verification_documents' => $uploadedPaths]);
+
+            \Log::info('Lawyer profile created successfully', [
+                'lawyer_id' => $lawyer->id,
+                'user_id' => $userId,
+                'verification_status' => $lawyer->verification_status
+            ]);
+
+            return response()->json([
+                'message' => 'Lawyer profile created successfully. Your application is pending admin verification.',
+                'lawyer' => $lawyer->load('specializations')
+            ], 201);
+        });
     } catch (\Exception $e) {
-        // If document upload fails, delete the lawyer profile and return error
-        $lawyer->delete();
+        \Log::error('Lawyer profile creation failed', [
+            'user_id' => $request->user()->id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
         return response()->json([
-            'message' => 'Failed to upload verification documents',
+            'message' => 'Failed to create lawyer profile',
             'error' => $e->getMessage()
         ], 500);
     }
-
-    return response()->json([
-        'message' => 'Lawyer profile created successfully. Your application is pending admin verification.',
-        'lawyer' => $lawyer->load('specializations')
-    ], 201);
 }
 
     /**
