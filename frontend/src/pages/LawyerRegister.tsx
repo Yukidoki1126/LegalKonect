@@ -438,14 +438,21 @@ const LawyerRegister = () => {
         }
       });
 
+      // Debug: Log token being sent
+      console.log('Sending lawyer profile request with token:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+
       const lawyerResponse = await fetch(`${API_BASE_URL}/lawyer/profile`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
           // Note: Do NOT set Content-Type header - browser will set it with boundary for multipart/form-data
         },
         body: formDataToSend
       });
+
+      // Debug: Log response status
+      console.log('Lawyer profile response status:', lawyerResponse.status, lawyerResponse.statusText);
 
       if (!lawyerResponse.ok) {
         const errorData = await lawyerResponse.json();
