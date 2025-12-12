@@ -253,29 +253,25 @@ public function createProfile(Request $request)
     ]);
 
     // Keep the authenticated user's name in sync with the lawyer profile and set role to lawyer
-    try {
-        $user = $request->user();
-        if ($user) {
-            $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
-            $needsUpdate = false;
-            
-            if ($user->name !== $fullName) {
-                $user->name = $fullName;
-                $needsUpdate = true;
-            }
-            
-            // Set role to lawyer when creating lawyer profile
-            if ($user->role !== 'lawyer') {
-                $user->role = 'lawyer';
-                $needsUpdate = true;
-            }
-            
-            if ($needsUpdate) {
-                $user->save();
-            }
+    $user = $request->user();
+    if ($user) {
+        $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
+        
+        // Update user name
+        if ($user->name !== $fullName) {
+            $user->name = $fullName;
         }
-    } catch (\Exception $e) {
-        \Log::warning('Failed to sync user data after creating lawyer profile', ['user_id' => $request->user()?->id, 'error' => $e->getMessage()]);
+        
+        // CRITICAL: Set role to lawyer when creating lawyer profile
+        $user->role = 'lawyer';
+        $user->save();
+        
+        \Log::info('User role updated to lawyer', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'role' => $user->role,
+            'name' => $user->name
+        ]);
     }
 
     // Attach specializations
