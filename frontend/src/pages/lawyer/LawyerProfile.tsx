@@ -104,7 +104,7 @@ const LawyerProfile: React.FC = () => {
   const fetchProfile = async () => {
     try {
       const data = await lawyerApi.getProfile();
-      setCurrentProfilePhoto(data.profile_photo || null);
+      setCurrentProfilePhoto(data.profile_photo_url || data.profile_photo || null);
       setVerificationStatus(data.verification_status || null);
       setVerifiedAt(data.verified_at || null);
       setVerificationNotes(data.verification_notes || null);
@@ -242,8 +242,12 @@ const LawyerProfile: React.FC = () => {
       const response = await lawyerApi.uploadProfilePhoto(file);
       console.log('Upload response:', response);
 
-      // Handle both response structures
-      const profilePhoto = response.lawyer?.profile_photo || response.profile_photo || null;
+      // Prioritize profile_photo_url for R2 storage compatibility
+      const profilePhoto = response.lawyer?.profile_photo_url || 
+                          response.lawyer?.profile_photo || 
+                          response.profile_photo_url || 
+                          response.profile_photo || 
+                          null;
       setCurrentProfilePhoto(profilePhoto);
       setSuccessMessage('Profile photo uploaded successfully!');
       setShowSuccessModal(true);

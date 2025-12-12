@@ -448,6 +448,7 @@ class LawyerDashboardController extends Controller
             'office_phone' => $lawyer->office_phone,
             'office_hours' => $lawyer->office_hours,
             'profile_photo' => $lawyer->profile_photo,
+            'profile_photo_url' => $lawyer->profile_photo_url,
             'status' => $lawyer->status,
             'rating' => $lawyer->rating,
             'total_reviews' => $lawyer->total_reviews,
@@ -459,7 +460,8 @@ class LawyerDashboardController extends Controller
             // Payment info for direct client payments
             'gcash_number' => $lawyer->gcash_number,
             'gcash_account_name' => $lawyer->gcash_account_name,
-            'gcash_qr_code' => $lawyer->gcash_qr_code ? Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($lawyer->gcash_qr_code) : null,
+            'gcash_qr_code' => $lawyer->gcash_qr_code,
+            'gcash_qr_url' => $lawyer->gcash_qr_url,
             'bank_name' => $lawyer->bank_name,
             'bank_account_number' => $lawyer->bank_account_number,
             'bank_account_name' => $lawyer->bank_account_name,
@@ -601,10 +603,12 @@ class LawyerDashboardController extends Controller
         $lawyer->profile_photo = $path;
         $lawyer->save();
 
+        // Refresh the lawyer to get the appended attributes
+        $lawyer->refresh();
+
         return response()->json([
             'message' => 'Profile photo uploaded successfully',
-            'lawyer' => $lawyer,
-            'profile_photo_url' => Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($path)
+            'lawyer' => $lawyer
         ]);
     }
 
@@ -836,7 +840,8 @@ class LawyerDashboardController extends Controller
                 'payment_info' => [
                     'gcash_number' => $lawyer->gcash_number,
                     'gcash_account_name' => $lawyer->gcash_account_name,
-                    'gcash_qr_code' => $lawyer->gcash_qr_code ? Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($lawyer->gcash_qr_code) : null,
+                    'gcash_qr_code' => $lawyer->gcash_qr_code,
+                    'gcash_qr_url' => $lawyer->gcash_qr_url,
                     'bank_name' => $lawyer->bank_name,
                     'bank_account_number' => $lawyer->bank_account_number,
                     'bank_account_name' => $lawyer->bank_account_name,
@@ -877,11 +882,14 @@ class LawyerDashboardController extends Controller
 
             $lawyer->update(['gcash_qr_code' => $path]);
 
+            // Refresh to get appended attributes
+            $lawyer->refresh();
+
             Log::info('GCash QR uploaded', ['lawyer_id' => $lawyer->id]);
 
             return response()->json([
                 'message' => 'GCash QR code uploaded successfully',
-                'gcash_qr_url' => Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($path),
+                'gcash_qr_url' => $lawyer->gcash_qr_url,
             ]);
         } catch (\Exception $e) {
             Log::error('Error uploading GCash QR: ' . $e->getMessage());
