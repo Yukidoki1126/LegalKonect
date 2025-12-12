@@ -64,6 +64,8 @@ echo "Dumping autoload..."\n\
 composer dump-autoload\n\
 echo "Seeding specializations..."\n\
 php artisan db:seed --class=SpecializationsTableSeeder --force\n\
+echo "Seeding super admin..."\n\
+php artisan db:seed --class=SuperAdminSeeder --force\n\
 echo "Caching configuration..."\n\
 php artisan config:cache\n\
 echo "Caching routes..."\n\
