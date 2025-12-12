@@ -13,7 +13,13 @@ const adminApi = axios.create({
 
 // Add token to requests
 adminApi.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('admin_token');
+  // Try sessionStorage first (admin login), then localStorage (regular user with admin role)
+  let token = sessionStorage.getItem('admin_token');
+  
+  if (!token) {
+    token = localStorage.getItem('token');
+  }
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

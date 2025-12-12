@@ -20,8 +20,8 @@ const AdminDashboard: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check if admin token exists before loading
-    const token = sessionStorage.getItem('admin_token');
+    // Check if admin token exists before loading (check both sessionStorage and localStorage)
+    const token = sessionStorage.getItem('admin_token') || localStorage.getItem('token');
     console.log('AdminDashboard: Checking token:', token ? 'exists' : 'missing');
     if (!token) {
       navigate('/login');

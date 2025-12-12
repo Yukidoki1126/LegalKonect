@@ -143,9 +143,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await api.post('/auth/login', { email, password });
       const { token: newToken, user: newUser, redirect } = response.data;
 
+      console.log('Login response:', { newUser, redirect, role: newUser.role });
+
       // Check if this is an admin or super admin login
       if (newUser.role === 'admin' || newUser.role === 'super_admin') {
-        // Store admin data in sessionStorage (admin uses separate storage)
+        console.log('Admin detected, redirecting to /admin');
+        // Store admin data in both sessionStorage and localStorage for compatibility
         sessionStorage.setItem('admin_token', newToken);
         sessionStorage.setItem('admin', JSON.stringify({
           id: newUser.id,
@@ -153,9 +156,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           email: newUser.email,
           role: newUser.role,
         }));
+        // Also store in localStorage as backup for admin API calls
+        localStorage.setItem('token', newToken);
+        localStorage.setItem('user', JSON.stringify(newUser));
+        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         return redirect || '/admin';
       }
 
+      console.log('Regular user login');
       // Regular user login
       setToken(newToken);
       setUser(newUser);
