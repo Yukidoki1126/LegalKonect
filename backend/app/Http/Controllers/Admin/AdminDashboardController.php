@@ -460,25 +460,25 @@ class AdminDashboardController extends Controller
         // Appointment trends over time (daily)
         $appointmentTrends = DB::table('appointments')
             ->select(
-                DB::raw('CAST(created_at AS DATE) as date'),
+                DB::raw('DATE(created_at) as date'),
                 DB::raw('COUNT(*) as total'),
                 DB::raw('SUM(CASE WHEN status = \'confirmed\' THEN 1 ELSE 0 END) as confirmed'),
                 DB::raw('SUM(CASE WHEN status = \'completed\' THEN 1 ELSE 0 END) as completed'),
                 DB::raw('SUM(CASE WHEN status = \'cancelled\' THEN 1 ELSE 0 END) as cancelled')
             )
             ->where('created_at', '>=', $startDate)
-            ->groupBy(DB::raw('CAST(created_at AS DATE)'))
+            ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy('date', 'asc')
             ->get();
         
         // Peak booking hours
         $peakHours = DB::table('appointments')
             ->select(
-                DB::raw('DATEPART(HOUR, created_at) as hour'),
+                DB::raw('HOUR(created_at) as hour'),
                 DB::raw('COUNT(*) as count')
             )
             ->where('created_at', '>=', $startDate)
-            ->groupBy(DB::raw('DATEPART(HOUR, created_at)'))
+            ->groupBy(DB::raw('HOUR(created_at)'))
             ->orderBy('count', 'desc')
             ->limit(5)
             ->get();
