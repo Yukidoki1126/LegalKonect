@@ -248,8 +248,8 @@ const AdminVerifications: React.FC = () => {
           </div>
         </div>
 
-        {/* Lawyers Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        {/* Lawyers Table - Desktop */}
+        <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -334,6 +334,73 @@ const AdminVerifications: React.FC = () => {
                 Showing {filteredLawyers.length} of {lawyers.length} pending verifications
               </p>
             </div>
+          )}
+        </div>
+
+        {/* Lawyers Cards - Mobile */}
+        <div className="md:hidden space-y-3">
+          {filteredLawyers.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+              <svg className="w-12 h-12 text-green-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-gray-900 font-medium">All caught up!</p>
+              <p className="text-gray-500 text-sm mt-1">No pending verifications at the moment.</p>
+            </div>
+          ) : (
+            filteredLawyers.map((lawyer) => (
+              <div key={lawyer.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-lg">
+                      {lawyer.first_name.charAt(0)}{lawyer.last_name.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">
+                      {lawyer.first_name} {lawyer.last_name}
+                    </h3>
+                    <p className="text-xs text-gray-600 truncate">{lawyer.user?.email || lawyer.email}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 py-3 border-t border-gray-100">
+                  <div>
+                    <p className="text-xs text-gray-500">IBP Number</p>
+                    <p className="text-sm font-medium text-gray-900">{lawyer.ibp_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">License</p>
+                    <p className="text-sm font-medium text-gray-900">{lawyer.license_number}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500">Specializations</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {lawyer.specializations?.map(s => s.name).join(', ') || 'Not specified'}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500">Submitted</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(lawyer.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => viewLawyerDetails(lawyer)}
+                    className="w-full px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition text-sm"
+                  >
+                    Review Application
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>

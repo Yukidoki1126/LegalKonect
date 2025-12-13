@@ -390,8 +390,8 @@ const AdminManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Admins Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Admins Table - Desktop */}
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -473,7 +473,88 @@ const AdminManagement: React.FC = () => {
             </tbody>
           </table>
           </div>
+        </div>
 
+        {/* Admins Cards - Mobile */}
+        <div className="md:hidden space-y-3">
+          {filteredAdmins.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+              <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <p className="text-gray-900 font-medium">No admins found</p>
+              <p className="text-gray-500 text-sm mt-1">Try adjusting your search or create a new admin.</p>
+            </div>
+          ) : (
+            filteredAdmins.map((admin) => (
+              <div key={admin.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">{admin.name}</h3>
+                    <p className="text-xs text-gray-600 truncate mt-0.5">{admin.email}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 ml-2">
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getRoleBadgeColor(admin.role)}`}>
+                      {admin.role === 'super_admin' ? 'Super' : 'Admin'}
+                    </span>
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusBadgeColor(admin.status)}`}>
+                      {admin.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 py-3 border-t border-gray-100">
+                  <div>
+                    <p className="text-xs text-gray-500">Last Login</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {admin.last_login_at ? new Date(admin.last_login_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Created</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(admin.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+
+                {admin.id !== currentAdmin.id ? (
+                  <div className="flex gap-2 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => openEditModal(admin)}
+                      className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg font-medium transition text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleSuspendAdmin(admin.id, admin.status)}
+                      className={`flex-1 px-3 py-2 rounded-lg font-medium transition text-sm ${
+                        admin.status === 'active' 
+                          ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                    >
+                      {admin.status === 'active' ? 'Suspend' : 'Activate'}
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(admin)}
+                      className="flex-1 px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-medium transition text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ) : (
+                  <div className="pt-3 border-t border-gray-100 text-center">
+                    <span className="text-gray-400 italic text-sm">Your Account</span>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Empty State */}
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
           {filteredAdmins.length === 0 && (
             <div className="text-center py-12">
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
