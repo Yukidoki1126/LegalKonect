@@ -106,14 +106,21 @@ const LawyerLayout: React.FC = () => {
                 </svg>
               </button>
 
-              <span className="text-lg font-semibold text-gray-900">LegalKonect</span>
+              <div className="flex items-center gap-2">
+                <img 
+                  src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+                  alt="LegalKonect" 
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <span className="text-lg font-semibold text-gray-900">LegalKonect</span>
+              </div>
               <span className="ml-3 text-sm text-gray-500">Lawyer Portal</span>
             </div>
 
            <div className="flex items-center">
   <button
     onClick={handleLogout}
-    className="text-gray-600 hover:text-gray-900 px-3 py-1.5 text-sm font-medium hover:bg-gray-100 rounded-md transition-colors"
+    className="text-red-600 hover:text-red-700 px-3 py-1.5 text-sm font-medium hover:bg-red-50 rounded-md transition-colors"
   >
     Logout
   </button>

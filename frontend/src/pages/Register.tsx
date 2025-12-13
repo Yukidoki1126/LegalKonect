@@ -156,9 +156,11 @@ const Register: React.FC = () => {
         {/* Logo and Header */}
         <div className="text-center">
           <Link to="/" className="inline-flex justify-center mb-6">
-            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-all hover:scale-105">
-              <Scale className="w-10 h-10 text-white" />
-            </div>
+            <img 
+              src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+              alt="LegalKonect" 
+              className="w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 object-cover"
+            />
           </Link>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Create your account

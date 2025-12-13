@@ -32,18 +32,22 @@ const AdminLawyers: React.FC = () => {
 
   // Lock body scroll when modal is open and prevent layout shift
   useEffect(() => {
+    const header = document.getElementById('admin-header');
     if (showConfirmModal || showNotificationModal) {
       // Get scrollbar width before hiding it
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollbarWidth}px`;
+      if (header) header.style.paddingRight = `${scrollbarWidth}px`;
     } else {
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
+      if (header) header.style.paddingRight = '';
     }
     return () => {
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
+      if (header) header.style.paddingRight = '';
     };
   }, [showConfirmModal, showNotificationModal]);
 
@@ -205,83 +209,83 @@ const confirmToggleStatus = async () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Lawyers Management</h1>
-        <p className="text-sm sm:text-base text-gray-600">Manage all lawyers on the platform</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0.5">Lawyers Management</h1>
+        <p className="text-xs sm:text-sm text-gray-600">Manage all lawyers on the platform</p>
       </div>
 
       {/* Stats Summary - Responsive Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-5">
-        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
+        <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Total Lawyers</p>
-              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">{(lawyers || []).length}</p>
+              <p className="text-gray-500 text-xs font-medium">Total Lawyers</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5">{(lawyers || []).length}</p>
             </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Verified</p>
-              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs font-medium">Verified</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5">
                 {(lawyers || []).filter(l => l.status === 'approved').length}
               </p>
             </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-50 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-50 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Pending</p>
-              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs font-medium">Pending</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5">
                 {(lawyers || []).filter(l => l.status === 'pending').length}
               </p>
             </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Rejected</p>
-              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs font-medium">Rejected</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5">
                 {(lawyers || []).filter(l => l.status === 'rejected').length}
               </p>
             </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-50 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-50 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm col-span-2 sm:col-span-1">
+        <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Available Now</p>
-              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-gray-500 text-xs font-medium">Available Now</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5">
                 {(lawyers || []).filter(l => l.status === 'approved' && l.is_available).length}
               </p>
             </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z" />
               </svg>
             </div>
@@ -290,11 +294,11 @@ const confirmToggleStatus = async () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl p-3 sm:p-5 shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row gap-2">
           {/* Search */}
           <div className="flex-1 relative">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -302,7 +306,7 @@ const confirmToggleStatus = async () => {
               placeholder="Search lawyers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
             />
           </div>
 
@@ -310,7 +314,7 @@ const confirmToggleStatus = async () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all sm:min-w-[160px]"
+            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all sm:min-w-[140px]"
           >
             <option value="all">All Status</option>
             <option value="approved">Verified</option>

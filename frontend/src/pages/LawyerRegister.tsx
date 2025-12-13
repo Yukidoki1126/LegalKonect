@@ -593,7 +593,11 @@ const LawyerRegister = () => {
 
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <img src="/logo.png" alt="LegalKonect" className="h-16" />
+            <img 
+              src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+              alt="LegalKonect" 
+              className="h-16 w-16 rounded-full shadow-lg object-cover"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Join LegalKonect</h1>
           <p className="text-gray-600 mt-2">Register as a legal professional and connect with clients</p>

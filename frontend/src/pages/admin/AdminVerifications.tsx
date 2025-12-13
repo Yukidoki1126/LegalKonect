@@ -55,17 +55,21 @@ const AdminVerifications: React.FC = () => {
 
   // Prevent body scroll when modals are open and prevent layout shift
   useEffect(() => {
+    const header = document.getElementById('admin-header');
     if (showDetailModal || showNotificationModal) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollbarWidth}px`;
+      if (header) header.style.paddingRight = `${scrollbarWidth}px`;
     } else {
       document.body.style.overflow = 'unset';
       document.body.style.paddingRight = '';
+      if (header) header.style.paddingRight = '';
     }
     return () => {
       document.body.style.overflow = 'unset';
       document.body.style.paddingRight = '';
+      if (header) header.style.paddingRight = '';
     };
   }, [showDetailModal, showNotificationModal]);
 
