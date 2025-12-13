@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { TrendingUp, Users, Clock, Star, Calendar, BarChart3, PieChart, AlertCircle } from 'lucide-react';
 import adminApi from '../../services/adminApi';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import PageTransition from '../../components/PageTransition';
 
 interface DescriptiveAnalytics {
   top_specializations: { name: string; appointment_count: number }[];
@@ -84,8 +83,7 @@ const AdminAnalytics: React.FC = () => {
   }
 
   return (
-    <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
@@ -348,7 +346,6 @@ const AdminAnalytics: React.FC = () => {
           </div>
         )}
       </div>
-    </PageTransition>
   );
 };
 

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import adminApi from '../../services/adminApi';
-import PageTransition from '../../components/PageTransition';
 
 interface Payment {
   id: number;
@@ -112,7 +111,6 @@ const AdminPayments: React.FC = () => {
   }
 
   return (
-    <PageTransition>
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>

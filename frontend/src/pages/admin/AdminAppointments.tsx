@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import adminApi, { clearAdminCache } from '../../services/adminApi';
-import PageTransition from '../../components/PageTransition';
 
 interface Appointment {
   id: number;
@@ -180,8 +179,7 @@ const AdminAppointments: React.FC = () => {
   }
 
   return (
-    <PageTransition>
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Appointments Management</h1>
@@ -287,8 +285,8 @@ const AdminAppointments: React.FC = () => {
         </div>
       </div>
 
-      {/* Appointments Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      {/* Appointments Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -408,6 +406,71 @@ const AdminAppointments: React.FC = () => {
         </div>
       </div>
 
+      {/* Appointments Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {filteredAppointments.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+            <p className="text-gray-500 text-sm">No appointments found</p>
+          </div>
+        ) : (
+          filteredAppointments.map((appointment) => (
+            <div key={appointment.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-900 truncate">
+                    {appointment.client_name}
+                  </h3>
+                  <p className="text-xs text-gray-600 truncate">{appointment.client_email}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 ml-2">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
+                    {appointment.status}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPaymentColor(appointment.payment_status)}`}>
+                    {appointment.payment_status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 py-3 border-t border-gray-100">
+                <div>
+                  <p className="text-xs text-gray-500">Lawyer</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{appointment.lawyer_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Fee</p>
+                  <p className="text-sm font-medium text-gray-900">₱{appointment.consultation_fee}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Date</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Time</p>
+                  <p className="text-sm font-medium text-gray-900">{appointment.time_slot}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Booked On</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {new Date(appointment.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Pagination */}
       {pagination.lastPage > 1 && (
         <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
@@ -438,7 +501,6 @@ const AdminAppointments: React.FC = () => {
         Showing {filteredAppointments.length} appointments
       </div>
     </div>
-    </PageTransition>
   );
 };
 

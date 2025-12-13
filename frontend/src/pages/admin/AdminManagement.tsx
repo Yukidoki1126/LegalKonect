@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { adminManagementService } from '../../services/adminApi';
+import { adminManagementService } from '../../services/adminManagementService';
 import ConfirmModal from '../../components/ConfirmModal';
 import Toast from '../../components/Toast';
-import PageTransition from '../../components/PageTransition';
 
 interface Admin {
   id: number;
@@ -296,17 +295,16 @@ const AdminManagement: React.FC = () => {
   }
 
   return (
-    <PageTransition>
-      <div className="p-6">
+    <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="mb-6">
+        <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Management</h1>
           <p className="text-gray-600 mt-2">Manage system administrators</p>
         </div>
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
             <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
@@ -366,7 +364,7 @@ const AdminManagement: React.FC = () => {
         )}
 
         {/* Search and Create */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 p-5">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex-1 relative">
               <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -394,6 +392,7 @@ const AdminManagement: React.FC = () => {
 
         {/* Admins Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -473,6 +472,7 @@ const AdminManagement: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
 
           {filteredAdmins.length === 0 && (
             <div className="text-center py-12">
@@ -767,7 +767,7 @@ const AdminManagement: React.FC = () => {
           onClose={closeToast}
         />
       </div>
-    </PageTransition>
+    </div>
   );
 };
 

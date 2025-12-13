@@ -202,8 +202,7 @@ const AdminFaqs = () => {
   });
 
   return (
-    <PageTransition>
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -371,7 +370,7 @@ const AdminFaqs = () => {
           ) : (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[640px]">
                   <thead>
                     <tr className="bg-gray-50">
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Question</th>
@@ -699,7 +698,6 @@ const AdminFaqs = () => {
         </div>
       )}
     </div>
-    </PageTransition>
   );
 };
 

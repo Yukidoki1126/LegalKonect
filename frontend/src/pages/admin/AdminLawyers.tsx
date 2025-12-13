@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import adminApi, { clearAdminCache } from '../../services/adminApi';
-import PageTransition from '../../components/PageTransition';
 interface Lawyer {
   id: number;
   name: string;
@@ -201,7 +200,6 @@ const confirmToggleStatus = async () => {
   }
 
   return (
-    <PageTransition>
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
@@ -694,7 +692,6 @@ const confirmToggleStatus = async () => {
         document.body
       )}
     </div>
-    </PageTransition>
   );
 };
 

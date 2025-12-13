@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import adminApi, { clearAdminCache } from '../../services/adminApi';
-import ConfirmModal from '../../components/ConfirmModal'; 
+import ConfirmModal from '../../components/ConfirmModal';
 import Toast from '../../components/Toast';
-import PageTransition from '../../components/PageTransition';
 
 interface User {
   id: number;
@@ -293,8 +292,7 @@ const AdminUsers: React.FC = () => {
   }
 
   return (
-    <PageTransition>
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Users Management</h1>
@@ -667,7 +665,6 @@ const AdminUsers: React.FC = () => {
         onClose={closeToast}
       />
     </div>
-    </PageTransition>
   );
 };
 

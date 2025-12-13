@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import adminApi from '../../services/adminApi';
-import PageTransition from '../../components/PageTransition';
 
 interface DashboardStats {
   total_users: number;
@@ -130,8 +129,7 @@ const AdminOverview: React.FC = () => {
   }
 
   return (
-    <PageTransition>
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center justify-between">
@@ -376,7 +374,6 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
     </div>
-    </PageTransition>
   );
 };
 
