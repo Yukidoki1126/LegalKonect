@@ -785,20 +785,6 @@ const LawyerAppointments: React.FC = () => {
               </span>
             </button>
             <button
-              onClick={() => handleTabChange('new')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
-                activeTab === 'new' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200/50' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              New Booking
-              <span className={`py-0.5 px-2 rounded-full text-xs ${
-                activeTab === 'new' ? 'bg-white/20' : newBookingCount > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100'
-              }`}>
-                {newBookingCount}
-              </span>
-            </button>
-            <button
               onClick={() => handleTabChange('upcoming')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
                 activeTab === 'upcoming' ? 'bg-purple-600 text-white shadow-lg shadow-purple-200/50' : 'text-gray-600 hover:bg-gray-100'
@@ -922,6 +908,22 @@ const LawyerAppointments: React.FC = () => {
               activeTab === 'all' ? 'bg-white/20' : 'bg-gray-100'
             }`}>
               {allAppointments.length}
+            </span>
+          </button>
+          <button
+            onClick={() => handleTabChange('new')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+              activeTab === 'new'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200/50'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            New Booking
+            <span className={`py-0.5 px-2 rounded-full text-xs ${
+              activeTab === 'new' ? 'bg-white/20' : newBookingCount > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
+            }`}>
+              {newBookingCount}
             </span>
           </button>
           <button

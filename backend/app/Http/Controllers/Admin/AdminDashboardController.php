@@ -276,8 +276,8 @@ class AdminDashboardController extends Controller
 
              $revenueData = Appointment::where('payment_status', 'paid')
                  ->where('created_at', '>=', $startDate)
-                 ->selectRaw('CAST(created_at AS DATE) as date, SUM(consultation_fee) as amount')
-                 ->groupBy(DB::raw('CAST(created_at AS DATE)'))
+                 ->selectRaw('DATE(created_at) as date, SUM(consultation_fee) as amount')
+                 ->groupBy(DB::raw('DATE(created_at)'))
                  ->orderBy('date')
                  ->get();
 
@@ -573,7 +573,7 @@ class AdminDashboardController extends Controller
         $avgResponseTime = DB::table('appointments')
             ->whereIn('status', ['confirmed', 'declined'])
             ->where('created_at', '>=', $startDate)
-            ->select(DB::raw('AVG(DATEDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
+            ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
             ->first();
 
         // Total appointments count (accurate, no JOINs)
