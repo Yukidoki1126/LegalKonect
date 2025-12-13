@@ -123,6 +123,22 @@ const AdminFaqs = () => {
     }
   }, [showAnalytics]);
 
+  // Prevent body scroll when modals are open and prevent layout shift
+  useEffect(() => {
+    if (showModal || showDeleteModal) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '';
+    };
+  }, [showModal, showDeleteModal]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -673,7 +689,7 @@ const AdminFaqs = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" style={{ margin: 0 }}>
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 relative">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">

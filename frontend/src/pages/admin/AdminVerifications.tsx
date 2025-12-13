@@ -53,6 +53,22 @@ const AdminVerifications: React.FC = () => {
     loadLawyers();
   }, []);
 
+  // Prevent body scroll when modals are open and prevent layout shift
+  useEffect(() => {
+    if (showDetailModal || showNotificationModal) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '';
+    };
+  }, [showDetailModal, showNotificationModal]);
+
   const loadLawyers = async (forceRefresh = false) => {
     try {
       setLoading(true);
@@ -437,74 +453,111 @@ const AdminVerifications: React.FC = () => {
               {/* Modal Content */}
               <div className="p-6 space-y-6">
                 {/* Personal Information */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-600">Full Name</label>
-                      <p className="text-gray-900 font-medium">{selectedLawyer.first_name} {selectedLawyer.last_name}</p>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Email</label>
-                      <p className="text-gray-900 font-medium">{selectedLawyer.user?.email}</p>
+                    <h3 className="text-lg font-bold text-gray-900">Personal Information</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Full Name</label>
+                      <p className="text-gray-900 font-semibold mt-1">{selectedLawyer.first_name} {selectedLawyer.last_name}</p>
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Office Phone</label>
-                      <p className="text-gray-900 font-medium">{selectedLawyer.office_phone || 'N/A'}</p>
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+                      <p className="text-gray-900 font-semibold mt-1 break-all">{selectedLawyer.user?.email}</p>
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Years of Experience</label>
-                      <p className="text-gray-900 font-medium">{selectedLawyer.years_experience} years</p>
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Office Phone</label>
+                      <p className="text-gray-900 font-semibold mt-1">{selectedLawyer.office_phone || 'N/A'}</p>
                     </div>
-                    <div className="col-span-2">
-                      <label className="text-sm text-gray-600">Office Address</label>
-                      <p className="text-gray-900 font-medium">{selectedLawyer.office_address}</p>
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Years of Experience</label>
+                      <p className="text-gray-900 font-semibold mt-1">{selectedLawyer.years_experience} years</p>
+                    </div>
+                    <div className="col-span-full bg-white rounded-lg p-3 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Office Address</label>
+                      <p className="text-gray-900 font-semibold mt-1">{selectedLawyer.office_address}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Professional Credentials */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Professional Credentials</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-600">IBP Number</label>
-                      <p className="text-gray-900 font-medium">{selectedLawyer.ibp_number}</p>
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                      </svg>
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-600">License Number</label>
-                      <p className="text-gray-900 font-medium">{selectedLawyer.license_number}</p>
+                    <h3 className="text-lg font-bold text-gray-900">Professional Credentials</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">IBP Number</label>
+                      <p className="text-gray-900 font-semibold mt-1">{selectedLawyer.ibp_number}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">License Number</label>
+                      <p className="text-gray-900 font-semibold mt-1">{selectedLawyer.license_number}</p>
                     </div>
                     {selectedLawyer.prc_license_number && (
-                      <div>
-                        <label className="text-sm text-gray-600">PRC License Number</label>
-                        <p className="text-gray-900 font-medium">{selectedLawyer.prc_license_number}</p>
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">PRC License Number</label>
+                        <p className="text-gray-900 font-semibold mt-1">{selectedLawyer.prc_license_number}</p>
                       </div>
                     )}
                     {selectedLawyer.roll_of_attorneys_number && (
-                      <div>
-                        <label className="text-sm text-gray-600">Roll of Attorneys Number</label>
-                        <p className="text-gray-900 font-medium">{selectedLawyer.roll_of_attorneys_number}</p>
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Roll of Attorneys Number</label>
+                        <p className="text-gray-900 font-semibold mt-1">{selectedLawyer.roll_of_attorneys_number}</p>
                       </div>
                     )}
-                    <div className="col-span-2">
-                      <label className="text-sm text-gray-600">Specializations</label>
-                      <p className="text-gray-900 font-medium">
-                        {selectedLawyer.specializations?.map(s => s.name).join(', ') || 'N/A'}
-                      </p>
+                    <div className="col-span-full bg-white rounded-lg p-3 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Specializations</label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {selectedLawyer.specializations?.map((s) => (
+                          <span key={s.id} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                            {s.name}
+                          </span>
+                        )) || <span className="text-gray-500">N/A</span>}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Verification Documents */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Verification Documents</h3>
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border border-green-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">Verification Documents</h3>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {selectedLawyer.verification_documents && Object.keys(selectedLawyer.verification_documents).map((docType) => (
-                      <div key={docType} className="border border-gray-200 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-900 mb-2 capitalize">
-                          {docType.replace(/_/g, ' ')}
-                        </p>
+                      <div key={docType} className="bg-white border-2 border-green-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-gray-900 capitalize">
+                                {docType.replace(/_/g, ' ')}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">Verification Document</p>
+                            </div>
+                          </div>
+                        </div>
                         {documentUrls[docType] ? (
                           <button
                             onClick={async () => {
@@ -545,16 +598,21 @@ const AdminVerifications: React.FC = () => {
                                 alert(error.message || 'Failed to view document. Please try again.');
                               }
                             }}
-                            className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
                           >
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                             View Document
                           </button>
                         ) : (
-                          <span className="text-gray-500 text-sm">Document not available</span>
+                          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-500 rounded-lg text-sm">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Document not available
+                          </div>
                         )}
                       </div>
                     ))}
@@ -563,9 +621,21 @@ const AdminVerifications: React.FC = () => {
 
                 {/* Action Buttons */}
                 {selectedLawyer.verification_status === 'pending' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-5 border border-gray-200 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">Review Decision</h3>
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-4 border-2 border-gray-200">
+                      <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         Approval Notes (Optional)
                       </label>
                       <textarea
@@ -573,12 +643,15 @@ const AdminVerifications: React.FC = () => {
                         onChange={(e) => setApproveNotes(e.target.value)}
                         placeholder="Add any notes for this approval..."
                         rows={2}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="bg-white rounded-lg p-4 border-2 border-gray-200">
+                      <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         Rejection Reason (Required if rejecting)
                       </label>
                       <textarea
@@ -586,23 +659,29 @@ const AdminVerifications: React.FC = () => {
                         onChange={(e) => setRejectNotes(e.target.value)}
                         placeholder="Provide detailed reason for rejection (minimum 10 characters)..."
                         rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                       />
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="grid grid-cols-2 gap-4 pt-2">
                       <button
                         onClick={handleApproveLawyer}
                         disabled={actionLoading}
-                        className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         {actionLoading ? 'Processing...' : 'Approve & Verify'}
                       </button>
                       <button
                         onClick={handleRejectLawyer}
                         disabled={actionLoading}
-                        className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         {actionLoading ? 'Processing...' : 'Reject'}
                       </button>
                     </div>

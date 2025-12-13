@@ -30,15 +30,20 @@ const AdminLawyers: React.FC = () => {
     currentStatus: string;
   } | null>(null);
 
-  // Lock body scroll when modal is open
+  // Lock body scroll when modal is open and prevent layout shift
   useEffect(() => {
     if (showConfirmModal || showNotificationModal) {
+      // Get scrollbar width before hiding it
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
     } else {
       document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
     }
     return () => {
       document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
     };
   }, [showConfirmModal, showNotificationModal]);
 
@@ -320,13 +325,13 @@ const confirmToggleStatus = async () => {
         <div className="overflow-x-auto">
           <table className="w-full table-fixed border-collapse">
             <colgroup>
-              <col style={{ width: '22%' }} />
-              <col style={{ width: '16%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '11%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '11%' }} />
               <col style={{ width: '20%' }} />
+              <col style={{ width: '22%' }} />
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '18%' }} />
             </colgroup>
             <thead className="bg-gray-50">
               <tr>

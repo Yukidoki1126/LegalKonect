@@ -80,6 +80,22 @@ const AdminManagement: React.FC = () => {
     loadStats();
   }, []);
 
+  // Prevent body scroll when modal is open and prevent layout shift
+  useEffect(() => {
+    if (showCreateModal) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '';
+    };
+  }, [showCreateModal]);
+
   const loadAdmins = async () => {
     try {
       setLoading(true);
@@ -568,7 +584,7 @@ const AdminManagement: React.FC = () => {
 
         {/* Create Admin Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]" style={{ margin: 0 }}>
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <h2 className="text-2xl font-bold mb-4">Create New Admin</h2>
               <form onSubmit={handleCreateAdmin}>

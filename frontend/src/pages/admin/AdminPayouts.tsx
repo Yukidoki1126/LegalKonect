@@ -63,6 +63,22 @@ export default function AdminPayouts() {
     fetchPayouts();
   }, [statusFilter]);
 
+  // Prevent body scroll when modals are open and prevent layout shift
+  useEffect(() => {
+    if (showDetailModal || showProofModal) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = '';
+    };
+  }, [showDetailModal, showProofModal]);
+
   const fetchPayouts = async () => {
     try {
       setLoading(true);
