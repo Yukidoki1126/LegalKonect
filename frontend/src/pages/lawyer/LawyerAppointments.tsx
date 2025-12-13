@@ -234,7 +234,13 @@ const LawyerAppointments: React.FC = () => {
       if (activeTab === 'all') {
         setAppointments(allData);
       } else if (activeTab === 'new') {
-        const filteredData = allData.filter((a: Appointment) => isNewBooking(a));
+        // Filter for new bookings (created within last 24 hours and pending)
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const filteredData = allData.filter((a: Appointment) => {
+          const createdAt = new Date(a.created_at);
+          return createdAt >= oneDayAgo && a.status === 'pending';
+        });
         setAppointments(filteredData);
       } else if (activeTab === 'upcoming') {
         const filteredData = allData.filter((a: Appointment) => isUpcoming(a));
@@ -919,22 +925,6 @@ const LawyerAppointments: React.FC = () => {
             </span>
           </button>
           <button
-            onClick={() => handleTabChange('new')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
-              activeTab === 'new'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200/50'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            New Booking
-            <span className={`py-0.5 px-2 rounded-full text-xs ${
-              activeTab === 'new' ? 'bg-white/20' : newBookingCount > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100'
-            }`}>
-              {newBookingCount}
-            </span>
-          </button>
-          <button
             onClick={() => handleTabChange('upcoming')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
               activeTab === 'upcoming'
@@ -1160,6 +1150,13 @@ const LawyerAppointments: React.FC = () => {
                         {appointment.user.name}
                       </h3>
                     </div>
+                    {/* Show NEW badge for appointments created within 24 hours */}
+                    {isNewBooking(appointment) && (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-sm animate-pulse flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        NEW
+                      </span>
+                    )}
                     {/* Show reschedule status badge if pending */}
                     {appointment.reschedule_status === 'pending' && (
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1">

@@ -235,7 +235,7 @@ class AdminDashboardController extends Controller
                     : 'Unknown',
                 'amount' => $reservationFee,
                 'platform_fee' => $platformFee,
-                'payment_method' => $appointment->payment_method_used ?? $appointment->payment_method,
+                'payment_method' => $appointment->payment_method_used ?? $appointment->payment_method ?? 'pending',
                 'payment_status' => $appointment->payment_status,
                 'payment_reference' => $appointment->payment_reference,
                 'payment_date' => $appointment->created_at,

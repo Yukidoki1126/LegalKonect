@@ -76,6 +76,8 @@ const AdminPayments: React.FC = () => {
         return 'bg-blue-100 text-blue-700';
       case 'gcash':
         return 'bg-green-100 text-green-700';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
@@ -233,7 +235,7 @@ const AdminPayments: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{payment.lawyer_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPaymentMethodBadge(payment.payment_method)}`}>
-                        {payment.payment_method ? payment.payment_method.charAt(0).toUpperCase() + payment.payment_method.slice(1) : 'N/A'}
+                        {payment.payment_method ? payment.payment_method.charAt(0).toUpperCase() + payment.payment_method.slice(1) : 'Pending'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -295,7 +297,7 @@ const AdminPayments: React.FC = () => {
                     </div>
                   </div>
                   <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getPaymentMethodBadge(payment.payment_method)}`}>
-                    {payment.payment_method?.charAt(0).toUpperCase() + payment.payment_method?.slice(1)}
+                    {payment.payment_method ? payment.payment_method.charAt(0).toUpperCase() + payment.payment_method.slice(1) : 'Pending'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm mb-3">
