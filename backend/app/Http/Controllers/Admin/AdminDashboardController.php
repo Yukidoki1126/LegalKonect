@@ -420,189 +420,148 @@ class AdminDashboardController extends Controller
         try {
             $days = $request->input('days', 30);
             $startDate = now()->subDays($days);
-            $cacheKey = "descriptive_analytics_{$days}";
             
-            // Cache for 5 minutes to improve performance
-            return \Cache::remember($cacheKey, 300, function () use ($days, $startDate) {
-        // Most requested legal expertise (by case type)
-        // Priority: 1. Lawyer-confirmed specialization, 2. Client-selected specialization, 3. Lawyer's primary specialization
-        $topSpecializations = DB::table('appointments')
-            ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
-            ->leftJoin('specializations as confirmed_spec', 'appointments.confirmed_specialization_id', '=', 'confirmed_spec.id')
-            ->leftJoin('specializations as client_spec', 'appointments.specialization_id', '=', 'client_spec.id')
-            ->leftJoinSub(
-                // Subquery: Get the first specialization for each lawyer (fallback)
-                DB::table('lawyer_specializations as ls1')
-                    ->select('ls1.lawyer_id', 'ls1.specialization_id')
-                    ->whereNotExists(function ($query) {
-                        $query->select(DB::raw(1))
-                            ->from('lawyer_specializations as ls2')
-                            ->whereColumn('ls2.lawyer_id', 'ls1.lawyer_id')
-                            ->whereRaw('ls2.id < ls1.id');
-                    }),
-                'primary_spec',
-                'lawyers.id',
-                '=',
-                'primary_spec.lawyer_id'
-            )
-            ->leftJoin('specializations as fallback_spec', 'primary_spec.specialization_id', '=', 'fallback_spec.id')
-            ->select(
-                DB::raw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id) as id'),
-                DB::raw('COALESCE(confirmed_spec.name, client_spec.name, fallback_spec.name) as name'),
-                DB::raw('COUNT(*) as appointment_count')
-            )
-            ->where('appointments.created_at', '>=', $startDate)
-            ->whereRaw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id) IS NOT NULL')
-            ->groupBy(DB::raw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id)'), DB::raw('COALESCE(confirmed_spec.name, client_spec.name, fallback_spec.name)'))
-            ->orderBy('appointment_count', 'desc')
-            ->limit(10)
-            ->get();
-        
-        // Appointment trends over time (daily)
-        $appointmentTrends = DB::table('appointments')
-            ->select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN status = \'confirmed\' THEN 1 ELSE 0 END) as confirmed'),
-                DB::raw('SUM(CASE WHEN status = \'completed\' THEN 1 ELSE 0 END) as completed'),
-                DB::raw('SUM(CASE WHEN status = \'cancelled\' THEN 1 ELSE 0 END) as cancelled')
-            )
-            ->where('created_at', '>=', $startDate)
-            ->groupBy(DB::raw('DATE(created_at)'))
-            ->orderBy('date', 'asc')
-            ->get();
-        
-        // Peak booking hours
-        $peakHours = DB::table('appointments')
-            ->select(
-                DB::raw('HOUR(created_at) as hour'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->where('created_at', '>=', $startDate)
-            ->groupBy(DB::raw('HOUR(created_at)'))
-            ->orderBy('count', 'desc')
-            ->limit(5)
-            ->get();
-        
-        // Top performing lawyers - FIXED
-        $topLawyers = DB::table('appointments')
-            ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
-            ->select(
-                'lawyers.first_name',
-                'lawyers.last_name',
-                'lawyers.rating',
-                DB::raw('COUNT(*) as total_appointments'),
-                DB::raw('SUM(CASE WHEN appointments.status = \'completed\' THEN 1 ELSE 0 END) as completed_appointments')
-            )
-            ->where('appointments.created_at', '>=', $startDate)
-            ->groupBy('lawyers.id', 'lawyers.first_name', 'lawyers.last_name', 'lawyers.rating')
-            ->orderBy('completed_appointments', 'desc')
-            ->limit(10)
-            ->get();
-        
-        // Meeting type preferences
-        $meetingTypes = DB::table('appointments')
-            ->select('meeting_type', DB::raw('COUNT(*) as count'))
-            ->where('created_at', '>=', $startDate)
-            ->whereNotNull('meeting_type')
-            ->groupBy('meeting_type')
-            ->get();
-        
-        // Average consultation fee by primary specialization (to avoid double counting)
-        // Average fee by specialization
-        // Priority: 1. Lawyer-confirmed specialization, 2. Client-selected specialization, 3. Lawyer's primary specialization
-        $avgFeeBySpecialization = DB::table('appointments')
-            ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
-            ->leftJoin('specializations as confirmed_spec', 'appointments.confirmed_specialization_id', '=', 'confirmed_spec.id')
-            ->leftJoin('specializations as client_spec', 'appointments.specialization_id', '=', 'client_spec.id')
-            ->leftJoinSub(
-                // Subquery: Get the first specialization for each lawyer
-                DB::table('lawyer_specializations as ls1')
-                    ->select('ls1.lawyer_id', 'ls1.specialization_id')
-                    ->whereNotExists(function ($query) {
-                        $query->select(DB::raw(1))
-                            ->from('lawyer_specializations as ls2')
-                            ->whereColumn('ls2.lawyer_id', 'ls1.lawyer_id')
-                            ->whereRaw('ls2.id < ls1.id');
-                    }),
-                'primary_spec',
-                'lawyers.id',
-                '=',
-                'primary_spec.lawyer_id'
-            )
-            ->leftJoin('specializations as fallback_spec', 'primary_spec.specialization_id', '=', 'fallback_spec.id')
-            ->select(
-                DB::raw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id) as id'),
-                DB::raw('COALESCE(confirmed_spec.name, client_spec.name, fallback_spec.name) as name'),
-                DB::raw('COALESCE(AVG(appointments.consultation_fee), 0) as avg_fee'),
-                DB::raw('MIN(appointments.consultation_fee) as min_fee'),
-                DB::raw('MAX(appointments.consultation_fee) as max_fee')
-            )
-            ->where('appointments.created_at', '>=', $startDate)
-            ->whereRaw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id) IS NOT NULL')
-            ->groupBy(DB::raw('COALESCE(confirmed_spec.id, client_spec.id, fallback_spec.id)'), DB::raw('COALESCE(confirmed_spec.name, client_spec.name, fallback_spec.name)'))
-            ->orderBy('avg_fee', 'desc')
-            ->get();
-        
-        // Client retention rate
-        $repeatClients = DB::table('appointments')
-            ->select('user_id', DB::raw('COUNT(*) as appointment_count'))
-            ->where('created_at', '>=', $startDate)
-            ->groupBy('user_id')
-            ->having(DB::raw('COUNT(*)'), '>', 1)
-            ->count();
-        
-        $totalClients = DB::table('appointments')
-            ->where('created_at', '>=', $startDate)
-            ->distinct('user_id')
-            ->count('user_id');
-        
-        $retentionRate = $totalClients > 0 ? round(($repeatClients / $totalClients) * 100, 1) : 0;
-        
-        // Cancellation reasons
-        $cancellationReasons = DB::table('appointments')
-            ->select('cancellation_reason', DB::raw('COUNT(*) as count'))
-            ->where('status', 'cancelled')
-            ->where('created_at', '>=', $startDate)
-            ->whereNotNull('cancellation_reason')
-            ->groupBy('cancellation_reason')
-            ->orderBy('count', 'desc')
-            ->limit(10)
-            ->get();
-        
-        // Average response time (in minutes)
-        $avgResponseTime = DB::table('appointments')
-            ->whereIn('status', ['confirmed', 'declined'])
-            ->where('created_at', '>=', $startDate)
-            ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
-            ->first();
-
-        // Total appointments count (accurate, no JOINs)
-        $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
-
-        // Total verified lawyers count
-        $totalLawyers = Lawyer::where('verification_status', 'verified')->count();
-        
-        return response()->json([
-            'top_specializations' => $topSpecializations,
-            'appointment_trends' => $appointmentTrends,
-            'peak_hours' => $peakHours,
-            'top_lawyers' => $topLawyers,
-            'meeting_types' => $meetingTypes,
-            'avg_fee_by_specialization' => $avgFeeBySpecialization,
-            'retention_rate' => $retentionRate,
-            'total_clients' => $totalClients,
-            'total_lawyers' => $totalLawyers,
-            'repeat_clients' => $repeatClients,
-            'cancellation_reasons' => $cancellationReasons,
-            'avg_response_time_minutes' => round($avgResponseTime->avg_minutes ?? 0, 1),
-            'period_days' => $days,
-            'total_appointments' => $totalAppointments,
-        ]);
-        }); // End cache
+            // Simple query - Top specializations from appointments
+            $topSpecializations = DB::table('appointments')
+                ->join('specializations', 'appointments.specialization_id', '=', 'specializations.id')
+                ->select('specializations.id', 'specializations.name', DB::raw('COUNT(*) as appointment_count'))
+                ->where('appointments.created_at', '>=', $startDate)
+                ->whereNotNull('appointments.specialization_id')
+                ->groupBy('specializations.id', 'specializations.name')
+                ->orderBy('appointment_count', 'desc')
+                ->limit(10)
+                ->get();
+            
+            // Appointment trends - simplified
+            $appointmentTrends = DB::table('appointments')
+                ->select(
+                    DB::raw('DATE(created_at) as date'),
+                    DB::raw('COUNT(*) as total'),
+                    DB::raw('SUM(CASE WHEN status = "confirmed" THEN 1 ELSE 0 END) as confirmed'),
+                    DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed'),
+                    DB::raw('SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled')
+                )
+                ->where('created_at', '>=', $startDate)
+                ->groupBy(DB::raw('DATE(created_at)'))
+                ->orderBy('date', 'asc')
+                ->get();
+            
+            // Peak hours
+            $peakHours = DB::table('appointments')
+                ->select(
+                    DB::raw('HOUR(created_at) as hour'),
+                    DB::raw('COUNT(*) as count')
+                )
+                ->where('created_at', '>=', $startDate)
+                ->groupBy(DB::raw('HOUR(created_at)'))
+                ->orderBy('count', 'desc')
+                ->limit(5)
+                ->get();
+            
+            // Top lawyers
+            $topLawyers = DB::table('appointments')
+                ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+                ->select(
+                    'lawyers.id',
+                    'lawyers.first_name',
+                    'lawyers.last_name',
+                    'lawyers.rating',
+                    DB::raw('COUNT(*) as total_appointments'),
+                    DB::raw('SUM(CASE WHEN appointments.status = "completed" THEN 1 ELSE 0 END) as completed_appointments')
+                )
+                ->where('appointments.created_at', '>=', $startDate)
+                ->groupBy('lawyers.id', 'lawyers.first_name', 'lawyers.last_name', 'lawyers.rating')
+                ->orderBy('completed_appointments', 'desc')
+                ->limit(10)
+                ->get();
+            
+            // Meeting types
+            $meetingTypes = DB::table('appointments')
+                ->select('meeting_type', DB::raw('COUNT(*) as count'))
+                ->where('created_at', '>=', $startDate)
+                ->whereNotNull('meeting_type')
+                ->groupBy('meeting_type')
+                ->get();
+            
+            // Average fee by specialization
+            $avgFeeBySpecialization = DB::table('appointments')
+                ->join('specializations', 'appointments.specialization_id', '=', 'specializations.id')
+                ->select(
+                    'specializations.id',
+                    'specializations.name',
+                    DB::raw('AVG(appointments.consultation_fee) as avg_fee'),
+                    DB::raw('MIN(appointments.consultation_fee) as min_fee'),
+                    DB::raw('MAX(appointments.consultation_fee) as max_fee')
+                )
+                ->where('appointments.created_at', '>=', $startDate)
+                ->whereNotNull('appointments.specialization_id')
+                ->whereNotNull('appointments.consultation_fee')
+                ->groupBy('specializations.id', 'specializations.name')
+                ->orderBy('avg_fee', 'desc')
+                ->get();
+            
+            // Client retention
+            $repeatClients = DB::table('appointments')
+                ->select('user_id', DB::raw('COUNT(*) as appointment_count'))
+                ->where('created_at', '>=', $startDate)
+                ->groupBy('user_id')
+                ->having(DB::raw('COUNT(*)'), '>', 1)
+                ->count();
+            
+            $totalClients = DB::table('appointments')
+                ->where('created_at', '>=', $startDate)
+                ->distinct('user_id')
+                ->count('user_id');
+            
+            $retentionRate = $totalClients > 0 ? round(($repeatClients / $totalClients) * 100, 1) : 0;
+            
+            // Cancellation reasons
+            $cancellationReasons = DB::table('appointments')
+                ->select('cancellation_reason', DB::raw('COUNT(*) as count'))
+                ->where('status', 'cancelled')
+                ->where('created_at', '>=', $startDate)
+                ->whereNotNull('cancellation_reason')
+                ->groupBy('cancellation_reason')
+                ->orderBy('count', 'desc')
+                ->limit(10)
+                ->get();
+            
+            // Average response time
+            $avgResponseTime = DB::table('appointments')
+                ->whereIn('status', ['confirmed', 'declined'])
+                ->where('created_at', '>=', $startDate)
+                ->whereNotNull('updated_at')
+                ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
+                ->first();
+            
+            // Counts
+            $totalAppointments = DB::table('appointments')->where('created_at', '>=', $startDate)->count();
+            $totalLawyers = DB::table('lawyers')->where('status', 'approved')->count();
+            
+            return response()->json([
+                'top_specializations' => $topSpecializations,
+                'appointment_trends' => $appointmentTrends,
+                'peak_hours' => $peakHours,
+                'top_lawyers' => $topLawyers,
+                'meeting_types' => $meetingTypes,
+                'avg_fee_by_specialization' => $avgFeeBySpecialization,
+                'retention_rate' => $retentionRate,
+                'total_clients' => $totalClients,
+                'total_lawyers' => $totalLawyers,
+                'repeat_clients' => $repeatClients,
+                'cancellation_reasons' => $cancellationReasons,
+                'avg_response_time_minutes' => round($avgResponseTime->avg_minutes ?? 0, 1),
+                'period_days' => $days,
+                'total_appointments' => $totalAppointments,
+            ]);
         } catch (\Exception $e) {
             \Log::error('Descriptive analytics error: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load analytics: ' . $e->getMessage()], 500);
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'error' => 'Failed to load analytics',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
+            ], 500);
         }
     }
 
