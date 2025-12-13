@@ -423,13 +423,18 @@ class AdminDashboardController extends Controller
             
             \Log::info('Starting descriptive analytics', ['days' => $days, 'startDate' => $startDate]);
             
-            // Simple query - Top specializations from appointments
+            // Top specializations - use confirmed_specialization_id if available, otherwise specialization_id
             try {
                 $topSpecializations = DB::table('appointments')
-                    ->join('specializations', 'appointments.specialization_id', '=', 'specializations.id')
+                    ->join('specializations', function($join) {
+                        $join->on('specializations.id', '=', DB::raw('COALESCE(appointments.confirmed_specialization_id, appointments.specialization_id)'));
+                    })
                     ->select('specializations.id', 'specializations.name', DB::raw('COUNT(*) as appointment_count'))
                     ->where('appointments.created_at', '>=', $startDate)
-                    ->whereNotNull('appointments.specialization_id')
+                    ->where(function($query) {
+                        $query->whereNotNull('appointments.specialization_id')
+                              ->orWhereNotNull('appointments.confirmed_specialization_id');
+                    })
                     ->groupBy('specializations.id', 'specializations.name')
                     ->orderBy('appointment_count', 'desc')
                     ->limit(10)
@@ -437,22 +442,27 @@ class AdminDashboardController extends Controller
                 \Log::info('Top specializations query success', [
                     'count' => $topSpecializations->count(),
                     'data' => $topSpecializations,
-                    'total_appointments' => DB::table('appointments')->where('created_at', '>=', $startDate)->count()
+                    'total_appointments' => DB::table('appointments')->where('created_at', '>=', $startDate)->count(),
+                    'with_specialization' => DB::table('appointments')
+                        ->where('created_at', '>=', $startDate)
+                        ->where(function($q) {
+                            $q->whereNotNull('specialization_id')->orWhereNotNull('confirmed_specialization_id');
+                        })->count()
                 ]);
             } catch (\Exception $e) {
                 \Log::error('Top specializations query failed: ' . $e->getMessage());
                 $topSpecializations = collect([]);
             }
             
-            // Appointment trends - simplified
+            // Appointment trends - simplified (PostgreSQL compatible)
             try {
                 $appointmentTrends = DB::table('appointments')
                     ->select(
                         DB::raw('DATE(created_at) as date'),
                         DB::raw('COUNT(*) as total'),
-                        DB::raw('SUM(CASE WHEN status = "confirmed" THEN 1 ELSE 0 END) as confirmed'),
-                        DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed'),
-                        DB::raw('SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled')
+                        DB::raw("SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed"),
+                        DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed"),
+                        DB::raw("SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled")
                     )
                     ->where('created_at', '>=', $startDate)
                     ->groupBy(DB::raw('DATE(created_at)'))
@@ -464,16 +474,16 @@ class AdminDashboardController extends Controller
                 $appointmentTrends = collect([]);
             }
             
-            // Peak hours - based on appointment_time, not created_at
+            // Peak hours - based on appointment_time (PostgreSQL compatible - use EXTRACT)
             try {
                 $peakHours = DB::table('appointments')
                     ->select(
-                        DB::raw('HOUR(appointment_time) as hour'),
+                        DB::raw('EXTRACT(HOUR FROM appointment_time::time) as hour'),
                         DB::raw('COUNT(*) as count')
                     )
                     ->where('created_at', '>=', $startDate)
                     ->whereNotNull('appointment_time')
-                    ->groupBy(DB::raw('HOUR(appointment_time)'))
+                    ->groupBy(DB::raw('EXTRACT(HOUR FROM appointment_time::time)'))
                     ->orderBy('count', 'desc')
                     ->limit(5)
                     ->get();
@@ -483,7 +493,7 @@ class AdminDashboardController extends Controller
                 $peakHours = collect([]);
             }
             
-            // Top lawyers
+            // Top lawyers (PostgreSQL compatible - use single quotes)
             try {
                 $topLawyers = DB::table('appointments')
                     ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
@@ -493,7 +503,7 @@ class AdminDashboardController extends Controller
                         'lawyers.last_name',
                         'lawyers.rating',
                         DB::raw('COUNT(*) as total_appointments'),
-                        DB::raw('SUM(CASE WHEN appointments.status = "completed" THEN 1 ELSE 0 END) as completed_appointments')
+                        DB::raw("SUM(CASE WHEN appointments.status = 'completed' THEN 1 ELSE 0 END) as completed_appointments")
                     )
                     ->where('appointments.created_at', '>=', $startDate)
                     ->groupBy('lawyers.id', 'lawyers.first_name', 'lawyers.last_name', 'lawyers.rating')
@@ -520,10 +530,12 @@ class AdminDashboardController extends Controller
                 $meetingTypes = collect([]);
             }
             
-            // Average fee by specialization
+            // Average fee by specialization - use confirmed or original specialization
             try {
                 $avgFeeBySpecialization = DB::table('appointments')
-                    ->join('specializations', 'appointments.specialization_id', '=', 'specializations.id')
+                    ->join('specializations', function($join) {
+                        $join->on('specializations.id', '=', DB::raw('COALESCE(appointments.confirmed_specialization_id, appointments.specialization_id)'));
+                    })
                     ->select(
                         'specializations.id',
                         'specializations.name',
@@ -532,7 +544,10 @@ class AdminDashboardController extends Controller
                         DB::raw('MAX(appointments.consultation_fee) as max_fee')
                     )
                     ->where('appointments.created_at', '>=', $startDate)
-                    ->whereNotNull('appointments.specialization_id')
+                    ->where(function($query) {
+                        $query->whereNotNull('appointments.specialization_id')
+                              ->orWhereNotNull('appointments.confirmed_specialization_id');
+                    })
                     ->whereNotNull('appointments.consultation_fee')
                     ->groupBy('specializations.id', 'specializations.name')
                     ->orderBy('avg_fee', 'desc')
@@ -583,13 +598,13 @@ class AdminDashboardController extends Controller
                 $cancellationReasons = collect([]);
             }
             
-            // Average response time
+            // Average response time (PostgreSQL compatible)
             try {
                 $avgResponseTime = DB::table('appointments')
                     ->whereIn('status', ['confirmed', 'declined'])
                     ->where('created_at', '>=', $startDate)
                     ->whereNotNull('updated_at')
-                    ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
+                    ->select(DB::raw('AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60) as avg_minutes'))
                     ->first();
                 \Log::info('Avg response time query success', ['minutes' => $avgResponseTime->avg_minutes ?? 0]);
             } catch (\Exception $e) {
@@ -634,6 +649,76 @@ class AdminDashboardController extends Controller
                 'message' => $e->getMessage(),
                 'line' => $e->getLine(),
                 'file' => $e->getFile()
+            ], 500);
+        }
+    }
+
+    // Debug endpoint to check appointment data
+    public function debugAppointments(Request $request)
+    {
+        try {
+            $days = $request->input('days', 30);
+            $startDate = now()->subDays($days);
+
+            // Get raw appointment data with both specialization columns
+            $appointments = DB::table('appointments')
+                ->select(
+                    'id',
+                    'specialization_id',
+                    'confirmed_specialization_id',
+                    'appointment_date',
+                    'appointment_time',
+                    'status',
+                    'meeting_type',
+                    'created_at'
+                )
+                ->where('created_at', '>=', $startDate)
+                ->get();
+
+            // Get specializations
+            $specializations = DB::table('specializations')
+                ->select('id', 'name')
+                ->get()
+                ->keyBy('id');
+
+            // Check appointments with both specialization types
+            $appointmentsWithSpec = DB::table('appointments as a')
+                ->leftJoin('specializations as s1', 'a.specialization_id', '=', 's1.id')
+                ->leftJoin('specializations as s2', 'a.confirmed_specialization_id', '=', 's2.id')
+                ->select(
+                    'a.id',
+                    'a.specialization_id',
+                    's1.name as original_specialization_name',
+                    'a.confirmed_specialization_id',
+                    's2.name as confirmed_specialization_name',
+                    'a.appointment_date',
+                    'a.appointment_time',
+                    'a.status',
+                    DB::raw('COALESCE(a.confirmed_specialization_id, a.specialization_id) as effective_specialization_id'),
+                    DB::raw('COALESCE(s2.name, s1.name) as effective_specialization_name')
+                )
+                ->where('a.created_at', '>=', $startDate)
+                ->get();
+
+            return response()->json([
+                'total_appointments' => $appointments->count(),
+                'appointments_raw' => $appointments,
+                'specializations' => $specializations,
+                'appointments_with_specializations' => $appointmentsWithSpec,
+                'start_date' => $startDate->toDateTimeString(),
+                'now' => now()->toDateTimeString(),
+                'summary' => [
+                    'with_original_spec' => $appointments->whereNotNull('specialization_id')->count(),
+                    'with_confirmed_spec' => $appointments->whereNotNull('confirmed_specialization_id')->count(),
+                    'without_any_spec' => $appointments->filter(function($a) {
+                        return $a->specialization_id === null && $a->confirmed_specialization_id === null;
+                    })->count()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }

@@ -258,6 +258,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/payments', [App\Http\Controllers\Admin\AdminDashboardController::class, 'payments']);
     Route::get('/analytics', [App\Http\Controllers\Admin\AdminDashboardController::class, 'analytics']);
         Route::get('/descriptive-analytics', [App\Http\Controllers\Admin\AdminDashboardController::class, 'descriptiveAnalytics']); 
+    Route::get('/debug-appointments', [App\Http\Controllers\Admin\AdminDashboardController::class, 'debugAppointments']);
 
             // (debug route removed)
     
