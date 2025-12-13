@@ -187,39 +187,46 @@ const AdminAnalytics: React.FC = () => {
                 <TrendingUp className="w-6 h-6 text-blue-600" />
                 <h3 className="text-xl font-bold text-gray-900">Appointment Trends Over Time</h3>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={descriptive.appointment_trends}>
-                  <defs>
-                    <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorConfirmed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorCancelled" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="date"
-                    stroke="#6b7280"
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                    labelStyle={{ color: '#111827' }}
-                  />
-                  <Legend />
-                  <Area type="monotone" dataKey="completed" stackId="1" stroke="#10b981" fill="url(#colorCompleted)" name="Completed" />
-                  <Area type="monotone" dataKey="confirmed" stackId="1" stroke="#3b82f6" fill="url(#colorConfirmed)" name="Confirmed" />
-                  <Area type="monotone" dataKey="cancelled" stackId="1" stroke="#ef4444" fill="url(#colorCancelled)" name="Cancelled" />
-                </AreaChart>
-              </ResponsiveContainer>
+              {descriptive.appointment_trends && descriptive.appointment_trends.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={descriptive.appointment_trends}>
+                    <defs>
+                      <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorConfirmed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorCancelled" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="date"
+                      stroke="#6b7280"
+                      tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    />
+                    <YAxis stroke="#6b7280" />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                      labelStyle={{ color: '#111827' }}
+                    />
+                    <Legend />
+                    <Area type="monotone" dataKey="completed" stackId="1" stroke="#10b981" fill="url(#colorCompleted)" name="Completed" />
+                    <Area type="monotone" dataKey="confirmed" stackId="1" stroke="#3b82f6" fill="url(#colorConfirmed)" name="Confirmed" />
+                    <Area type="monotone" dataKey="cancelled" stackId="1" stroke="#ef4444" fill="url(#colorCancelled)" name="Cancelled" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                  <BarChart3 className="w-16 h-16 mb-3 opacity-50" />
+                  <p className="text-sm">No appointment data available for this period</p>
+                </div>
+              )}
             </div>
 
             {/* Two Column Layout */}
@@ -230,18 +237,25 @@ const AdminAnalytics: React.FC = () => {
                   <Clock className="w-6 h-6 text-orange-600" />
                   <h3 className="text-xl font-bold text-gray-900">Peak Booking Hours</h3>
                 </div>
-                <div className="space-y-3">
-                  {descriptive.peak_hours.map((hour, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-900">
-                        {String(hour.hour).padStart(2, '0')}:00 - {String(Number(hour.hour) + 1).padStart(2, '0')}:00
-                      </span>
-                      <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-bold">
-                        {Number(hour.count)} bookings
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                {descriptive.peak_hours && descriptive.peak_hours.length > 0 ? (
+                  <div className="space-y-3">
+                    {descriptive.peak_hours.map((hour, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-gray-900">
+                          {String(hour.hour).padStart(2, '0')}:00 - {String(Number(hour.hour) + 1).padStart(2, '0')}:00
+                        </span>
+                        <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-bold">
+                          {Number(hour.count)} bookings
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                    <Clock className="w-12 h-12 mb-2 opacity-50" />
+                    <p className="text-sm">No booking data available</p>
+                  </div>
+                )}
               </div>
 
               {/* Meeting Types */}
@@ -250,24 +264,31 @@ const AdminAnalytics: React.FC = () => {
                   <PieChart className="w-6 h-6 text-green-600" />
                   <h3 className="text-xl font-bold text-gray-900">Meeting Type Preferences</h3>
                 </div>
-                <div className="space-y-3">
-                  {descriptive.meeting_types.map((type, index) => {
-                    const total = descriptive.meeting_types.reduce((sum, t) => sum + t.count, 0);
-                    const percentage = ((type.count / total) * 100).toFixed(1);
+                {descriptive.meeting_types && descriptive.meeting_types.length > 0 ? (
+                  <div className="space-y-3">
+                    {descriptive.meeting_types.map((type, index) => {
+                      const total = descriptive.meeting_types.reduce((sum, t) => sum + t.count, 0);
+                      const percentage = ((type.count / total) * 100).toFixed(1);
 
-                    return (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <span className="text-gray-900 capitalize">{type.meeting_type || 'Not specified'}</span>
-                          <p className="text-gray-600 text-sm">{percentage}% of total</p>
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <span className="text-gray-900 capitalize">{type.meeting_type || 'Not specified'}</span>
+                            <p className="text-gray-600 text-sm">{percentage}% of total</p>
+                          </div>
+                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">
+                            {type.count}
+                          </span>
                         </div>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">
-                          {type.count}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                    <PieChart className="w-12 h-12 mb-2 opacity-50" />
+                    <p className="text-sm">No meeting type data available</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -277,44 +298,51 @@ const AdminAnalytics: React.FC = () => {
                 <Star className="w-6 h-6 text-yellow-600" />
                 <h3 className="text-xl font-bold text-gray-900">Top Performing Lawyers</h3>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-gray-600 text-sm font-medium">Lawyer</th>
-                      <th className="text-right py-3 px-4 text-gray-600 text-sm font-medium">Total</th>
-                      <th className="text-right py-3 px-4 text-gray-600 text-sm font-medium">Completed</th>
-                      <th className="text-right py-3 px-4 text-gray-600 text-sm font-medium">Rating</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {descriptive.top_lawyers.map((lawyer, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-purple-600 font-bold">#{index + 1}</span>
-                            <span className="text-gray-900">
-                              {lawyer.first_name} {lawyer.last_name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-right text-gray-700">{lawyer.total_appointments}</td>
-                        <td className="py-3 px-4 text-right text-green-600 font-bold">
-                          {lawyer.completed_appointments}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end space-x-1">
-                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                            <span className="text-gray-900 font-bold">
-                              {Number(lawyer.rating || 0).toFixed(1)}
-                            </span>
-                          </div>
-                        </td>
+              {descriptive.top_lawyers && descriptive.top_lawyers.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-gray-600 text-sm font-medium">Lawyer</th>
+                        <th className="text-right py-3 px-4 text-gray-600 text-sm font-medium">Total</th>
+                        <th className="text-right py-3 px-4 text-gray-600 text-sm font-medium">Completed</th>
+                        <th className="text-right py-3 px-4 text-gray-600 text-sm font-medium">Rating</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {descriptive.top_lawyers.map((lawyer, index) => (
+                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-purple-600 font-bold">#{index + 1}</span>
+                              <span className="text-gray-900">
+                                {lawyer.first_name} {lawyer.last_name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-right text-gray-700">{lawyer.total_appointments}</td>
+                          <td className="py-3 px-4 text-right text-green-600 font-bold">
+                            {lawyer.completed_appointments}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end space-x-1">
+                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                              <span className="text-gray-900 font-bold">
+                                {Number(lawyer.rating || 0).toFixed(1)}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                  <Star className="w-12 h-12 mb-2 opacity-50" />
+                  <p className="text-sm">No lawyer performance data available</p>
+                </div>
+              )}
             </div>
 
             {/* Cancellation Reasons */}

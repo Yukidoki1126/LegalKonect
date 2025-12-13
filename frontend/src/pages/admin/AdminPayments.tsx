@@ -360,8 +360,8 @@ const AdminPayments: React.FC = () => {
 
       {/* Transaction Details Modal */}
       {selectedTransaction && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+      <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden relative">
           <div className={`px-6 py-4 ${
             selectedTransaction.payment_method === 'gcash' 
               ? 'bg-gradient-to-r from-green-500 to-emerald-600' 

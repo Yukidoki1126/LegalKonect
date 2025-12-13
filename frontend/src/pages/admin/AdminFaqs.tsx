@@ -52,6 +52,9 @@ const AdminFaqs = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingFaqId, setDeletingFaqId] = useState<number | null>(null);
+  const [deletingFaqQuestion, setDeletingFaqQuestion] = useState<string>('');
   
   const [formData, setFormData] = useState({
     category_id: '',
@@ -149,22 +152,37 @@ const AdminFaqs = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this FAQ?')) return;
+  const handleDeleteClick = (faq: FAQ) => {
+    setDeletingFaqId(faq.id);
+    setDeletingFaqQuestion(faq.question);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingFaqId) return;
 
     const token = sessionStorage.getItem('admin_token');
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/faqs/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/faqs/${deletingFaqId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (response.ok) {
         await fetchFaqs();
+        setShowDeleteModal(false);
+        setDeletingFaqId(null);
+        setDeletingFaqQuestion('');
       }
     } catch (error) {
       console.error('Error deleting FAQ:', error);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setDeletingFaqId(null);
+    setDeletingFaqQuestion('');
   };
 
   const handleEdit = (faq: FAQ) => {
@@ -440,7 +458,7 @@ const AdminFaqs = () => {
                                 <Edit className="w-5 h-5" />
                               </button>
                               <button
-                                onClick={() => handleDelete(faq.id)}
+                                onClick={() => handleDeleteClick(faq)}
                                 className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
                               >
                                 <Trash2 className="w-5 h-5" />
@@ -526,7 +544,7 @@ const AdminFaqs = () => {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(faq.id)}
+                        onClick={() => handleDeleteClick(faq)}
                         className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -655,16 +673,16 @@ const AdminFaqs = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-700">
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 relative">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold text-gray-900">
                   {editingFaq ? 'Edit FAQ' : 'Add New FAQ'}
                 </h2>
                 <button
                   onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-white transition"
+                  className="text-gray-400 hover:text-gray-600 transition"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -672,13 +690,13 @@ const AdminFaqs = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Category
                   </label>
                   <select
                     value={formData.category_id}
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
                     <option value="">Select Category</option>
@@ -691,28 +709,28 @@ const AdminFaqs = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Question
                   </label>
                   <input
                     type="text"
                     value={formData.question}
                     onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter the question..."
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Answer
                   </label>
                   <textarea
                     value={formData.answer}
                     onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
                     rows={6}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     placeholder="Enter the answer..."
                     required
                   />
@@ -720,13 +738,13 @@ const AdminFaqs = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Type
                     </label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="static">Static</option>
                       <option value="dynamic">Dynamic</option>
@@ -734,14 +752,14 @@ const AdminFaqs = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Order
                     </label>
                     <input
                       type="number"
                       value={formData.order}
                       onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                      className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -752,27 +770,73 @@ const AdminFaqs = () => {
                     id="is_active"
                     checked={formData.is_active}
                     onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    className="w-4 h-4 text-purple-600 bg-slate-700 border-slate-600 rounded focus:ring-purple-500"
+                    className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <label htmlFor="is_active" className="ml-3 text-sm text-gray-300">
+                  <label htmlFor="is_active" className="ml-3 text-sm text-gray-700">
                     Active
                   </label>
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-slate-700">
+              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
                 <button
                   onClick={handleCloseModal}
-                  className="px-6 py-3 bg-slate-700 text-gray-300 rounded-lg hover:bg-slate-600 transition font-medium"
+                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition font-medium"
+                  className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-medium"
                 >
                   <Save className="w-5 h-5" />
                   <span>{editingFaq ? 'Update FAQ' : 'Create FAQ'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200 relative">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                Delete FAQ
+              </h3>
+              
+              <p className="text-gray-600 text-center mb-4">
+                Are you sure you want to delete this FAQ?
+              </p>
+              
+              <div className="bg-gray-50 rounded-lg p-3 mb-6">
+                <p className="text-sm font-medium text-gray-700 line-clamp-2">
+                  {deletingFaqQuestion}
+                </p>
+              </div>
+              
+              <p className="text-sm text-gray-500 text-center mb-6">
+                This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDeleteCancel}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+                >
+                  Delete
                 </button>
               </div>
             </div>

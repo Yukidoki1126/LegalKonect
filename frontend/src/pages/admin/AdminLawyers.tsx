@@ -318,28 +318,37 @@ const confirmToggleStatus = async () => {
       {/* Lawyers Table - Desktop */}
       <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed border-collapse">
+            <colgroup>
+              <col style={{ width: '22%' }} />
+              <col style={{ width: '16%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '20%' }} />
+            </colgroup>
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider border-r border-transparent">
                   Lawyer
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider border-r border-transparent">
                   Specialization
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider border-r border-transparent">
                   Fee
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider border-r border-transparent">
                   Appointments
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider border-r border-transparent">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider border-r border-transparent">
                   Availability
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -347,41 +356,43 @@ const confirmToggleStatus = async () => {
             <tbody className="divide-y divide-gray-200">
               {filteredLawyers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-3 py-8 text-center text-gray-500">
                     No lawyers found
                   </td>
                 </tr>
               ) : (
                 filteredLawyers.map((lawyer) => (
                   <tr key={lawyer.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">
+                    <td className="px-3 py-3 border-r border-transparent">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-bold text-xs">
                             {lawyer.name?.charAt(0) || 'L'}
                           </span>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{lawyer.name || 'Unknown'}</div>
-                          <div className="text-sm text-gray-600">{lawyer.email || 'N/A'}</div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">{lawyer.name || 'Unknown'}</div>
+                          <div className="text-xs text-gray-600 truncate">{lawyer.email || 'N/A'}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-700">{lawyer.specialization || 'N/A'}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 font-medium">
-                        ₱{lawyer.consultation_fee ? lawyer.consultation_fee.toLocaleString() : '0'}
+                    <td className="px-3 py-3 border-r border-transparent">
+                      <span className="text-xs text-gray-700 block leading-relaxed" title={lawyer.specialization || 'N/A'}>
+                        {lawyer.specialization || 'N/A'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    <td className="px-3 py-3 border-r border-transparent">
+                      <span className="text-sm text-gray-900 font-medium whitespace-nowrap">
+                        ₱{lawyer.consultation_fee ? (lawyer.consultation_fee >= 1000 ? (lawyer.consultation_fee / 1000).toFixed(0) + 'k' : lawyer.consultation_fee.toString()) : '0'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 border-r border-transparent">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium whitespace-nowrap">
                         {lawyer.total_appointments || 0} bookings
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    <td className="px-3 py-3 border-r border-transparent">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                         lawyer.status === 'approved' ? 'bg-green-100 text-green-700' :
                         lawyer.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-red-100 text-red-700'
@@ -389,11 +400,11 @@ const confirmToggleStatus = async () => {
                         {lawyer.status === 'approved' ? 'verified' : lawyer.status || 'unknown'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-3 border-r border-transparent">
                       {lawyer.status === 'approved' ? (
                         <button
                           onClick={() => toggleAvailability(lawyer.id, lawyer.is_available, lawyer.name)}
-                          className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                          className={`px-2 py-1 rounded-full text-xs font-medium transition whitespace-nowrap ${
                             lawyer.is_available
                               ? 'bg-green-100 text-green-700 hover:bg-green-200'
                               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -402,29 +413,29 @@ const confirmToggleStatus = async () => {
                           {lawyer.is_available ? 'Online' : 'Offline'}
                         </button>
                       ) : (
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-400">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-400 whitespace-nowrap">
                           N/A
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-3 py-3 text-sm">
                       {lawyer.status === 'approved' ? (
                         <button
                           onClick={() => showConfirmationModal(lawyer.id, lawyer.status, lawyer.name)}
-                          className="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition"
+                          className="w-full px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition"
                         >
                           Suspend
                         </button>
                       ) : lawyer.status === 'suspended' ? (
                         <button
                           onClick={() => showConfirmationModal(lawyer.id, lawyer.status, lawyer.name)}
-                          className="px-4 py-2 bg-green-50 text-green-600 rounded-lg font-medium hover:bg-green-100 transition"
+                          className="w-full px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-medium hover:bg-green-100 transition"
                         >
                           Activate
                         </button>
                       ) : (
-                        <span className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm">
-                          Pending Verification
+                        <span className="block text-center px-2 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs">
+                          Pending
                         </span>
                       )}
                     </td>

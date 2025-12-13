@@ -2047,12 +2047,12 @@ const LawyerAppointments: React.FC = () => {
             </div>
 
             {/* Receipt Image */}
-            {selectedAppointment.payment_proof && (
+            {paymentProofData && paymentProofData.url && (
               <div className="mb-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Receipt:</p>
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <img
-                    src={`${STORAGE_URL}/storage/${selectedAppointment.payment_proof}`}
+                    src={paymentProofData.url}
                     alt="Payment Receipt"
                     className="w-full h-auto max-h-96 object-contain bg-gray-100"
                     onError={(e) => {
@@ -2061,7 +2061,7 @@ const LawyerAppointments: React.FC = () => {
                   />
                 </div>
                 <a
-                  href={`${STORAGE_URL}/storage/${selectedAppointment.payment_proof}`}
+                  href={paymentProofData.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2"
