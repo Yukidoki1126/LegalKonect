@@ -421,122 +421,189 @@ class AdminDashboardController extends Controller
             $days = $request->input('days', 30);
             $startDate = now()->subDays($days);
             
+            \Log::info('Starting descriptive analytics', ['days' => $days, 'startDate' => $startDate]);
+            
             // Simple query - Top specializations from appointments
-            $topSpecializations = DB::table('appointments')
-                ->join('specializations', 'appointments.specialization_id', '=', 'specializations.id')
-                ->select('specializations.id', 'specializations.name', DB::raw('COUNT(*) as appointment_count'))
-                ->where('appointments.created_at', '>=', $startDate)
-                ->whereNotNull('appointments.specialization_id')
-                ->groupBy('specializations.id', 'specializations.name')
-                ->orderBy('appointment_count', 'desc')
-                ->limit(10)
-                ->get();
+            try {
+                $topSpecializations = DB::table('appointments')
+                    ->join('specializations', 'appointments.specialization_id', '=', 'specializations.id')
+                    ->select('specializations.id', 'specializations.name', DB::raw('COUNT(*) as appointment_count'))
+                    ->where('appointments.created_at', '>=', $startDate)
+                    ->whereNotNull('appointments.specialization_id')
+                    ->groupBy('specializations.id', 'specializations.name')
+                    ->orderBy('appointment_count', 'desc')
+                    ->limit(10)
+                    ->get();
+                \Log::info('Top specializations query success', ['count' => $topSpecializations->count()]);
+            } catch (\Exception $e) {
+                \Log::error('Top specializations query failed: ' . $e->getMessage());
+                $topSpecializations = collect([]);
+            }
             
             // Appointment trends - simplified
-            $appointmentTrends = DB::table('appointments')
-                ->select(
-                    DB::raw('DATE(created_at) as date'),
-                    DB::raw('COUNT(*) as total'),
-                    DB::raw('SUM(CASE WHEN status = "confirmed" THEN 1 ELSE 0 END) as confirmed'),
-                    DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed'),
-                    DB::raw('SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled')
-                )
-                ->where('created_at', '>=', $startDate)
-                ->groupBy(DB::raw('DATE(created_at)'))
-                ->orderBy('date', 'asc')
-                ->get();
+            try {
+                $appointmentTrends = DB::table('appointments')
+                    ->select(
+                        DB::raw('DATE(created_at) as date'),
+                        DB::raw('COUNT(*) as total'),
+                        DB::raw('SUM(CASE WHEN status = "confirmed" THEN 1 ELSE 0 END) as confirmed'),
+                        DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed'),
+                        DB::raw('SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled')
+                    )
+                    ->where('created_at', '>=', $startDate)
+                    ->groupBy(DB::raw('DATE(created_at)'))
+                    ->orderBy('date', 'asc')
+                    ->get();
+                \Log::info('Appointment trends query success', ['count' => $appointmentTrends->count()]);
+            } catch (\Exception $e) {
+                \Log::error('Appointment trends query failed: ' . $e->getMessage());
+                $appointmentTrends = collect([]);
+            }
             
             // Peak hours
-            $peakHours = DB::table('appointments')
-                ->select(
-                    DB::raw('HOUR(created_at) as hour'),
-                    DB::raw('COUNT(*) as count')
-                )
-                ->where('created_at', '>=', $startDate)
-                ->groupBy(DB::raw('HOUR(created_at)'))
-                ->orderBy('count', 'desc')
-                ->limit(5)
-                ->get();
+            try {
+                $peakHours = DB::table('appointments')
+                    ->select(
+                        DB::raw('HOUR(created_at) as hour'),
+                        DB::raw('COUNT(*) as count')
+                    )
+                    ->where('created_at', '>=', $startDate)
+                    ->groupBy(DB::raw('HOUR(created_at)'))
+                    ->orderBy('count', 'desc')
+                    ->limit(5)
+                    ->get();
+                \Log::info('Peak hours query success', ['count' => $peakHours->count()]);
+            } catch (\Exception $e) {
+                \Log::error('Peak hours query failed: ' . $e->getMessage());
+                $peakHours = collect([]);
+            }
             
             // Top lawyers
-            $topLawyers = DB::table('appointments')
-                ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
-                ->select(
-                    'lawyers.id',
-                    'lawyers.first_name',
-                    'lawyers.last_name',
-                    'lawyers.rating',
-                    DB::raw('COUNT(*) as total_appointments'),
-                    DB::raw('SUM(CASE WHEN appointments.status = "completed" THEN 1 ELSE 0 END) as completed_appointments')
-                )
-                ->where('appointments.created_at', '>=', $startDate)
-                ->groupBy('lawyers.id', 'lawyers.first_name', 'lawyers.last_name', 'lawyers.rating')
-                ->orderBy('completed_appointments', 'desc')
-                ->limit(10)
-                ->get();
+            try {
+                $topLawyers = DB::table('appointments')
+                    ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+                    ->select(
+                        'lawyers.id',
+                        'lawyers.first_name',
+                        'lawyers.last_name',
+                        'lawyers.rating',
+                        DB::raw('COUNT(*) as total_appointments'),
+                        DB::raw('SUM(CASE WHEN appointments.status = "completed" THEN 1 ELSE 0 END) as completed_appointments')
+                    )
+                    ->where('appointments.created_at', '>=', $startDate)
+                    ->groupBy('lawyers.id', 'lawyers.first_name', 'lawyers.last_name', 'lawyers.rating')
+                    ->orderBy('completed_appointments', 'desc')
+                    ->limit(10)
+                    ->get();
+                \Log::info('Top lawyers query success', ['count' => $topLawyers->count()]);
+            } catch (\Exception $e) {
+                \Log::error('Top lawyers query failed: ' . $e->getMessage());
+                $topLawyers = collect([]);
+            }
             
             // Meeting types
-            $meetingTypes = DB::table('appointments')
-                ->select('meeting_type', DB::raw('COUNT(*) as count'))
-                ->where('created_at', '>=', $startDate)
-                ->whereNotNull('meeting_type')
-                ->groupBy('meeting_type')
-                ->get();
+            try {
+                $meetingTypes = DB::table('appointments')
+                    ->select('meeting_type', DB::raw('COUNT(*) as count'))
+                    ->where('created_at', '>=', $startDate)
+                    ->whereNotNull('meeting_type')
+                    ->groupBy('meeting_type')
+                    ->get();
+                \Log::info('Meeting types query success', ['count' => $meetingTypes->count()]);
+            } catch (\Exception $e) {
+                \Log::error('Meeting types query failed: ' . $e->getMessage());
+                $meetingTypes = collect([]);
+            }
             
             // Average fee by specialization
-            $avgFeeBySpecialization = DB::table('appointments')
-                ->join('specializations', 'appointments.specialization_id', '=', 'specializations.id')
-                ->select(
-                    'specializations.id',
-                    'specializations.name',
-                    DB::raw('AVG(appointments.consultation_fee) as avg_fee'),
-                    DB::raw('MIN(appointments.consultation_fee) as min_fee'),
-                    DB::raw('MAX(appointments.consultation_fee) as max_fee')
-                )
-                ->where('appointments.created_at', '>=', $startDate)
-                ->whereNotNull('appointments.specialization_id')
-                ->whereNotNull('appointments.consultation_fee')
-                ->groupBy('specializations.id', 'specializations.name')
-                ->orderBy('avg_fee', 'desc')
-                ->get();
+            try {
+                $avgFeeBySpecialization = DB::table('appointments')
+                    ->join('specializations', 'appointments.specialization_id', '=', 'specializations.id')
+                    ->select(
+                        'specializations.id',
+                        'specializations.name',
+                        DB::raw('AVG(appointments.consultation_fee) as avg_fee'),
+                        DB::raw('MIN(appointments.consultation_fee) as min_fee'),
+                        DB::raw('MAX(appointments.consultation_fee) as max_fee')
+                    )
+                    ->where('appointments.created_at', '>=', $startDate)
+                    ->whereNotNull('appointments.specialization_id')
+                    ->whereNotNull('appointments.consultation_fee')
+                    ->groupBy('specializations.id', 'specializations.name')
+                    ->orderBy('avg_fee', 'desc')
+                    ->get();
+                \Log::info('Avg fee query success', ['count' => $avgFeeBySpecialization->count()]);
+            } catch (\Exception $e) {
+                \Log::error('Avg fee query failed: ' . $e->getMessage());
+                $avgFeeBySpecialization = collect([]);
+            }
             
             // Client retention
-            $repeatClients = DB::table('appointments')
-                ->select('user_id', DB::raw('COUNT(*) as appointment_count'))
-                ->where('created_at', '>=', $startDate)
-                ->groupBy('user_id')
-                ->having(DB::raw('COUNT(*)'), '>', 1)
-                ->count();
-            
-            $totalClients = DB::table('appointments')
-                ->where('created_at', '>=', $startDate)
-                ->distinct('user_id')
-                ->count('user_id');
-            
-            $retentionRate = $totalClients > 0 ? round(($repeatClients / $totalClients) * 100, 1) : 0;
+            try {
+                $repeatClients = DB::table('appointments')
+                    ->select('user_id', DB::raw('COUNT(*) as appointment_count'))
+                    ->where('created_at', '>=', $startDate)
+                    ->groupBy('user_id')
+                    ->having(DB::raw('COUNT(*)'), '>', 1)
+                    ->count();
+                
+                $totalClients = DB::table('appointments')
+                    ->where('created_at', '>=', $startDate)
+                    ->distinct('user_id')
+                    ->count('user_id');
+                
+                $retentionRate = $totalClients > 0 ? round(($repeatClients / $totalClients) * 100, 1) : 0;
+                \Log::info('Client retention query success', ['repeat' => $repeatClients, 'total' => $totalClients]);
+            } catch (\Exception $e) {
+                \Log::error('Client retention query failed: ' . $e->getMessage());
+                $repeatClients = 0;
+                $totalClients = 0;
+                $retentionRate = 0;
+            }
             
             // Cancellation reasons
-            $cancellationReasons = DB::table('appointments')
-                ->select('cancellation_reason', DB::raw('COUNT(*) as count'))
-                ->where('status', 'cancelled')
-                ->where('created_at', '>=', $startDate)
-                ->whereNotNull('cancellation_reason')
-                ->groupBy('cancellation_reason')
-                ->orderBy('count', 'desc')
-                ->limit(10)
-                ->get();
+            try {
+                $cancellationReasons = DB::table('appointments')
+                    ->select('cancellation_reason', DB::raw('COUNT(*) as count'))
+                    ->where('status', 'cancelled')
+                    ->where('created_at', '>=', $startDate)
+                    ->whereNotNull('cancellation_reason')
+                    ->groupBy('cancellation_reason')
+                    ->orderBy('count', 'desc')
+                    ->limit(10)
+                    ->get();
+                \Log::info('Cancellation reasons query success', ['count' => $cancellationReasons->count()]);
+            } catch (\Exception $e) {
+                \Log::error('Cancellation reasons query failed: ' . $e->getMessage());
+                $cancellationReasons = collect([]);
+            }
             
             // Average response time
-            $avgResponseTime = DB::table('appointments')
-                ->whereIn('status', ['confirmed', 'declined'])
-                ->where('created_at', '>=', $startDate)
-                ->whereNotNull('updated_at')
-                ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
-                ->first();
+            try {
+                $avgResponseTime = DB::table('appointments')
+                    ->whereIn('status', ['confirmed', 'declined'])
+                    ->where('created_at', '>=', $startDate)
+                    ->whereNotNull('updated_at')
+                    ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
+                    ->first();
+                \Log::info('Avg response time query success', ['minutes' => $avgResponseTime->avg_minutes ?? 0]);
+            } catch (\Exception $e) {
+                \Log::error('Avg response time query failed: ' . $e->getMessage());
+                $avgResponseTime = (object)['avg_minutes' => 0];
+            }
             
             // Counts
-            $totalAppointments = DB::table('appointments')->where('created_at', '>=', $startDate)->count();
-            $totalLawyers = DB::table('lawyers')->where('status', 'approved')->count();
+            try {
+                $totalAppointments = DB::table('appointments')->where('created_at', '>=', $startDate)->count();
+                $totalLawyers = DB::table('lawyers')->where('status', 'approved')->count();
+                \Log::info('Counts query success', ['appointments' => $totalAppointments, 'lawyers' => $totalLawyers]);
+            } catch (\Exception $e) {
+                \Log::error('Counts query failed: ' . $e->getMessage());
+                $totalAppointments = 0;
+                $totalLawyers = 0;
+            }
+            
+            \Log::info('Descriptive analytics completed successfully');
             
             return response()->json([
                 'top_specializations' => $topSpecializations,
@@ -560,7 +627,8 @@ class AdminDashboardController extends Controller
             return response()->json([
                 'error' => 'Failed to load analytics',
                 'message' => $e->getMessage(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
             ], 500);
         }
     }
