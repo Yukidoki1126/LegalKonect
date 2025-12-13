@@ -65,7 +65,7 @@ export default function AdminPayouts() {
 
   // Prevent body scroll when modals are open and prevent layout shift
   useEffect(() => {
-    if (showDetailModal || showProofModal) {
+    if (showApproveModal || showPaidModal || showRejectModal || showSuccessModal) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -77,7 +77,7 @@ export default function AdminPayouts() {
       document.body.style.overflow = 'unset';
       document.body.style.paddingRight = '';
     };
-  }, [showDetailModal, showProofModal]);
+  }, [showApproveModal, showPaidModal, showRejectModal, showSuccessModal]);
 
   const fetchPayouts = async () => {
     try {
