@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { adminManagementService } from '../../services/adminManagementService';
+import adminApi, { adminManagementService } from '../../services/adminApi';
 import ConfirmModal from '../../components/ConfirmModal';
 import Toast from '../../components/Toast';
 
@@ -766,7 +766,6 @@ const AdminManagement: React.FC = () => {
           type={toast.type}
           onClose={closeToast}
         />
-      </div>
     </div>
   );
 };

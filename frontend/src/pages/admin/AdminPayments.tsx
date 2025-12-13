@@ -457,7 +457,6 @@ const AdminPayments: React.FC = () => {
         </div>
       </div>
     )}
-    </PageTransition>
   );
 };
 

@@ -337,9 +337,8 @@ const AdminVerifications: React.FC = () => {
           )}
         </div>
       </div>
-    </PageTransition>
 
-        {/* Detail Modal - Moved outside PageTransition to fix z-index */}
+        {/* Detail Modal */}
         {showDetailModal && selectedLawyer && (
           <div
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
