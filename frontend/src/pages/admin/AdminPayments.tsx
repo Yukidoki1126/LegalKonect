@@ -42,7 +42,7 @@ const AdminPayments: React.FC = () => {
 
   // Prevent body scroll when modal is open and prevent layout shift
   useEffect(() => {
-    if (showModal) {
+    if (selectedTransaction) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -54,7 +54,7 @@ const AdminPayments: React.FC = () => {
       document.body.style.overflow = 'unset';
       document.body.style.paddingRight = '';
     };
-  }, [showModal]);
+  }, [selectedTransaction]);
 
   const loadPayments = async () => {
     try {
