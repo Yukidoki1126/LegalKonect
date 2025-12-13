@@ -592,28 +592,27 @@ const AdminUsers: React.FC = () => {
       </div>
 
       {/* Pagination */}
-        <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-600">
-            Showing page {pagination.currentPage} of {pagination.lastPage} ({pagination.total} total)
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }))}
-              disabled={pagination.currentPage === 1}
-              className="px-4 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }))}
-              disabled={pagination.currentPage === pagination.lastPage}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              Next
-            </button>
-          </div>
+      <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+        <div className="text-sm text-gray-600">
+          Showing page {pagination.currentPage} of {pagination.lastPage} ({pagination.total} total)
         </div>
-      )}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }))}
+            disabled={pagination.currentPage === 1}
+            className="px-4 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }))}
+            disabled={pagination.currentPage === pagination.lastPage}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Next
+          </button>
+        </div>
+      </div>
 
       {/* Results Count */}
       <div className="text-center text-gray-600 text-sm">
