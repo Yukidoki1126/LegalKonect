@@ -800,8 +800,8 @@ const AdminFaqs = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200 relative">
+        <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[9999] p-4" style={{ margin: 0 }}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200 relative" onClick={(e) => e.stopPropagation()}>
             <div className="p-6">
               <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
                 <AlertCircle className="w-6 h-6 text-red-600" />

@@ -422,19 +422,19 @@ const confirmToggleStatus = async () => {
                       {lawyer.status === 'approved' ? (
                         <button
                           onClick={() => showConfirmationModal(lawyer.id, lawyer.status, lawyer.name)}
-                          className="w-full px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition"
+                          className="px-4 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition whitespace-nowrap"
                         >
                           Suspend
                         </button>
                       ) : lawyer.status === 'suspended' ? (
                         <button
                           onClick={() => showConfirmationModal(lawyer.id, lawyer.status, lawyer.name)}
-                          className="w-full px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-medium hover:bg-green-100 transition"
+                          className="px-4 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-medium hover:bg-green-100 transition whitespace-nowrap"
                         >
                           Activate
                         </button>
                       ) : (
-                        <span className="block text-center px-2 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs">
+                        <span className="inline-block text-center px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs whitespace-nowrap">
                           Pending
                         </span>
                       )}

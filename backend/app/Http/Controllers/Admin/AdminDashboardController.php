@@ -434,7 +434,11 @@ class AdminDashboardController extends Controller
                     ->orderBy('appointment_count', 'desc')
                     ->limit(10)
                     ->get();
-                \Log::info('Top specializations query success', ['count' => $topSpecializations->count()]);
+                \Log::info('Top specializations query success', [
+                    'count' => $topSpecializations->count(),
+                    'data' => $topSpecializations,
+                    'total_appointments' => DB::table('appointments')->where('created_at', '>=', $startDate)->count()
+                ]);
             } catch (\Exception $e) {
                 \Log::error('Top specializations query failed: ' . $e->getMessage());
                 $topSpecializations = collect([]);
@@ -454,25 +458,26 @@ class AdminDashboardController extends Controller
                     ->groupBy(DB::raw('DATE(created_at)'))
                     ->orderBy('date', 'asc')
                     ->get();
-                \Log::info('Appointment trends query success', ['count' => $appointmentTrends->count()]);
+                \Log::info('Appointment trends query success', ['count' => $appointmentTrends->count(), 'data' => $appointmentTrends]);
             } catch (\Exception $e) {
                 \Log::error('Appointment trends query failed: ' . $e->getMessage());
                 $appointmentTrends = collect([]);
             }
             
-            // Peak hours
+            // Peak hours - based on appointment_time, not created_at
             try {
                 $peakHours = DB::table('appointments')
                     ->select(
-                        DB::raw('HOUR(created_at) as hour'),
+                        DB::raw('HOUR(appointment_time) as hour'),
                         DB::raw('COUNT(*) as count')
                     )
                     ->where('created_at', '>=', $startDate)
-                    ->groupBy(DB::raw('HOUR(created_at)'))
+                    ->whereNotNull('appointment_time')
+                    ->groupBy(DB::raw('HOUR(appointment_time)'))
                     ->orderBy('count', 'desc')
                     ->limit(5)
                     ->get();
-                \Log::info('Peak hours query success', ['count' => $peakHours->count()]);
+                \Log::info('Peak hours query success', ['count' => $peakHours->count(), 'data' => $peakHours]);
             } catch (\Exception $e) {
                 \Log::error('Peak hours query failed: ' . $e->getMessage());
                 $peakHours = collect([]);
@@ -509,7 +514,7 @@ class AdminDashboardController extends Controller
                     ->whereNotNull('meeting_type')
                     ->groupBy('meeting_type')
                     ->get();
-                \Log::info('Meeting types query success', ['count' => $meetingTypes->count()]);
+                \Log::info('Meeting types query success', ['count' => $meetingTypes->count(), 'data' => $meetingTypes]);
             } catch (\Exception $e) {
                 \Log::error('Meeting types query failed: ' . $e->getMessage());
                 $meetingTypes = collect([]);
