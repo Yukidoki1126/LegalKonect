@@ -417,12 +417,13 @@ class AdminDashboardController extends Controller
 
     public function descriptiveAnalytics(Request $request)
     {
-        $days = $request->input('days', 30);
-        $startDate = now()->subDays($days);
-        $cacheKey = "descriptive_analytics_{$days}";
-        
-        // Cache for 5 minutes to improve performance
-        return \Cache::remember($cacheKey, 300, function () use ($days, $startDate) {
+        try {
+            $days = $request->input('days', 30);
+            $startDate = now()->subDays($days);
+            $cacheKey = "descriptive_analytics_{$days}";
+            
+            // Cache for 5 minutes to improve performance
+            return \Cache::remember($cacheKey, 300, function () use ($days, $startDate) {
         // Most requested legal expertise (by case type)
         // Priority: 1. Lawyer-confirmed specialization, 2. Client-selected specialization, 3. Lawyer's primary specialization
         $topSpecializations = DB::table('appointments')
@@ -599,6 +600,10 @@ class AdminDashboardController extends Controller
             'total_appointments' => $totalAppointments,
         ]);
         }); // End cache
+        } catch (\Exception $e) {
+            \Log::error('Descriptive analytics error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load analytics: ' . $e->getMessage()], 500);
+        }
     }
 
     // debug endpoint removed
