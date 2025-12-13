@@ -37,7 +37,7 @@ class ManualPaymentController extends Controller
                 $paymentMethods['gcash'] = [
                     'number' => $lawyer->gcash_number,
                     'account_name' => $lawyer->gcash_account_name,
-                    'qr_code' => $lawyer->gcash_qr_code ? Storage::disk(env('FILESYSTEM_DISK', 'public'))->url($lawyer->gcash_qr_code) : null,
+                    'qr_code' => $lawyer->gcash_qr_url,
                 ];
             }
 

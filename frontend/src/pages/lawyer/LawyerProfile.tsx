@@ -128,7 +128,7 @@ const LawyerProfile: React.FC = () => {
       setPaymentInfo({
         gcash_number: data.gcash_number || '',
         gcash_account_name: data.gcash_account_name || '',
-        gcash_qr_code: data.gcash_qr_code || null,
+        gcash_qr_code: data.gcash_qr_url || data.gcash_qr_code || null,
         bank_name: data.bank_name || '',
         bank_account_number: data.bank_account_number || '',
         bank_account_name: data.bank_account_name || '',
