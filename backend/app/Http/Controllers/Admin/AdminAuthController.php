@@ -61,16 +61,19 @@ class AdminAuthController extends Controller
      */
     public function me(Request $request)
     {
-        $admin = $request->user();
+        $user = $request->user();
 
+        // Handle both Admin model (admins table) and User model (users table with admin role)
+        $isActive = property_exists($user, 'is_active') ? $user->is_active : ($user->status === 'active');
+        
         return response()->json([
             'admin' => [
-                'id' => $admin->id,
-                'name' => $admin->name,
-                'email' => $admin->email,
-                'role' => $admin->role,
-                'status' => $admin->is_active ? 'active' : 'suspended',
-                'last_login_at' => $admin->last_login_at,
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'status' => $isActive ? 'active' : 'suspended',
+                'last_login_at' => $user->last_login_at,
             ]
         ]);
     }

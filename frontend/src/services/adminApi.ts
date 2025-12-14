@@ -95,7 +95,6 @@ export const adminAuthService = {
 
   me: async () => {
     const response = await adminApi.get('/me');
-    console.log('adminAuthService.me() raw response:', response.data);
     return response.data.admin;
   },
 };

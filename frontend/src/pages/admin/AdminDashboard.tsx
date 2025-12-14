@@ -22,7 +22,6 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     // Check if admin token exists before loading (check both sessionStorage and localStorage)
     const token = sessionStorage.getItem('admin_token') || localStorage.getItem('token');
-    console.log('AdminDashboard: Checking token:', token ? 'exists' : 'missing');
     if (!token) {
       navigate('/login');
       return;
@@ -34,13 +33,9 @@ const AdminDashboard: React.FC = () => {
 
   const loadAdmin = async () => {
     try {
-      console.log('AdminDashboard: Loading admin data...');
       const adminData = await adminAuthService.me();
-      console.log('AdminDashboard: Admin data loaded:', adminData);
-      console.log('AdminDashboard: Admin role:', adminData?.role);
       
       if (!adminData) {
-        console.error('AdminDashboard: No admin data received');
         navigate('/login');
         return;
       }
@@ -48,7 +43,6 @@ const AdminDashboard: React.FC = () => {
       setAdmin(adminData);
     } catch (error: any) {
       console.error('AdminDashboard: Error loading admin:', error);
-      console.error('AdminDashboard: Error details:', error.response?.data);
       navigate('/login');
     } finally {
       setLoading(false);
