@@ -592,15 +592,15 @@ const LawyerCases: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Tabs - Enhanced */}
-        <div className="bg-white rounded-2xl border-2 border-gray-100 p-2 mb-6">
-          <div className="flex gap-2">
+        {/* Filter Tabs - Enhanced - Mobile Responsive */}
+        <div className="bg-white rounded-2xl border-2 border-gray-100 p-2 mb-6 overflow-hidden">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {(['all', 'pending', 'ongoing', 'closed'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleFilterChange(tab)}
                 className={`
-                  flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
+                  flex-1 min-w-[120px] px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap
                   ${
                     filter === tab
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
@@ -608,10 +608,10 @@ const LawyerCases: React.FC = () => {
                   }
                 `}
               >
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                   <span className="capitalize">{tab}</span>
                   <span className={`
-                    px-2 py-0.5 rounded-full text-xs font-bold
+                    px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-bold
                     ${filter === tab ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}
                   `}>
                     {tab === 'all' ? stats.total :

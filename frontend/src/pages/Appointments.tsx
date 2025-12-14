@@ -613,60 +613,71 @@ const Appointments: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {appointments.map((appointment) => (
-                  <div key={appointment.id} className="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-card hover:border-blue-200 transition-all duration-300 group">
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={appointment.id} className="bg-white border-2 border-gray-200 rounded-2xl p-4 sm:p-6 hover:shadow-card hover:border-blue-200 transition-all duration-300 group">
+                    {/* Header with Lawyer Name and Status */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 pb-4 border-b border-gray-100">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        <h3 className="text-lg sm:text-xl font-bold text-blue-600 group-hover:text-blue-700 transition-colors mb-2">
                           {appointment.lawyer.first_name} {appointment.lawyer.last_name}
                         </h3>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {appointment.lawyer.specializations.map((spec, idx) => (
-                            <span key={idx} className="text-xs font-medium text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
+                        
+                        {/* Compact specializations - show first 3 only */}
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {appointment.lawyer.specializations.slice(0, 3).map((spec, idx) => (
+                            <span key={idx} className="text-xs font-medium text-gray-600 bg-gray-50 px-2 py-0.5 rounded">
                               {spec.name}
                             </span>
                           ))}
+                          {appointment.lawyer.specializations.length > 3 && (
+                            <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
+                              +{appointment.lawyer.specializations.length - 3} more
+                            </span>
+                          )}
                         </div>
+                        
                         {/* Show selected case type */}
                         {(appointment.specialization || appointment.confirmed_specialization) && (
-                          <div className="flex items-center gap-1 mb-2">
-                            <span className="text-sm text-purple-700 bg-purple-100 px-2 py-1 rounded flex items-center gap-1">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="font-medium">Case: {appointment.confirmed_specialization?.name || appointment.specialization?.name}</span>
+                            {appointment.confirmed_specialization && (
+                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
-                              Case: {appointment.confirmed_specialization?.name || appointment.specialization?.name}
-                              {appointment.confirmed_specialization && (
-                                <svg className="w-4 h-4 text-green-600 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </span>
+                            )}
                           </div>
                         )}
                       </div>
-                      <div className="flex gap-2 flex-wrap">
+                      
+                      {/* Status Badges - Stacked on mobile */}
+                      <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
                         {/* Show reschedule status badge if pending */}
                         {appointment.reschedule_status === 'pending' && (
-                          <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-300">
+                          <span className="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-purple-100 text-purple-800 border-2 border-purple-200 text-center">
                             Reschedule Pending
                           </span>
                         )}
+                        
                         {/* Show reschedule available/used indicator for upcoming paid appointments */}
                         {(appointment.status === 'pending' || appointment.status === 'confirmed') && 
                          appointment.payment_status === 'paid' && 
                          appointment.reschedule_status !== 'pending' && (
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          <span className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border-2 text-center whitespace-nowrap ${
                             appointment.client_reschedule_used 
-                              ? 'bg-gray-100 text-gray-500 border border-gray-200' 
-                              : 'bg-blue-50 text-blue-600 border border-blue-200'
+                              ? 'bg-gray-50 text-gray-500 border-gray-200' 
+                              : 'bg-blue-50 text-blue-600 border-blue-200'
                           }`} title={appointment.client_reschedule_used ? 'You have used your one-time reschedule' : 'You have 1 reschedule attempt available'}>
                             {appointment.client_reschedule_used ? '0 Reschedule Left' : '1 Reschedule Left'}
                           </span>
                         )}
+                        
                         {/* Smart combined status badge */}
                         {(() => {
                           const smartStatus = getSmartStatus(appointment);
                           return (
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${smartStatus.color}`}>
+                            <span className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold border-2 text-center ${smartStatus.color}`}>
                               {smartStatus.label}
                             </span>
                           );

@@ -209,11 +209,11 @@ const LawyerDetail: React.FC = () => {
           {/* Main Content - 2 columns */}
           <div className="lg:col-span-2 space-y-6">
             {/* Lawyer Header - Clean & Professional */}
-            <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-soft overflow-hidden relative">
-              <div className="flex items-start gap-6">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-8 shadow-soft overflow-hidden relative">
+              <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                 {/* Profile Photo */}
-                <div className="flex-shrink-0">
-                  <div className="w-28 h-28 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl overflow-hidden border-2 border-white shadow-lg ring-4 ring-blue-50">
+                <div className="flex-shrink-0 mx-auto sm:mx-0">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl overflow-hidden border-2 border-white shadow-lg ring-4 ring-blue-50">
                     {(lawyer.profile_photo_url || lawyer.profile_photo) ? (
                       <img
                         src={
@@ -243,11 +243,11 @@ const LawyerDetail: React.FC = () => {
                 </div>
 
                 {/* Lawyer Info */}
-                <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-3">{fullName}</h1>
+                <div className="flex-1 text-center sm:text-left w-full">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{fullName}</h1>
 
                   {/* Specializations - Modern Pills */}
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
                     {lawyer.specializations.map((spec) => (
                       <span
                         key={spec.id}
@@ -259,16 +259,16 @@ const LawyerDetail: React.FC = () => {
                   </div>
 
                   {/* Key Stats - Minimal */}
-                  <div className="flex items-center gap-6 text-sm text-gray-600">
-                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg w-full sm:w-auto justify-center">
                       <Shield className="w-4 h-4 text-green-600" />
                       <span>License: <span className="font-semibold text-gray-800">{lawyer.license_number}</span></span>
                     </div>
-                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg w-full sm:w-auto justify-center">
+                      <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span><span className="font-semibold text-gray-800">{lawyer.years_experience}</span> years experience</span>
+                      <span className="truncate"><span className="font-semibold text-gray-800">{lawyer.years_experience}</span> years experience</span>
                     </div>
                   </div>
                 </div>
@@ -276,8 +276,8 @@ const LawyerDetail: React.FC = () => {
             </div>
 
             {/* About Section */}
-            <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-soft">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-8 shadow-soft">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -285,12 +285,12 @@ const LawyerDetail: React.FC = () => {
                 </div>
                 About
               </h2>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{lawyer.bio}</p>
+              <p className="text-sm sm:text-base text-gray-700 leading-relaxed break-words">{lawyer.bio}</p>
             </div>
 
             {/* Reviews - Cleaner Design */}
             {reviewStats && reviewStats.total_reviews > 0 && (
-              <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-soft">
+              <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-8 shadow-soft">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
@@ -364,7 +364,7 @@ const LawyerDetail: React.FC = () => {
           {/* Sidebar - Clean & Functional */}
           <div className="space-y-6">
             {/* Pricing Card - Simple */}
-            <div className="bg-gradient-to-br from-white to-blue-50/50 border border-gray-100 rounded-2xl p-6 shadow-soft relative overflow-hidden">
+            <div className="bg-gradient-to-br from-white to-blue-50/50 border border-gray-100 rounded-2xl p-4 sm:p-6 shadow-soft relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
               <p className="text-sm text-gray-600 mb-2 font-medium">Consultation Fee</p>
               <p className="text-4xl font-bold text-gray-900 mb-1">
@@ -374,7 +374,7 @@ const LawyerDetail: React.FC = () => {
             </div>
 
             {/* Contact Info - Clean List */}
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-soft">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 shadow-soft">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
                   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -386,7 +386,7 @@ const LawyerDetail: React.FC = () => {
               <div className="space-y-4 text-sm">
                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                   <MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700">{lawyer.office_address}</span>
+                  <span className="text-gray-700 break-words">{lawyer.office_address}</span>
                 </div>
                 {lawyer.office_phone && (
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
@@ -396,7 +396,7 @@ const LawyerDetail: React.FC = () => {
                 )}
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                   <Mail className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                  <span className="text-gray-700">{lawyer.user.email}</span>
+                  <span className="text-gray-700 break-all text-xs sm:text-sm">{lawyer.user.email}</span>
                 </div>
               </div>
             </div>
@@ -405,14 +405,14 @@ const LawyerDetail: React.FC = () => {
             <div className="space-y-3">
               <button
                 onClick={handleBookAppointment}
-                className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold flex items-center justify-center gap-2 shadow-button hover:shadow-button-hover hover:-translate-y-0.5"
+                className="w-full px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold flex items-center justify-center gap-2 shadow-button hover:shadow-button-hover hover:-translate-y-0.5">
               >
                 <Calendar className="w-5 h-5" />
                 Book Appointment
               </button>
               <button
                 onClick={handleGetDirections}
-                className="w-full px-6 py-4 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300"
+                className="w-full px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300">
               >
                 <MapPin className="w-5 h-5" />
                 Get Directions

@@ -227,19 +227,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-      <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-100">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-fadeIn">
+      <div className="bg-white rounded-xl sm:rounded-2xl max-w-6xl w-full max-h-[98vh] sm:max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-100">
         {/* Header */}
-        <div className="relative p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 via-white to-indigo-50">
+        <div className="relative p-4 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 via-white to-indigo-50">
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-lg sm:text-2xl font-bold text-gray-900">
                   Book Appointment
                 </h2>
               </div>
@@ -268,9 +268,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
         </div>
 
         {/* Body */}
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                 {/* LEFT COLUMN - Calendar */}
                 <div className="space-y-4">
                   <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-200 p-6 shadow-soft">
@@ -302,7 +302,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                   </div>
 
                   {/* Fee Summary - Below Calendar */}
-                  <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl p-6 shadow-soft">
+                  <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-soft">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,8 +357,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                 <div className="space-y-4">
                   {/* Legal Matter Type (Specialization) - Optional */}
                   {lawyer.specializations && lawyer.specializations.length > 0 && (
-                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-200 p-6 shadow-soft">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl sm:rounded-2xl border border-gray-200 p-3 sm:p-6 shadow-soft">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -390,8 +390,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                   )}
 
                   {/* Meeting Type */}
-                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-200 p-6 shadow-soft">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl sm:rounded-2xl border border-gray-200 p-3 sm:p-6 shadow-soft">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -399,7 +399,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                       </div>
                       Meeting Type
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-4">
                       {[
                         { value: 'in-person', icon: '🏢', label: 'In-Person', disabled: false },
                         { value: 'video', icon: '💻', label: 'Video Call', badge: 'Coming Soon', disabled: true }
@@ -409,7 +409,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                           type="button"
                           onClick={() => !type.disabled && setMeetingType(type.value)}
                           disabled={type.disabled}
-                          className={`px-4 py-4 rounded-xl border-2 text-sm font-semibold transition-all flex flex-col items-center gap-2 relative ${
+                          className={`px-2 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl border-2 text-xs sm:text-sm font-semibold transition-all flex flex-col items-center gap-1 sm:gap-2 relative ${
                             meetingType === type.value && !type.disabled
                               ? 'border-blue-600 bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg scale-[1.02]'
                               : type.disabled
@@ -417,7 +417,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                               : 'border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50 text-gray-700 hover:scale-[1.02]'
                           }`}
                         >
-                          <span className="text-3xl">{type.icon}</span>
+                          <span className="text-2xl sm:text-3xl">{type.icon}</span>
                           <span>{type.label}</span>
                           {type.badge && (
                             <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap shadow-sm">
@@ -431,8 +431,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
 
                   {/* Time Slots - Only shown after date is selected */}
                   {selectedDate && (
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-6 shadow-soft">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl border border-blue-200 p-3 sm:p-6 shadow-soft">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -452,14 +452,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                           <p className="text-gray-600 mt-4 text-sm font-medium">Loading available slots...</p>
                         </div>
                       ) : availableSlots.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-3">
                           {availableSlots.map((slot) => (
                             <button
                               key={slot.time}
                               type="button"
                               onClick={() => slot.available && setSelectedTime(slot.time)}
                               disabled={!slot.available}
-                              className={`px-4 py-3.5 rounded-2xl border-2 text-sm font-semibold transition-all ${
+                              className={`px-2 sm:px-4 py-2.5 sm:py-3.5 rounded-lg sm:rounded-2xl border-2 text-xs sm:text-sm font-semibold transition-all ${
                                 !slot.available
                                   ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed line-through opacity-60'
                                   : selectedTime === slot.time
@@ -507,8 +507,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                   )}
 
                   {/* Notes */}
-                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-200 p-6 shadow-soft">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl sm:rounded-2xl border border-gray-200 p-3 sm:p-6 shadow-soft">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -522,7 +522,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                       onChange={(e) => setClientNotes(e.target.value)}
                       rows={4}
                       placeholder="Brief description of your legal matter..."
-                      className="w-full px-4 py-3.5 text-sm border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 resize-none transition-all duration-200 hover:border-gray-300"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3.5 text-xs sm:text-sm border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 resize-none transition-all duration-200 hover:border-gray-300"
                       maxLength={1000}
                     />
                     <div className="flex justify-between items-center mt-2">
@@ -551,18 +551,18 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                 )}
 
                 {/* Submit Button */}
-                <div className="flex gap-4">
+                <div className="flex gap-2 sm:gap-4">
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="flex-1 px-6 py-3.5 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all"
+                    className="flex-1 px-3 sm:px-6 py-2.5 sm:py-3.5 text-sm sm:text-base border-2 border-gray-200 text-gray-700 rounded-lg sm:rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all">
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading || !selectedDate || !selectedTime}
-                    className="flex-1 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all shadow-button hover:shadow-button-hover disabled:shadow-none flex items-center justify-center gap-2"
+                    className="flex-1 px-3 sm:px-6 py-2.5 sm:py-3.5 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all shadow-button hover:shadow-button-hover disabled:shadow-none flex items-center justify-center gap-2">
                   >
                     {loading ? (
                       <>
