@@ -37,6 +37,7 @@ const AdminDashboard: React.FC = () => {
       console.log('AdminDashboard: Loading admin data...');
       const adminData = await adminAuthService.me();
       console.log('AdminDashboard: Admin data loaded:', adminData);
+      console.log('AdminDashboard: Admin role:', adminData?.role);
       setAdmin(adminData);
     } catch (error) {
       console.error('AdminDashboard: Error loading admin:', error);
