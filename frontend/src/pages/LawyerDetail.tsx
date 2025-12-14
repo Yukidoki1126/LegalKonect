@@ -412,7 +412,7 @@ const LawyerDetail: React.FC = () => {
               </button>
               <button
                 onClick={handleGetDirections}
-                className="w-full px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300">
+                className="w-full px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300"
               >
                 <MapPin className="w-5 h-5" />
                 Get Directions

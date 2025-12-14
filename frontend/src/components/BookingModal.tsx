@@ -562,7 +562,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                   <button
                     type="submit"
                     disabled={loading || !selectedDate || !selectedTime}
-                    className="flex-1 px-3 sm:px-6 py-2.5 sm:py-3.5 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all shadow-button hover:shadow-button-hover disabled:shadow-none flex items-center justify-center gap-2">
+                    className="flex-1 px-3 sm:px-6 py-2.5 sm:py-3.5 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all shadow-button hover:shadow-button-hover disabled:shadow-none flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <>
