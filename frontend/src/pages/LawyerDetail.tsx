@@ -405,7 +405,7 @@ const LawyerDetail: React.FC = () => {
             <div className="space-y-3">
               <button
                 onClick={handleBookAppointment}
-                className="w-full px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold flex items-center justify-center gap-2 shadow-button hover:shadow-button-hover hover:-translate-y-0.5">
+                className="w-full px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold flex items-center justify-center gap-2 shadow-button hover:shadow-button-hover hover:-translate-y-0.5"
               >
                 <Calendar className="w-5 h-5" />
                 Book Appointment

@@ -555,7 +555,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="flex-1 px-3 sm:px-6 py-2.5 sm:py-3.5 text-sm sm:text-base border-2 border-gray-200 text-gray-700 rounded-lg sm:rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all">
+                    className="flex-1 px-3 sm:px-6 py-2.5 sm:py-3.5 text-sm sm:text-base border-2 border-gray-200 text-gray-700 rounded-lg sm:rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all"
                   >
                     Cancel
                   </button>
