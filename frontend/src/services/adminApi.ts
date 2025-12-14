@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api.config';
 
-const API_URL = `${API_BASE_URL.replace('/api', '')}/api/admin`;
+// Construct admin API URL: if API_BASE_URL ends with /api, replace with /api/admin
+// Otherwise append /api/admin
+const API_URL = API_BASE_URL.endsWith('/api') 
+  ? API_BASE_URL.replace(/\/api$/, '/api/admin')
+  : `${API_BASE_URL}/api/admin`;
 
 const adminApi = axios.create({
   baseURL: API_URL,
