@@ -94,8 +94,18 @@ export const adminAuthService = {
   },
 
   me: async () => {
-    const response = await adminApi.get('/me');
-    return response.data.admin;
+    console.log('adminAuthService.me(): Making request to /me');
+    console.log('adminAuthService.me(): API_URL =', API_URL);
+    try {
+      const response = await adminApi.get('/me');
+      console.log('adminAuthService.me(): Raw response:', response);
+      console.log('adminAuthService.me(): Response data:', response.data);
+      return response.data.admin;
+    } catch (error: any) {
+      console.error('adminAuthService.me(): Request failed:', error);
+      console.error('adminAuthService.me(): Response:', error.response?.data);
+      throw error;
+    }
   },
 };
 

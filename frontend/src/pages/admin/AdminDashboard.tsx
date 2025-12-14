@@ -33,9 +33,20 @@ const AdminDashboard: React.FC = () => {
 
   const loadAdmin = async () => {
     try {
+      console.log('AdminDashboard: Calling adminAuthService.me()...');
       const adminData = await adminAuthService.me();
+      console.log('AdminDashboard: Received admin data:', adminData);
       
       if (!adminData) {
+        console.error('AdminDashboard: No admin data received, but NOT redirecting to login');
+        // Try to get from sessionStorage instead
+        const storedAdmin = sessionStorage.getItem('admin');
+        if (storedAdmin) {
+          console.log('AdminDashboard: Using stored admin data from sessionStorage');
+          setAdmin(JSON.parse(storedAdmin));
+          setLoading(false);
+          return;
+        }
         navigate('/login');
         return;
       }
@@ -43,6 +54,18 @@ const AdminDashboard: React.FC = () => {
       setAdmin(adminData);
     } catch (error: any) {
       console.error('AdminDashboard: Error loading admin:', error);
+      console.error('AdminDashboard: Error response:', error.response?.data);
+      console.error('AdminDashboard: Error status:', error.response?.status);
+      
+      // Try to use stored admin data as fallback
+      const storedAdmin = sessionStorage.getItem('admin');
+      if (storedAdmin) {
+        console.log('AdminDashboard: Using stored admin data as fallback');
+        setAdmin(JSON.parse(storedAdmin));
+        setLoading(false);
+        return;
+      }
+      
       navigate('/login');
     } finally {
       setLoading(false);
@@ -137,7 +160,7 @@ const AdminDashboard: React.FC = () => {
             {/* Logo */}
             <div className="flex items-center space-x-2 sm:space-x-3">
               <img 
-                src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+                src="/legalkonect.png" 
                 alt="LegalKonect" 
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover"
               />

@@ -74,7 +74,7 @@ const Navigation: React.FC = () => {
           >
             {!logoError ? (
               <img 
-                src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+                src="/legalkonect.png" 
                 alt="LegalKonect" 
                 className="w-12 h-12 rounded-lg object-cover"
                 onError={() => setLogoError(true)}

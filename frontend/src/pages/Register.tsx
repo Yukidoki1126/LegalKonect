@@ -157,7 +157,7 @@ const Register: React.FC = () => {
           <Link to="/" className="inline-flex justify-center mb-6">
             {!logoError ? (
               <img 
-                src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+                src="/legalkonect.png" 
                 alt="LegalKonect" 
                 className="w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 object-cover"
                 onError={() => setLogoError(true)}
