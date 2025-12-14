@@ -20,6 +20,8 @@ adminApi.interceptors.request.use((config) => {
     token = localStorage.getItem('token');
   }
   
+  console.log('adminApi request:', config.url, 'token:', token ? 'present' : 'missing');
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -93,6 +95,7 @@ export const adminAuthService = {
 
   me: async () => {
     const response = await adminApi.get('/me');
+    console.log('adminAuthService.me() raw response:', response.data);
     return response.data.admin;
   },
 };
