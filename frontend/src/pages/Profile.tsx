@@ -224,30 +224,30 @@ const Profile: React.FC = () => {
         {/* Main Card */}
         <div className="bg-white border border-gray-200/80 rounded-2xl shadow-soft overflow-hidden">
           {/* Profile Header Section */}
-          <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-purple-50/20">
-            <div className="flex items-center gap-6">
+          <div className="p-4 sm:p-8 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-purple-50/20">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
               <ProfilePictureUpload
                 currentPicture={user?.profile_picture_url || user?.profile_picture}
                 onUpload={handleProfilePictureUpload}
                 onDelete={handleProfilePictureDelete}
                 isUploading={uploadingPicture}
               />
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900">{user?.name || 'Your Name'}</h2>
-                <p className="text-base text-gray-500 mt-1">{user?.email}</p>
-                <div className="flex items-center gap-3 mt-4">
-                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex-1 text-center sm:text-left w-full">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{user?.name || 'Your Name'}</h2>
+                <p className="text-sm sm:text-base text-gray-500 mt-1 break-all">{user?.email}</p>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 mt-3 sm:mt-4">
+                  <span className="inline-flex items-center px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     Client
                   </span>
                   {user?.city && (
-                    <span className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full">
-                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="inline-flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-gray-600 bg-gray-100 px-2.5 sm:px-3 py-1.5 rounded-full max-w-full">
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       </svg>
-                      {user.city}, {user.province}
+                      <span className="truncate">{user.city}, {user.province}</span>
                     </span>
                   )}
                 </div>

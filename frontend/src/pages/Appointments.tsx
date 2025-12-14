@@ -497,56 +497,56 @@ const Appointments: React.FC = () => {
         )}
 
         <div className="bg-white rounded-2xl shadow-soft border border-gray-100 mb-6 overflow-hidden">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-            <div className="flex">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white overflow-x-auto scrollbar-hide">
+            <div className="flex min-w-max">
               <button
                 onClick={() => setActiveTab('upcoming')}
-                className={`flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2 ${
+                className={`flex-shrink-0 px-3 sm:px-4 py-4 text-center font-medium transition-all text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap ${
                   activeTab === 'upcoming'
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Upcoming
               </button>
               <button
                 onClick={() => setActiveTab('reschedule')}
-                className={`flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2 ${
+                className={`flex-shrink-0 px-3 sm:px-4 py-4 text-center font-medium transition-all text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap ${
                   activeTab === 'reschedule'
                     ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Reschedule
               </button>
               <button
                 onClick={() => setActiveTab('cancelled')}
-                className={`flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2 ${
+                className={`flex-shrink-0 px-3 sm:px-4 py-4 text-center font-medium transition-all text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap ${
                   activeTab === 'cancelled'
                     ? 'text-red-600 border-b-2 border-red-600 bg-red-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 Cancelled
               </button>
               <button
                 onClick={() => setActiveTab('past')}
-                className={`flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2 ${
+                className={`flex-shrink-0 px-3 sm:px-4 py-4 text-center font-medium transition-all text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap ${
                   activeTab === 'past'
                     ? 'text-green-600 border-b-2 border-green-600 bg-green-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Completed

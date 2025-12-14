@@ -238,7 +238,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
           onClick={() => handleDateClick(day)}
           disabled={disabled}
           className={`
-            p-3 text-center rounded-lg font-medium transition-all
+            w-full aspect-square flex items-center justify-center rounded-lg font-medium transition-all text-sm sm:text-base
             ${isPast && !isUnavailableByLawyer
               ? 'text-gray-300 cursor-not-allowed bg-gray-50'
               : ''

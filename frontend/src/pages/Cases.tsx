@@ -325,10 +325,10 @@ const Cases: React.FC = () => {
           </div>
         )}
 
-        {/* Filter Tabs with counts */}
+        {/* Filter Tabs with counts - Mobile Scrollable */}
         <div className="bg-white rounded-2xl shadow-soft border border-gray-100 mb-6 overflow-hidden">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-            <div className="flex">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white overflow-x-auto scrollbar-hide">
+            <div className="flex min-w-max">
               {([
                 { key: 'all', label: 'All Cases', count: stats.total, icon: 'M4 6h16M4 10h16M4 14h16M4 18h16' },
                 { key: 'pending', label: 'Pending', count: stats.pending, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -339,17 +339,17 @@ const Cases: React.FC = () => {
                   key={tab.key}
                   onClick={() => handleFilterChange(tab.key)}
                   className={`
-                    flex-1 px-4 py-4 text-center font-medium transition-all text-sm flex items-center justify-center gap-2
+                    flex-shrink-0 px-4 sm:px-6 py-4 text-center font-medium transition-all text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap
                     ${filter === tab.key
                       ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }
                   `}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
                   </svg>
-                  {tab.label}
+                  <span className="font-semibold">{tab.label}</span>
                   {tab.count > 0 && (
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                       filter === tab.key 
