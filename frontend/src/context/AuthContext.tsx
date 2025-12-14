@@ -160,6 +160,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Also store in localStorage as backup for admin API calls
         localStorage.setItem('token', newToken);
         localStorage.setItem('user', JSON.stringify(newUser));
+        
+        // IMPORTANT: Set React state so app knows user is logged in
+        setToken(newToken);
+        setUser(newUser);
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         return redirect || '/admin';
       }
