@@ -1,5 +1,5 @@
 // src/pages/Home.tsx - Professional design following DESIGN_IMPROVEMENTS.md
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Scale, Search, Calendar, Shield,
@@ -10,11 +10,12 @@ import {
 
 export default function Home() {
   const navigate = useNavigate();
+  const [logoError, setLogoError] = useState(false);
 
   // Reset page opacity on load for smooth transition
   useEffect(() => {
     document.body.style.opacity = '1';
-    document.body.style.transition = 'opacity 0.5s ease-in';
+    document.body.style.transition = '';
   }, []);
 
   // Check if user is already logged in and redirect accordingly
@@ -100,36 +101,39 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200/50">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 lg:h-20">
-            <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
-              <img 
-                src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
-                alt="LegalKonect" 
-                className="w-10 h-10 rounded-full shadow-md group-hover:shadow-lg transition-all group-hover:scale-105 object-cover"
-              />
-              <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">LegalKonect</span>
+      <nav className="fixed top-0 w-full z-50 bg-white backdrop-blur-lg border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            {/* Logo - Responsive sizing */}
+            <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer" onClick={() => navigate('/')}>
+              {!logoError ? (
+                <img 
+                  src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+                  alt="LegalKonect" 
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-md group-hover:shadow-lg transition-all group-hover:scale-105 object-cover"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-all group-hover:scale-105">
+                  <Scale className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+              )}
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                LegalKonect
+              </span>
             </div>
 
-            <div className="flex items-center gap-4">
+            {/* Action Buttons - Responsive */}
+            <div className="flex items-center gap-2 sm:gap-4">
               <button
-                onClick={() => {
-                  document.body.style.opacity = '0';
-                  document.body.style.transition = 'opacity 0.3s ease-out';
-                  setTimeout(() => navigate('/login'), 300);
-                }}
-                className="px-6 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-all hover:bg-blue-50 rounded-xl"
+                onClick={() => navigate('/login')}
+                className="px-3 py-2 sm:px-6 sm:py-2.5 text-sm sm:text-base text-gray-700 hover:text-blue-600 font-medium transition-all hover:bg-blue-50 rounded-lg sm:rounded-xl"
               >
                 Sign In
               </button>
               <button
-                onClick={() => {
-                  document.body.style.opacity = '0';
-                  document.body.style.transition = 'opacity 0.3s ease-out';
-                  setTimeout(() => navigate('/lawyers'), 300);
-                }}
-                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold transition-all hover:scale-105 shadow-md hover:shadow-lg"
+                onClick={() => navigate('/lawyers')}
+                className="px-3 py-2 sm:px-6 sm:py-2.5 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold transition-all shadow-md hover:shadow-lg whitespace-nowrap"
               >
                 Find Lawyers
               </button>

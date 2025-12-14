@@ -252,6 +252,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     delete api.defaults.headers.common['Authorization'];
+    
+    // Clean up any page styles that might interfere with navigation
+    document.body.style.opacity = '1';
+    document.body.style.transition = '';
+    
     // Redirect immediately BEFORE React state updates to avoid ProtectedRoute redirect
     window.location.href = '/';
   };

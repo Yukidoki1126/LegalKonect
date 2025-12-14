@@ -14,14 +14,15 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Reset page opacity on load for smooth transition
+  // Ensure body styles are clean when component mounts
   useEffect(() => {
     document.body.style.opacity = '1';
-    document.body.style.transition = 'opacity 0.5s ease-in';
+    document.body.style.transition = '';
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,9 +69,7 @@ const Login: React.FC = () => {
   };
 
   const handleNavigate = (path: string) => {
-    document.body.style.opacity = '0';
-    document.body.style.transition = 'opacity 0.3s ease-out';
-    setTimeout(() => navigate(path), 300);
+    navigate(path);
   };
 
   return (
@@ -88,11 +87,18 @@ const Login: React.FC = () => {
         {/* Logo and Header */}
         <div className="text-center">
           <Link to="/" className="inline-flex justify-center mb-6">
-            <img 
-              src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
-              alt="LegalKonect" 
-              className="w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 object-cover"
-            />
+            {!logoError ? (
+              <img 
+                src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+                alt="LegalKonect" 
+                className="w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 object-cover"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                <Scale className="w-8 h-8 text-white" />
+              </div>
+            )}
           </Link>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Sign in to your account

@@ -4,12 +4,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { STORAGE_URL } from '../config/api.config';
+import { Scale } from 'lucide-react';
 
 const Navigation: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -70,11 +72,18 @@ const Navigation: React.FC = () => {
             to="/"
             className="flex items-center space-x-3 group"
           >
-            <img 
-              src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
-              alt="LegalKonect" 
-              className="w-12 h-12 rounded-lg object-cover"
-            />
+            {!logoError ? (
+              <img 
+                src="https://pub-c2fcfa54c78d46cfbf87fcdba61cfbfe.r2.dev/system_logo/legalkonect.png" 
+                alt="LegalKonect" 
+                className="w-12 h-12 rounded-lg object-cover"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                <Scale className="w-6 h-6 text-white" />
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="text-2xl font-bold text-gray-900">
                 LegalKonect
