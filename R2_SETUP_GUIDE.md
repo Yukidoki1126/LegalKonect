@@ -51,7 +51,47 @@ This guide explains how to set up Cloudflare R2 storage for persistent file stor
    - **Option B**: Connect custom domain (e.g., `cdn.legalkonect.com`)
 5. Copy the public URL
 
-## Step 4: Configure Environment Variables on Render
+## Step 4: Configure CORS (Important!)
+
+To allow your frontend to load images from R2, you need to configure CORS:
+
+1. In your R2 bucket, go to **Settings** tab
+2. Scroll to **CORS Policy** section
+3. Click **Add CORS Policy** or **Edit**
+4. Add this configuration:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "https://legalkonect.site",
+      "https://www.legalkonect.site"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "HEAD"
+    ],
+    "AllowedHeaders": [
+      "*"
+    ],
+    "ExposeHeaders": [],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+5. Click **Save**
+
+**Important Notes:**
+- Add your actual production domain(s) to `AllowedOrigins`
+- Include both `www` and non-`www` versions
+- Include localhost for development
+- `GET` and `HEAD` methods are needed for image loading
+- Without CORS, browsers will block image loading with "CORS error"
+
+## Step 5: Configure Environment Variables on Render
 
 Add these environment variables to your Render service:
 
@@ -77,7 +117,7 @@ R2_REGION=auto
 5. Click **Save Changes**
 6. Render will automatically redeploy
 
-## Step 5: Test the Integration
+## Step 6: Test the Integration
 
 After deployment, test file uploads:
 
@@ -98,7 +138,7 @@ After deployment, test file uploads:
 2. Upload profile picture
 3. Check if it displays in appointments
 
-## Step 6: Migrate Existing Files (Optional)
+## Step 7: Migrate Existing Files (Optional)
 
 If you already have files in local storage, you'll need to re-upload them or migrate:
 
@@ -123,6 +163,18 @@ foreach ($lawyers as $lawyer) {
 
 ## Troubleshooting
 
+### CORS Error / Images Not Loading
+
+**Problem**: Console shows "CORS policy: No 'Access-Control-Allow-Origin' header"
+
+**Solution**:
+1. Go to R2 bucket **Settings** → **CORS Policy**
+2. Add your domain to `AllowedOrigins`
+3. Include both `http://` and `https://` versions
+4. Include `www` and non-`www` versions
+5. Wait a few minutes for changes to propagate
+6. Clear browser cache and reload
+
 ### Files Not Displaying
 
 **Problem**: Images show broken/404 error
@@ -131,6 +183,7 @@ foreach ($lawyers as $lawyer) {
 1. Check R2_PUBLIC_URL is correct
 2. Verify bucket has public access enabled
 3. Check file paths in database match uploaded files
+4. Verify CORS is configured (see above)
 
 ### Upload Fails
 

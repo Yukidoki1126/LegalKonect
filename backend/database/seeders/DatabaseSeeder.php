@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             LawyerAvailabilitySeeder::class,
             FaqSeeder::class,
             SuperAdminSeeder::class,
+            AdminTableSeeder::class,  // Add this - creates admin in admins table
             AppointmentSeeder::class,
             TestAppointmentsSeeder::class,
         ]);
