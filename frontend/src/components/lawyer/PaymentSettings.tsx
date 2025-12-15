@@ -47,13 +47,19 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({ initialData, onUpdate
   });
 
   useEffect(() => {
-    if (initialData) {
-      setFormData(prev => ({
-        ...prev,
-        ...initialData,
-      }));
+    // Only update formData from initialData if modals are closed (not actively editing)
+    if (initialData && !showGcashModal && !showBankModal) {
+      setFormData({
+        gcash_number: initialData.gcash_number || '',
+        gcash_account_name: initialData.gcash_account_name || '',
+        gcash_qr_code: initialData.gcash_qr_code || null,
+        bank_name: initialData.bank_name || '',
+        bank_account_number: initialData.bank_account_number || '',
+        bank_account_name: initialData.bank_account_name || '',
+        preferred_payout_method: initialData.preferred_payout_method || 'gcash',
+      });
     }
-  }, [initialData]);
+  }, [initialData, showGcashModal, showBankModal]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -66,20 +72,26 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({ initialData, onUpdate
   const handleSaveGcash = async () => {
     setLoading(true);
     setError('');
+    
+    const dataToSend = {
+      gcash_number: formData.gcash_number,
+      gcash_account_name: formData.gcash_account_name,
+      bank_name: formData.bank_name,
+      bank_account_number: formData.bank_account_number,
+      bank_account_name: formData.bank_account_name,
+      preferred_payout_method: 'gcash' as const,
+    };
+    
     try {
-      await lawyerApi.updatePaymentInfo({
-        gcash_number: formData.gcash_number,
-        gcash_account_name: formData.gcash_account_name,
-        bank_name: formData.bank_name,
-        bank_account_number: formData.bank_account_number,
-        bank_account_name: formData.bank_account_name,
-        preferred_payout_method: 'gcash',
-      });
+      await lawyerApi.updatePaymentInfo(dataToSend);
       setFormData(prev => ({ ...prev, preferred_payout_method: 'gcash' }));
       setSuccess('GCash details saved successfully!');
-      onUpdate?.();
       setShowGcashModal(false);
-      setTimeout(() => setSuccess(''), 3000);
+      // Fetch updated data after closing modal
+      setTimeout(() => {
+        onUpdate?.();
+        setSuccess('');
+      }, 500);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save GCash details');
     } finally {

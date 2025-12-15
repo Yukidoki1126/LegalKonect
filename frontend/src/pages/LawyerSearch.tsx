@@ -125,7 +125,7 @@ const LawyerSearch: React.FC = () => {
     let totalScore;
 
     if (hasUserLocation && lawyer.distance !== undefined) {
-      // User has location: Prioritize distance heavily (40%), then quality (30%), experience (15%)
+      
       totalScore =
         (distanceScore * 0.40) +    // 40% - Distance is very important
         (ratingScore * 0.30) +       // 30% - Quality matters
@@ -134,7 +134,7 @@ const LawyerSearch: React.FC = () => {
         (availabilityScore * 0.05) + // 5%  - Availability
         (priceScore * 0.02);         // 2%  - Price (least important)
     } else {
-      // No user location: Focus on quality (40%), experience (25%), reviews (15%)
+      
       totalScore =
         (ratingScore * 0.40) +       // 40% - Rating most important
         (experienceScore * 0.25) +   // 25% - Experience

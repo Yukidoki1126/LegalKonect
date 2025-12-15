@@ -28,7 +28,7 @@ class LawyerDashboardController extends Controller
         $stats = [
             'active_cases_count' => DB::table('cases')
                 ->where('lawyer_id', $lawyer->id)
-                ->where('status', 'active')
+                ->whereIn('status', ['pending', 'ongoing'])
                 ->count(),
 
             'upcoming_count' => $lawyer->appointments()
@@ -927,10 +927,11 @@ class LawyerDashboardController extends Controller
 
             $perPage = $request->get('per_page', 20);
 
-            // Get completed appointments with payment confirmed
+            // Get all appointments with confirmed payment (manual payment system)
+            // Shows all transactions regardless of appointment status
             $transactions = $lawyer->appointments()
                 ->with('user:id,name,email')
-                ->whereIn('status', ['completed', 'confirmed'])
+                ->where('payment_confirmed', true)
                 ->orderBy('appointment_date', 'desc')
                 ->paginate($perPage);
 

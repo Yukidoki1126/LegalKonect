@@ -473,6 +473,22 @@ export const lawyerApi = {
     return response.data;
   },
 
+  // Refund - Process refund with receipt
+  processRefund: async (appointmentId: number, formData: FormData) => {
+    const response = await axios.post(
+      `${API_URL}/lawyer/appointments/${appointmentId}/process-refund`,
+      formData,
+      {
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    cacheService.invalidatePattern('/lawyer/appointments');
+    return response.data;
+  },
+
   // Transaction History - Get completed appointments
   getTransactionHistory: async (page: number = 1) => {
     const response = await axios.get(`${API_URL}/lawyer/transactions?page=${page}`, {

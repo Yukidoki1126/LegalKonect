@@ -106,7 +106,14 @@ const LawyerLayout: React.FC = () => {
                 </svg>
               </button>
 
-              <span className="text-lg font-semibold text-gray-900">LegalKonect</span>
+              <div className="flex items-center gap-2">
+                <img 
+                  src="/legalkonect-logo.png" 
+                  alt="LegalKonect Logo" 
+                  className="w-8 h-8 rounded-md shadow-sm"
+                />
+                <span className="text-lg font-semibold text-gray-900">LegalKonect</span>
+              </div>
               <span className="ml-3 text-sm text-gray-500">Lawyer Portal</span>
             </div>
 

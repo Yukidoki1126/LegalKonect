@@ -6,6 +6,14 @@ import ReviewModal from '../components/ReviewModal';
 import { Star, Eye } from 'lucide-react';
 import { notificationService } from '../services/notificationService';
 
+const STORAGE_URL = 'http://localhost:8000';
+
+const getStorageUrl = (path: string | null | undefined): string => {
+  if (!path) return '';
+  if (path.startsWith('/storage')) return STORAGE_URL + path;
+  return STORAGE_URL + '/storage/' + path;
+};
+
 interface Appointment {
   id: number;
   appointment_date: string;
@@ -43,6 +51,10 @@ interface Appointment {
   };
   specialization?: { id: number; name: string } | null;
   confirmed_specialization?: { id: number; name: string } | null;
+  // Refund fields
+  refund_receipt?: string | null;
+  refund_processed_at?: string | null;
+  refund_notes?: string | null;
 }
 
 const Appointments: React.FC = () => {
@@ -814,6 +826,58 @@ const Appointments: React.FC = () => {
                         <p className="text-sm text-gray-900">
                           <strong className="text-gray-700">Reschedule Declined:</strong> You declined the lawyer's reschedule request. The appointment was cancelled.
                         </p>
+                        {appointment.payment_status === 'paid' && !appointment.refund_receipt && (
+                          <p className="text-xs text-green-700 mt-2">
+                            💰 <strong>Refund Status:</strong> The lawyer will process your refund. Please wait for the lawyer to handle the refund transaction.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Refund Receipt Display */}
+                    {appointment.status === 'cancelled' && appointment.refund_receipt && (
+                      <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-xl">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-green-900 mb-1">
+                              ✓ Refund Processed
+                            </p>
+                            <p className="text-xs text-green-800 mb-2">
+                              The lawyer has processed your refund. View the receipt below for your records.
+                            </p>
+                            {appointment.refund_processed_at && (
+                              <p className="text-xs text-green-700 mb-2">
+                                <strong>Processed:</strong> {new Date(appointment.refund_processed_at).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            )}
+                            {appointment.refund_notes && (
+                              <p className="text-xs text-green-800 bg-white/50 p-2 rounded mb-2">
+                                <strong>Notes:</strong> {appointment.refund_notes}
+                              </p>
+                            )}
+                            <a
+                              href={getStorageUrl(appointment.refund_receipt)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View Refund Receipt
+                            </a>
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -1188,8 +1252,8 @@ const Appointments: React.FC = () => {
                       {selectedAppointment.payment_status === 'paid' ? (
                         <>
                           <li>• The lawyer has been notified</li>
-                          <li>• <strong>Refund Policy:</strong> The lawyer will review and manually process your refund</li>
-                          <li>• Refunds may take some time as they require review</li>
+                          <li>• <strong>Refund:</strong> The lawyer will process your refund and may provide a refund receipt</li>
+                          <li>• Please contact the lawyer if you have any questions about your refund</li>
                           <li>• You can book a new appointment anytime</li>
                         </>
                       ) : (
@@ -1298,10 +1362,19 @@ const Appointments: React.FC = () => {
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                   <div className="flex-1 text-sm text-blue-900">
-                    <p className="font-semibold mb-1">Your Options:</p>
-                    <ul className="space-y-1 text-blue-800">
-                      <li><strong>Accept:</strong> Your appointment will be moved to the new date & time</li>
-                      <li><strong>Decline:</strong> Appointment will be cancelled. The lawyer will review and process your refund manually (may take some time)</li>
+                    <p className="font-semibold mb-2">Your Options:</p>
+                    <ul className="space-y-2 text-blue-800">
+                      <li>
+                        <strong>✓ Accept:</strong> Your appointment will be moved to the new date & time
+                      </li>
+                      <li>
+                        <strong>✗ Decline:</strong> Appointment will be cancelled.
+                        {selectedAppointment.payment_status === 'paid' && (
+                          <span className="block mt-1 text-xs">
+                            💰 <strong>Refund:</strong> The lawyer will process your refund and may provide a refund receipt for verification.
+                          </span>
+                        )}
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -1471,6 +1544,14 @@ const Appointments: React.FC = () => {
                     </svg>
                     <span><strong>Notify the lawyer</strong> that you declined</span>
                   </li>
+                  {selectedAppointment.payment_status === 'paid' && (
+                    <li className="flex items-start gap-3">
+                      <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span><strong>Refund will be processed</strong> by the lawyer. They will handle the refund and may provide a refund receipt for your records</span>
+                    </li>
+                  )}
                 </ul>
               </div>
 
@@ -1503,7 +1584,7 @@ const Appointments: React.FC = () => {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
-                      Yes, Decline & Cancel
+                      {selectedAppointment?.payment_status === 'paid' ? 'Yes, Decline & Request Refund' : 'Yes, Decline & Cancel'}
                     </>
                   )}
                 </button>

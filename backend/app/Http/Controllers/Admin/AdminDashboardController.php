@@ -68,6 +68,15 @@ class AdminDashboardController extends Controller
             ->whereNotNull('rating')
             ->avg('rating') ?? 0;
 
+        // Get actual appointment status counts (all time, not just period)
+        $appointmentStats = [
+            'total' => Appointment::count(),
+            'pending' => Appointment::where('status', 'pending')->count(),
+            'confirmed' => Appointment::where('status', 'confirmed')->count(),
+            'completed' => Appointment::where('status', 'completed')->count(),
+            'cancelled' => Appointment::where('status', 'cancelled')->count(),
+        ];
+
         return response()->json([
             'total_users' => $totalUsers,
             'total_lawyers' => $totalLawyers,
@@ -80,6 +89,7 @@ class AdminDashboardController extends Controller
             'active_lawyers' => $activeLawyers,
             'active_users' => $activeUsers,
             'average_rating' => round($averageRating, 1),
+            'appointment_stats' => $appointmentStats,
         ]);
     }
 
@@ -474,11 +484,11 @@ class AdminDashboardController extends Controller
         // Peak booking hours
         $peakHours = DB::table('appointments')
             ->select(
-                DB::raw('DATEPART(HOUR, created_at) as hour'),
+                DB::raw('HOUR(created_at) as hour'),
                 DB::raw('COUNT(*) as count')
             )
             ->where('created_at', '>=', $startDate)
-            ->groupBy(DB::raw('DATEPART(HOUR, created_at)'))
+            ->groupBy(DB::raw('HOUR(created_at)'))
             ->orderBy('count', 'desc')
             ->limit(5)
             ->get();
@@ -573,14 +583,17 @@ class AdminDashboardController extends Controller
         $avgResponseTime = DB::table('appointments')
             ->whereIn('status', ['confirmed', 'declined'])
             ->where('created_at', '>=', $startDate)
-            ->select(DB::raw('AVG(DATEDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
+            ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, created_at, updated_at)) as avg_minutes'))
             ->first();
 
         // Total appointments count (accurate, no JOINs)
         $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
 
-        // Total verified lawyers count
-        $totalLawyers = Lawyer::where('verification_status', 'verified')->count();
+        // Total verified/approved lawyers count
+        $totalLawyers = Lawyer::where(function($query) {
+            $query->where('status', 'approved')
+                  ->orWhere('verification_status', 'verified');
+        })->count();
         
         return response()->json([
             'top_specializations' => $topSpecializations,

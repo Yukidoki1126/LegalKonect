@@ -13,6 +13,13 @@ interface DashboardStats {
   active_lawyers: number;
   active_users: number;
   average_rating: number;
+  appointment_stats?: {
+    total: number;
+    pending: number;
+    confirmed: number;
+    completed: number;
+    cancelled: number;
+  };
 }
 
 const AdminOverview: React.FC = () => {
@@ -157,7 +164,7 @@ const AdminOverview: React.FC = () => {
       </div>
 
       {/* Stats Grid - Modern Card Design */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Total Users */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
           <div className="flex items-center justify-between">
@@ -210,25 +217,6 @@ const AdminOverview: React.FC = () => {
             <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Total Revenue */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Total Revenue</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">₱{stats?.total_revenue?.toLocaleString() || 0}</p>
-              <p className="text-gray-400 text-xs mt-2 flex items-center gap-1">
-                <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" /></svg>
-                ₱{stats?.monthly_revenue?.toLocaleString() || 0} this month
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
@@ -312,28 +300,28 @@ const AdminOverview: React.FC = () => {
                 <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
                 <span className="text-gray-700 text-sm">Confirmed</span>
               </div>
-              <span className="text-gray-900 font-semibold text-sm">{Math.floor((stats?.total_appointments || 0) * 0.6)}</span>
+              <span className="text-gray-900 font-semibold text-sm">{stats?.appointment_stats?.confirmed || 0}</span>
             </div>
             <div className="flex items-center justify-between py-2.5 px-3 rounded-md hover:bg-gray-50 transition-colors">
               <div className="flex items-center space-x-3">
                 <div className="w-2.5 h-2.5 bg-amber-500 rounded-full"></div>
                 <span className="text-gray-700 text-sm">Pending</span>
               </div>
-              <span className="text-gray-900 font-semibold text-sm">{stats?.pending_appointments || 0}</span>
+              <span className="text-gray-900 font-semibold text-sm">{stats?.appointment_stats?.pending || 0}</span>
             </div>
             <div className="flex items-center justify-between py-2.5 px-3 rounded-md hover:bg-gray-50 transition-colors">
               <div className="flex items-center space-x-3">
                 <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
                 <span className="text-gray-700 text-sm">Completed</span>
               </div>
-              <span className="text-gray-900 font-semibold text-sm">{Math.floor((stats?.total_appointments || 0) * 0.3)}</span>
+              <span className="text-gray-900 font-semibold text-sm">{stats?.appointment_stats?.completed || 0}</span>
             </div>
             <div className="flex items-center justify-between py-2.5 px-3 rounded-md hover:bg-gray-50 transition-colors">
               <div className="flex items-center space-x-3">
                 <div className="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
                 <span className="text-gray-700 text-sm">Cancelled</span>
               </div>
-              <span className="text-gray-900 font-semibold text-sm">{Math.floor((stats?.total_appointments || 0) * 0.1)}</span>
+              <span className="text-gray-900 font-semibold text-sm">{stats?.appointment_stats?.cancelled || 0}</span>
             </div>
           </div>
         </div>

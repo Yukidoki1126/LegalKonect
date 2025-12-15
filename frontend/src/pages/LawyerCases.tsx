@@ -314,11 +314,13 @@ const LawyerCases: React.FC = () => {
   };
 
   const openNewCaseModal = () => {
+    setError('');
     fetchCompletedAppointments();
     setShowNewCaseModal(true);
   };
 
   const openUpdateModal = (caseItem: Case) => {
+    setError('');
     setSelectedCase(caseItem);
     setUpdateForm({
       status: caseItem.status,
@@ -330,6 +332,7 @@ const LawyerCases: React.FC = () => {
   };
 
   const openDetailsModal = (caseItem: Case) => {
+    setError('');
     setSelectedCase(caseItem);
     fetchTodos(caseItem.id);
     setShowDetailsModal(true);
@@ -816,7 +819,10 @@ const LawyerCases: React.FC = () => {
               <div className="flex-shrink-0 px-5 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h2 className="text-lg font-medium text-gray-900">Create New Case</h2>
                 <button
-                  onClick={() => setShowNewCaseModal(false)}
+                  onClick={() => {
+                    setError('');
+                    setShowNewCaseModal(false);
+                  }}
                   className="text-gray-400 hover:text-gray-600 p-1 transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -988,7 +994,10 @@ const LawyerCases: React.FC = () => {
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      onClick={() => setShowNewCaseModal(false)}
+                      onClick={() => {
+                        setError('');
+                        setShowNewCaseModal(false);
+                      }}
                       className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-100 transition text-sm"
                     >
                       Cancel
@@ -1015,7 +1024,10 @@ const LawyerCases: React.FC = () => {
               <div className="flex-shrink-0 px-5 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h2 className="text-lg font-medium text-gray-900">Update Case</h2>
                 <button
-                  onClick={() => setShowUpdateModal(false)}
+                  onClick={() => {
+                    setError('');
+                    setShowUpdateModal(false);
+                  }}
                   className="text-gray-400 hover:text-gray-600 p-1 transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1198,7 +1210,10 @@ const LawyerCases: React.FC = () => {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => setShowUpdateModal(false)}
+                    onClick={() => {
+                      setError('');
+                      setShowUpdateModal(false);
+                    }}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition text-sm"
                   >
                     Cancel
@@ -1226,7 +1241,10 @@ const LawyerCases: React.FC = () => {
                   <p className="text-sm text-gray-500">Case Details</p>
                 </div>
                 <button
-                  onClick={() => setShowDetailsModal(false)}
+                  onClick={() => {
+                    setError('');
+                    setShowDetailsModal(false);
+                  }}
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1386,7 +1404,10 @@ const LawyerCases: React.FC = () => {
               <div className="flex-shrink-0 border-t border-gray-200 px-5 py-3 bg-gray-50 rounded-b-lg">
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowDetailsModal(false)}
+                    onClick={() => {
+                      setError('');
+                      setShowDetailsModal(false);
+                    }}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-100 transition text-sm"
                   >
                     Close

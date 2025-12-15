@@ -61,6 +61,10 @@ interface Appointment {
   payment_proof_uploaded_at?: string | null;
   payment_confirmed?: boolean;
   payment_confirmed_at?: string | null;
+  // Refund fields
+  refund_receipt?: string | null;
+  refund_processed_at?: string | null;
+  refund_notes?: string | null;
 }
 
 const LawyerAppointments: React.FC = () => {
@@ -78,9 +82,13 @@ const LawyerAppointments: React.FC = () => {
   const [showCaseTypeModal, setShowCaseTypeModal] = useState(false);
   const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
   const [showRejectPaymentModal, setShowRejectPaymentModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [showClientRescheduleModal, setShowClientRescheduleModal] = useState(false);
   const [paymentProofData, setPaymentProofData] = useState<{ url: string; method: string; uploadedAt: string } | null>(null);
   const [rejectPaymentReason, setRejectPaymentReason] = useState('');
+  const [refundNotes, setRefundNotes] = useState('');
+  const [refundReceipt, setRefundReceipt] = useState<File | null>(null);
+  const [refundReceiptPreview, setRefundReceiptPreview] = useState<string | null>(null);
   const [lawyerSpecializations, setLawyerSpecializations] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedCaseTypeId, setSelectedCaseTypeId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -155,6 +163,18 @@ const LawyerAppointments: React.FC = () => {
     return () => unsubscribe();
   }, [activeTab]);
 
+  // Prevent body scroll when refund modal is open
+  useEffect(() => {
+    if (showRefundModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showRefundModal]);
+
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
 
   // Helper function to check if appointment is upcoming (within next 3 days, confirmed/pending only)
@@ -179,12 +199,26 @@ const LawyerAppointments: React.FC = () => {
   // Helper function to check if appointment is a new booking (created within last 24 hours)
   const isNewBooking = useMemo(() => {
     return (appointment: Appointment): boolean => {
-      const now = new Date();
-      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const createdAt = new Date(appointment.created_at);
+      // Include both pending and confirmed (auto-confirmed) appointments
+      if (!['pending', 'confirmed'].includes(appointment.status)) return false;
       
-      // New booking = created within last 24 hours and pending status
-      return createdAt >= oneDayAgo && appointment.status === 'pending';
+      try {
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const createdAt = new Date(appointment.created_at);
+        
+        // Validate the date is valid
+        if (isNaN(createdAt.getTime())) {
+          console.warn('Invalid created_at date:', appointment.created_at);
+          return false;
+        }
+        
+        // New booking = created within last 24 hours with pending or confirmed status
+        return createdAt >= oneDayAgo;
+      } catch (error) {
+        console.error('Error parsing date for appointment:', appointment.id, error);
+        return false;
+      }
     };
   }, []);
 
@@ -194,8 +228,16 @@ const LawyerAppointments: React.FC = () => {
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     return allAppointments.filter(apt => {
-      const createdAt = new Date(apt.created_at);
-      return createdAt >= oneDayAgo && apt.status === 'pending';
+      // Include both pending and confirmed (auto-confirmed) appointments
+      if (!['pending', 'confirmed'].includes(apt.status)) return false;
+      
+      try {
+        const createdAt = new Date(apt.created_at);
+        if (isNaN(createdAt.getTime())) return false;
+        return createdAt >= oneDayAgo;
+      } catch {
+        return false;
+      }
     }).length;
   }, [allAppointments]);
 
@@ -234,6 +276,24 @@ const LawyerAppointments: React.FC = () => {
         setAppointments(allData);
       } else if (activeTab === 'new') {
         const filteredData = allData.filter((a: Appointment) => isNewBooking(a));
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        
+        console.log('New Booking filter DEBUG:', {
+          totalAppointments: allData.length,
+          filteredCount: filteredData.length,
+          pendingAppointments: allData.filter((a: Appointment) => a.status === 'pending').length,
+          confirmedAppointments: allData.filter((a: Appointment) => a.status === 'confirmed').length,
+          now: now.toISOString(),
+          oneDayAgo: oneDayAgo.toISOString(),
+          sampleAppointment: allData[0] ? {
+            id: allData[0].id,
+            status: allData[0].status,
+            created_at: allData[0].created_at,
+            createdAtParsed: new Date(allData[0].created_at).toISOString(),
+            isWithin24h: new Date(allData[0].created_at) >= oneDayAgo
+          } : null
+        });
         setAppointments(filteredData);
       } else if (activeTab === 'upcoming') {
         const filteredData = allData.filter((a: Appointment) => isUpcoming(a));
@@ -600,6 +660,59 @@ const LawyerAppointments: React.FC = () => {
     setSelectedAppointment(appointment);
     setSelectedCaseTypeId(appointment.confirmed_specialization?.id || appointment.specialization?.id || null);
     setShowCaseTypeModal(true);
+  };
+
+  const handleRefundClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setRefundNotes('');
+    setRefundReceipt(null);
+    setRefundReceiptPreview(null);
+    setShowRefundModal(true);
+  };
+
+  const handleRefundReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setRefundReceipt(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRefundReceiptPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRefundSubmit = async () => {
+    if (!selectedAppointment) return;
+
+    if (!refundReceipt) {
+      setSuccessMessage('Please upload a refund receipt');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const formData = new FormData();
+      formData.append('refund_receipt', refundReceipt);
+      if (refundNotes.trim()) {
+        formData.append('refund_notes', refundNotes);
+      }
+
+      await lawyerApi.processRefund(selectedAppointment.id, formData);
+      setShowRefundModal(false);
+      setSuccessMessage('Refund processed successfully! Client has been notified.');
+      setShowSuccessModal(true);
+      fetchAppointments();
+    } catch (err: any) {
+      console.error('Error processing refund:', err);
+      setShowRefundModal(false);
+      setSuccessMessage(err.response?.data?.message || 'Failed to process refund');
+      setShowSuccessModal(true);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleCaseTypeSave = async () => {
@@ -1383,6 +1496,37 @@ const LawyerAppointments: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Refund Button for Cancelled Paid Appointments */}
+                    {appointment.status === 'cancelled' && appointment.payment_status === 'paid' && !appointment.refund_receipt && (
+                      <button
+                        onClick={() => handleRefundClick(appointment)}
+                        disabled={actionLoading}
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Process Refund
+                      </button>
+                    )}
+
+                    {/* Refund Processed Indicator */}
+                    {appointment.status === 'cancelled' && appointment.refund_receipt && (
+                      <div className="w-full bg-green-50 border border-green-200 px-4 py-2.5 rounded-xl text-xs">
+                        <p className="font-semibold text-green-900 flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Refund Processed
+                        </p>
+                        {appointment.refund_processed_at && (
+                          <p className="text-green-700 mt-1">
+                            {new Date(appointment.refund_processed_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {/* Utility Buttons Row */}
                     {appointment.status !== 'cancelled' && (
                       <div className="flex gap-2">
@@ -2083,6 +2227,170 @@ const LawyerAppointments: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Refund Modal */}
+      {showRefundModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto transform transition-all"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#10b981 #f3f4f6'
+            }}
+          >
+            {/* Modal Header */}
+            <div className="relative bg-gradient-to-br from-green-600 to-emerald-700 p-4 rounded-t-2xl">
+              <button
+                type="button"
+                onClick={() => setShowRefundModal(false)}
+                className="absolute top-3 right-3 p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Process Refund</h3>
+                  <p className="text-green-100 text-xs mt-0.5">Upload receipt and notify client</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5">
+              {/* Appointment Info */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm font-semibold text-gray-700 mb-2">Appointment Details</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Client:</span>
+                    <span className="font-semibold text-gray-900">{selectedAppointment.user.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Refund Amount:</span>
+                    <span className="font-semibold text-green-600">₱{(selectedAppointment.reservation_fee || 100).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Original Payment Method:</span>
+                    <span className="font-semibold text-gray-900 capitalize">{selectedAppointment.payment_method_used || selectedAppointment.payment_method || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Refund Receipt Upload */}
+              <div className="mb-4">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-3">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Refund Receipt (Required)
+                </label>
+                
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleRefundReceiptChange}
+                  className="hidden"
+                  id="refund-receipt-upload"
+                />
+                
+                <label
+                  htmlFor="refund-receipt-upload"
+                  className="block w-full px-4 py-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all cursor-pointer text-center"
+                >
+                  {refundReceiptPreview ? (
+                    <div className="space-y-2">
+                      <img src={refundReceiptPreview} alt="Refund receipt preview" className="max-h-32 mx-auto rounded-lg border border-gray-200" />
+                      <p className="text-xs text-green-600 font-medium">✓ Receipt uploaded - Click to change</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <svg className="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-sm text-gray-600">Click to upload refund receipt</p>
+                      <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {/* Optional Notes */}
+              <div className="mb-4">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-3">
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={refundNotes}
+                  onChange={(e) => setRefundNotes(e.target.value)}
+                  placeholder="Add any notes about the refund (e.g., transaction ID, processing time, etc.)"
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none text-sm"
+                />
+              </div>
+
+              {/* Info Notice */}
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="text-sm text-blue-900">
+                    <p className="font-semibold mb-1">What happens next:</p>
+                    <ul className="space-y-1 text-blue-800 text-xs">
+                      <li>• The client will be notified via email</li>
+                      <li>• They can view the refund receipt from their appointments</li>
+                      <li>• This action cannot be undone</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowRefundModal(false)}
+                  disabled={actionLoading}
+                  className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRefundSubmit}
+                  disabled={actionLoading || !refundReceipt}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all hover:shadow-lg disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                >
+                  {actionLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Submit Refund
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

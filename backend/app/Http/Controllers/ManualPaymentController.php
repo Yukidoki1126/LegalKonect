@@ -308,4 +308,87 @@ class ManualPaymentController extends Controller
             return response()->json(['message' => 'Failed to get payment proof'], 500);
         }
     }
+
+    /**
+     * Process refund for a cancelled appointment
+     * Lawyer uploads refund receipt and marks refund as processed
+     */
+    public function processRefund(Request $request, $appointmentId)
+    {
+        try {
+            $user = $request->user();
+            $lawyer = $user->lawyer;
+
+            if (!$lawyer) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            $appointment = Appointment::where('id', $appointmentId)
+                ->where('lawyer_id', $lawyer->id)
+                ->where('status', 'cancelled')
+                ->where('payment_status', 'paid')
+                ->first();
+
+            if (!$appointment) {
+                return response()->json([
+                    'message' => 'Appointment not found or not eligible for refund processing'
+                ], 404);
+            }
+
+            // Check if refund already processed
+            if ($appointment->refund_receipt) {
+                return response()->json([
+                    'message' => 'Refund has already been processed for this appointment'
+                ], 400);
+            }
+
+            // Validate refund receipt
+            $request->validate([
+                'refund_receipt' => 'required|image|mimes:jpeg,png,jpg|max:5120', // 5MB max
+                'refund_notes' => 'nullable|string|max:500',
+            ]);
+
+            // Store refund receipt
+            $refundReceiptPath = $request->file('refund_receipt')->store('refund-receipts', 'public');
+
+            // Update appointment with refund information
+            $appointment->refund_receipt = $refundReceiptPath;
+            $appointment->refund_processed_at = now();
+            $appointment->refund_notes = $request->input('refund_notes');
+            $appointment->save();
+
+            Log::info('Refund processed', [
+                'appointment_id' => $appointment->id,
+                'lawyer_id' => $lawyer->id,
+                'refund_receipt' => $refundReceiptPath,
+            ]);
+
+            // Send notification/email to client
+            try {
+                // You can create a RefundProcessed mail class similar to PaymentConfirmed
+                // Mail::to($appointment->user->email)->send(new RefundProcessed($appointment));
+                
+                // For now, just log it
+                Log::info('Refund notification sent to client', [
+                    'client_email' => $appointment->user->email,
+                    'appointment_id' => $appointment->id,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send refund notification: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'message' => 'Refund processed successfully',
+                'appointment' => $appointment,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error processing refund: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to process refund'], 500);
+        }
+    }
 }

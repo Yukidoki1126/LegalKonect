@@ -104,9 +104,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 lg:h-20">
             <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all group-hover:scale-105">
-                <Scale className="w-5 h-5 text-white" />
-              </div>
+              <img 
+                src="/legalkonect-logo.png" 
+                alt="LegalKonect Logo" 
+                className="w-10 h-10 rounded-xl shadow-md group-hover:shadow-lg transition-all group-hover:scale-105"
+              />
               <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">LegalKonect</span>
             </div>
 
