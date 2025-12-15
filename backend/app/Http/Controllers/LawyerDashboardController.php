@@ -28,7 +28,7 @@ class LawyerDashboardController extends Controller
         $stats = [
             'active_cases_count' => DB::table('cases')
                 ->where('lawyer_id', $lawyer->id)
-                ->where('status', 'active')
+                ->whereIn('status', ['pending', 'ongoing'])
                 ->count(),
 
             'upcoming_count' => $lawyer->appointments()
