@@ -167,6 +167,16 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
       return;
     }
 
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('You must be logged in to book an appointment. Redirecting to login...');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -195,7 +205,18 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, lawyer }) 
       // Store appointmentId for redirect
       (window as any).pendingAppointmentId = appointmentId;
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to book appointment';
+      let errorMessage = err.response?.data?.message || 'Failed to book appointment';
+      
+      // Handle authentication errors specifically
+      if (err.response?.status === 401 || errorMessage.toLowerCase().includes('unauthenticated')) {
+        errorMessage = 'Your session has expired. Please log in again.';
+        setTimeout(() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }, 2000);
+      }
+      
       setError(errorMessage);
 
       // If the time slot was already booked, refresh the available slots

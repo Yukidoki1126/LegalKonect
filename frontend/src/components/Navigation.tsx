@@ -55,9 +55,11 @@ const Navigation: React.FC = () => {
             to="/"
             className="flex items-center space-x-3 group"
           >
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">LK</span>
-            </div>
+            <img 
+              src="/legalkonect-logo.png" 
+              alt="LegalKonect Logo" 
+              className="w-12 h-12 object-contain rounded-lg"
+            />
             <div className="flex flex-col">
               <span className="text-2xl font-bold text-gray-900">
                 LegalKonect

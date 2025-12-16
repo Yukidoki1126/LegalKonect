@@ -493,18 +493,21 @@ class AdminDashboardController extends Controller
             ->limit(5)
             ->get();
         
-        // Top performing lawyers - FIXED
+        // Top performing lawyers - Calculate rating from approved reviews using subquery
         $topLawyers = DB::table('appointments')
             ->join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+            ->leftJoin(DB::raw('(SELECT lawyer_id, AVG(rating) as avg_rating FROM reviews WHERE is_approved = 1 GROUP BY lawyer_id) as lawyer_reviews'), 
+                'lawyers.id', '=', 'lawyer_reviews.lawyer_id')
             ->select(
+                'lawyers.id',
                 'lawyers.first_name',
                 'lawyers.last_name',
-                'lawyers.rating',
-                DB::raw('COUNT(*) as total_appointments'),
+                DB::raw('COALESCE(lawyer_reviews.avg_rating, 0) as rating'),
+                DB::raw('COUNT(DISTINCT appointments.id) as total_appointments'),
                 DB::raw('SUM(CASE WHEN appointments.status = \'completed\' THEN 1 ELSE 0 END) as completed_appointments')
             )
             ->where('appointments.created_at', '>=', $startDate)
-            ->groupBy('lawyers.id', 'lawyers.first_name', 'lawyers.last_name', 'lawyers.rating')
+            ->groupBy('lawyers.id', 'lawyers.first_name', 'lawyers.last_name', 'lawyer_reviews.avg_rating')
             ->orderBy('completed_appointments', 'desc')
             ->limit(10)
             ->get();

@@ -16,6 +16,14 @@ class EnsureLawyer
         return response()->json(['message' => 'Unauthorized. Lawyer profile required.'], 403);
     }
     
+    // Check if lawyer is suspended
+    if ($user->lawyer->status === 'suspended') {
+        return response()->json([
+            'message' => 'Your lawyer account has been suspended. Please contact support.',
+            'suspended' => true
+        ], 403);
+    }
+    
     // Check if lawyer verification has been rejected FIRST
     if ($user->lawyer->verification_status === 'rejected') {
         return response()->json([

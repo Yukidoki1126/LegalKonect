@@ -26,6 +26,8 @@ interface Appointment {
   meeting_type: string;
   client_notes: string;
   lawyer_notes: string;
+  cancellation_reason?: string | null;
+  cancelled_by?: string | null;
   created_at: string;
   reschedule_status?: string | null;
   reschedule_reason?: string | null;
@@ -747,6 +749,20 @@ const Appointments: React.FC = () => {
                         <p className="text-sm text-blue-900">
                           <strong className="text-blue-700">Lawyer's Notes:</strong> {appointment.lawyer_notes}
                         </p>
+                      </div>
+                    )}
+
+                    {/* Cancellation Reason */}
+                    {appointment.status === 'cancelled' && appointment.cancellation_reason && (
+                      <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded">
+                        <p className="text-sm text-red-900">
+                          <strong className="text-red-700">Cancellation Reason:</strong> {appointment.cancellation_reason}
+                        </p>
+                        {appointment.cancelled_by && (
+                          <p className="text-xs text-red-700 mt-1">
+                            Cancelled by: {appointment.cancelled_by === 'lawyer' ? 'Lawyer' : 'You'}
+                          </p>
+                        )}
                       </div>
                     )}
 

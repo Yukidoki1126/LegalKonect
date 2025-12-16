@@ -114,6 +114,13 @@ class AuthController extends Controller
     // Load lawyer relationship with status
     $user->load('lawyer');
 
+    // Check if lawyer account is suspended
+    if ($user->lawyer && $user->lawyer->status === 'suspended') {
+        throw ValidationException::withMessages([
+            'email' => ['Your lawyer account has been suspended. Please contact support.'],
+        ]);
+    }
+
     $token = $user->createToken('auth-token')->plainTextToken;
 
     return response()->json([

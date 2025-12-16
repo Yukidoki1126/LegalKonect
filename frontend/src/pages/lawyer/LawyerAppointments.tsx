@@ -1267,9 +1267,15 @@ const LawyerAppointments: React.FC = () => {
                     </div>
                     {/* Show reschedule status badge if pending */}
                     {appointment.reschedule_status === 'pending' && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
+                        appointment.reschedule_requested_by === 'client'
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'bg-orange-100 text-orange-700 border border-orange-200'
+                      }`}>
                         <CalendarClock className="w-3 h-3" />
-                        Reschedule Pending
+                        {appointment.reschedule_requested_by === 'client' 
+                          ? 'Client Requested' 
+                          : 'Awaiting Client Response'}
                       </span>
                     )}
                     {/* Simplified smart status badge */}
@@ -1491,8 +1497,20 @@ const LawyerAppointments: React.FC = () => {
 
                     {/* Show reschedule status */}
                     {appointment.reschedule_status === 'pending' && (
-                      <div className="w-full bg-yellow-50 border border-yellow-300 px-4 py-2.5 rounded-xl text-xs">
-                        <p className="font-semibold text-yellow-900">Awaiting Client Response</p>
+                      <div className={`w-full border px-4 py-2.5 rounded-xl text-xs ${
+                        appointment.reschedule_requested_by === 'client'
+                          ? 'bg-blue-50 border-blue-300'
+                          : 'bg-yellow-50 border-yellow-300'
+                      }`}>
+                        <p className={`font-semibold ${
+                          appointment.reschedule_requested_by === 'client'
+                            ? 'text-blue-900'
+                            : 'text-yellow-900'
+                        }`}>
+                          {appointment.reschedule_requested_by === 'client'
+                            ? 'Client Requested - Review & Respond'
+                            : 'Awaiting Client Response'}
+                        </p>
                       </div>
                     )}
 

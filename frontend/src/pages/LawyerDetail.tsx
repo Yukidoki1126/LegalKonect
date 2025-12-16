@@ -146,6 +146,12 @@ const LawyerDetail: React.FC = () => {
   };
 
   const handleBookAppointment = () => {
+    // Check if user is logged in
+    if (!user) {
+      // Redirect to login with return URL
+      navigate('/login', { state: { from: `/lawyers/${id}` } });
+      return;
+    }
     setIsBookingModalOpen(true);
   };
 

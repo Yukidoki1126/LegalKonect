@@ -3,12 +3,19 @@ import { Clock, CheckCircle, Mail, Phone } from 'lucide-react';
 
 const PendingApproval = () => {
   const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');
     window.location.href = '/login';
   };
 
   const handleGoHome = () => {
+    // Clear auth and go to home page
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     window.location.href = '/';
   };
 

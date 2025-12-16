@@ -36,6 +36,10 @@ const LawyerCardSkeleton: React.FC = () => (
   </div>
 );
 
+// Cache configuration
+const CACHE_KEY = 'lawyers_cache';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 const LawyerSearch: React.FC = () => {
   const { user } = useAuth();
   
@@ -78,6 +82,40 @@ const LawyerSearch: React.FC = () => {
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+  };
+
+  // LocalStorage cache helpers
+  const getLocalCache = () => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (!cached) return null;
+      
+      const { data, timestamp } = JSON.parse(cached);
+      const age = Date.now() - timestamp;
+      
+      // Check if cache is still valid
+      if (age > CACHE_DURATION) {
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      
+      console.log(`✅ Using localStorage cache (${Math.round(age / 1000)}s old)`);
+      return data;
+    } catch (error) {
+      console.error('Error reading cache:', error);
+      return null;
+    }
+  };
+
+  const setLocalCache = (data: any) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+    } catch (error) {
+      console.error('Error saving cache:', error);
+    }
   };
 
   // Calculate weighted score for a lawyer based on multiple factors
@@ -150,9 +188,40 @@ const LawyerSearch: React.FC = () => {
   // Fetch lawyers and specializations with caching
   // Fetch data function (extracted for reuse)
   const fetchData = async (isBackgroundRefresh = false) => {
-    // Skip cache check if this is a background refresh
+    // Check localStorage cache first (persists across page refreshes)
+    if (!isBackgroundRefresh) {
+      const localCache = getLocalCache();
+      if (localCache) {
+        let lawyersData = localCache.lawyers;
+        
+        // Recalculate distances if user has location
+        if (user?.latitude && user?.longitude) {
+          lawyersData = lawyersData.map((lawyer: Lawyer) => {
+            if (lawyer.office_latitude && lawyer.office_longitude) {
+              const distance = calculateDistance(
+                user.latitude!,
+                user.longitude!,
+                parseFloat(lawyer.office_latitude),
+                parseFloat(lawyer.office_longitude)
+              );
+              return { ...lawyer, distance };
+            }
+            return lawyer;
+          });
+        }
+        
+        setLawyers(lawyersData);
+        setSpecializations(localCache.specializations);
+        setCachedLawyers(lawyersData);
+        setCachedSpecializations(localCache.specializations);
+        setLoading(false);
+        return; // Exit - using cached data
+      }
+    }
+
+    // Check context cache (in-memory)
     if (!isBackgroundRefresh && isCached && cachedLawyers.length > 0) {
-      console.log('✅ Using cached lawyers data');
+      console.log('✅ Using context cached lawyers data');
 
       // Just recalculate distances if needed
       let lawyersData = cachedLawyers;
@@ -186,9 +255,8 @@ const LawyerSearch: React.FC = () => {
 
     try {
       // Fetch both in parallel
-      const cacheBust = `t=${Date.now()}`;
       const [lawyersResponse, specsResponse] = await Promise.all([
-        api.get(`/lawyers?fresh=1&${cacheBust}`),
+        api.get('/lawyers'),
         api.get('/specializations')
       ]);
 
@@ -225,7 +293,13 @@ const LawyerSearch: React.FC = () => {
       setSpecializations(specsArray);
       setCachedSpecializations(specsArray);
 
-      console.log('✅ Data fetched and cached');
+      // Save to localStorage for persistence across page refreshes
+      setLocalCache({
+        lawyers: lawyersData,
+        specializations: specsArray
+      });
+
+      console.log('✅ Data fetched and cached (memory + localStorage)');
 
     } catch (err: any) {
       console.error('Error fetching data:', err);
@@ -259,11 +333,11 @@ const LawyerSearch: React.FC = () => {
     return () => window.removeEventListener('lawyers:event', handler as EventListener);
   }, []);
 
-  // Auto-refresh every 10 seconds (was 30 seconds)
+  // Auto-refresh every 60 seconds
   useEffect(() => {
     const refreshInterval = setInterval(() => {
       fetchData(true); // Background refresh (doesn't show loading state)
-    }, 10000); // 10 seconds
+    }, 60000); // 60 seconds
 
     // Cleanup on unmount
     return () => clearInterval(refreshInterval);
