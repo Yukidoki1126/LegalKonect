@@ -594,24 +594,41 @@ class LawyerDashboardController extends Controller
             ], 422);
         }
 
-        // Delete old profile photo if exists
-        if ($lawyer->profile_photo) {
-            Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->profile_photo);
+        try {
+            // Delete old profile photo if exists
+            if ($lawyer->profile_photo) {
+                try {
+                    Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->profile_photo);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to delete old profile photo: ' . $e->getMessage());
+                }
+            }
+
+            // Store new profile photo
+            $path = $request->file('profile_photo')->store('lawyers/' . $lawyer->id, env('FILESYSTEM_DISK', 'public'));
+
+            $lawyer->profile_photo = $path;
+            $lawyer->save();
+
+            // Refresh the lawyer to get the appended attributes
+            $lawyer->refresh();
+
+            return response()->json([
+                'message' => 'Profile photo uploaded successfully',
+                'profile_photo' => $lawyer->profile_photo,
+                'profile_photo_url' => $lawyer->profile_photo_url,
+                'lawyer' => $lawyer
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Profile photo upload failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to upload profile photo',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Store new profile photo
-        $path = $request->file('profile_photo')->store('lawyers/' . $lawyer->id, env('FILESYSTEM_DISK', 'public'));
-
-        $lawyer->profile_photo = $path;
-        $lawyer->save();
-
-        // Refresh the lawyer to get the appended attributes
-        $lawyer->refresh();
-
-        return response()->json([
-            'message' => 'Profile photo uploaded successfully',
-            'lawyer' => $lawyer
-        ]);
     }
 
     /**
@@ -627,16 +644,25 @@ class LawyerDashboardController extends Controller
             ], 404);
         }
 
-        if ($lawyer->profile_photo) {
-            Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->profile_photo);
-            $lawyer->profile_photo = null;
-            $lawyer->save();
-        }
+        try {
+            if ($lawyer->profile_photo) {
+                Storage::disk(env('FILESYSTEM_DISK', 'public'))->delete($lawyer->profile_photo);
+                $lawyer->profile_photo = null;
+                $lawyer->save();
+            }
 
-        return response()->json([
-            'message' => 'Profile photo deleted successfully',
-            'lawyer' => $lawyer
-        ]);
+            return response()->json([
+                'message' => 'Profile photo deleted successfully',
+                'lawyer' => $lawyer
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Profile photo deletion failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'message' => 'Failed to delete profile photo',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
