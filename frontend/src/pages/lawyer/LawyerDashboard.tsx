@@ -337,7 +337,7 @@ const LawyerDashboard: React.FC = () => {
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5 text-emerald-100" />
+            <span className="text-xl font-bold text-emerald-100">₱</span>
             <p className="text-sm font-semibold text-emerald-100 uppercase tracking-wide">Total Earnings</p>
           </div>
           <p className="text-4xl font-bold text-white mb-1">₱{stats?.total_earnings?.toLocaleString() || '0.00'}</p>

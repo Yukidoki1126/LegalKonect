@@ -104,6 +104,9 @@ const LawyerProfile: React.FC = () => {
   const fetchProfile = async () => {
     try {
       const data = await lawyerApi.getProfile();
+      console.log('Profile data:', data);
+      console.log('Profile photo URL:', data.profile_photo_url);
+      console.log('Profile photo:', data.profile_photo);
       setCurrentProfilePhoto(data.profile_photo_url || data.profile_photo || null);
       setVerificationStatus(data.verification_status || null);
       setVerifiedAt(data.verified_at || null);

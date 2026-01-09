@@ -5,7 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use App\Models\Lawyer;
+use App\Models\Appointment;
 use App\Observers\LawyerObserver;
+use App\Observers\AppointmentObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,5 +31,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Register model observers
         Lawyer::observe(LawyerObserver::class);
+        Appointment::observe(AppointmentObserver::class);
     }
 }

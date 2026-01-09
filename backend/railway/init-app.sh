@@ -9,6 +9,9 @@ php artisan db:seed --class=AdminSeeder --force
 php artisan db:seed --class=SpecializationsTableSeeder --force
 php artisan db:seed --class=FaqSeeder --force
 
+echo "Backfilling earnings for paid appointments..."
+php artisan earnings:backfill
+
 echo "Caching config..."
 php artisan config:cache
 

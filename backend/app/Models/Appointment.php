@@ -149,6 +149,14 @@ class Appointment extends Model
     }
 
     /**
+     * Get the earning associated with this appointment
+     */
+    public function earning()
+    {
+        return $this->hasOne(Earning::class);
+    }
+
+    /**
      * Check if appointment can be reviewed
      */
     public function canBeReviewed()

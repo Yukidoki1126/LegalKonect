@@ -40,16 +40,18 @@ class LawyerDashboardController extends Controller
                 ->where('status', 'completed')
                 ->count(),
 
-            // Use net_amount from lawyer_earnings table (after platform fees)
-            'total_earnings' => $lawyer->earnings()
-                ->where('status', 'completed')
-                ->sum('net_amount'),
+            // Calculate earnings from confirmed/paid appointments
+            'total_earnings' => $lawyer->appointments()
+                ->where('payment_status', 'paid')
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->sum('consultation_fee'),
 
-            'this_month_earnings' => $lawyer->earnings()
-                ->where('status', 'completed')
-                ->whereMonth('completed_at', now()->month)
-                ->whereYear('completed_at', now()->year)
-                ->sum('net_amount'),
+            'this_month_earnings' => $lawyer->appointments()
+                ->where('payment_status', 'paid')
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->sum('consultation_fee'),
 
             // Review stats
             'average_rating' => $lawyer->rating ?? 0,
