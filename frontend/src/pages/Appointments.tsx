@@ -43,6 +43,11 @@ interface Appointment {
   };
   specialization?: { id: number; name: string } | null;
   confirmed_specialization?: { id: number; name: string } | null;
+  // Refund fields
+  refund_receipt?: string | null;
+  refund_processed_at?: string | null;
+  refund_notes?: string | null;
+  cancellation_reason?: string | null;
 }
 
 const Appointments: React.FC = () => {
@@ -749,6 +754,63 @@ const Appointments: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Cancellation Reason */}
+                    {appointment.status === 'cancelled' && appointment.cancellation_reason && (
+                      <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded">
+                        <p className="text-sm text-red-900">
+                          <strong className="text-red-700">Cancellation Reason:</strong> {appointment.cancellation_reason}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Refund Receipt - Show when lawyer has processed refund */}
+                    {appointment.status === 'cancelled' && appointment.refund_receipt && (
+                      <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-green-900 mb-2">
+                              Refund Processed
+                            </p>
+                            <p className="text-sm text-green-800 mb-2">
+                              Your refund has been processed by the lawyer. Please check your payment method for the refund.
+                            </p>
+                            {appointment.refund_processed_at && (
+                              <p className="text-xs text-green-700 mb-2">
+                                Processed on: {new Date(appointment.refund_processed_at).toLocaleDateString('en-US', {
+                                  month: 'long',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  hour12: true
+                                })}
+                              </p>
+                            )}
+                            {appointment.refund_notes && (
+                              <p className="text-xs text-green-700 mb-3">
+                                <strong>Notes:</strong> {appointment.refund_notes}
+                              </p>
+                            )}
+                            <a
+                              href={appointment.refund_receipt}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View Refund Receipt
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Reschedule Request Notification (from lawyer) */}
                     {appointment.reschedule_status === 'pending' && appointment.proposed_date && appointment.reschedule_requested_by === 'lawyer' && (
                       <div className="mb-4 p-4 bg-orange-50 border-l-4 border-orange-500 rounded-lg">
@@ -876,10 +938,8 @@ const Appointments: React.FC = () => {
                         </button>
                       )}
 
-                      {/* Only show cancel for unpaid appointments WITHOUT payment proof uploaded */}
-                      {(appointment.status === 'pending' || appointment.status === 'confirmed') &&
-                       appointment.payment_status === 'unpaid' &&
-                       !appointment.payment_proof && (
+                      {/* Cancel button - show for pending/confirmed appointments */}
+                      {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
                         <button
                           onClick={() => handleCancelClick(appointment)}
                           disabled={cancellingId === appointment.id}
@@ -1065,23 +1125,28 @@ const Appointments: React.FC = () => {
                 </div>
               </div>
 
-              {/* Non-Refundable Warning for Paid */}
+              {/* Refund Policy Information for Paid */}
               {selectedAppointment.payment_status === 'paid' && (
-                <div className="mb-4 p-4 rounded-xl border-2 border-amber-200 bg-amber-50">
+                <div className="mb-4 p-4 rounded-xl border-2 border-blue-200 bg-blue-50">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-amber-900">Non-Refundable</h4>
-                      <p className="text-sm text-amber-800 mt-0.5">
-                        The reservation fee of <strong>₱{selectedAppointment.lawyer.reservation_fee?.toLocaleString() || '100'}</strong> is non-refundable once paid.
+                      <h4 className="text-sm font-bold text-blue-900">Refund Policy</h4>
+                      <p className="text-sm text-blue-800 mt-0.5">
+                        Your reservation fee of <strong>₱{selectedAppointment.lawyer.reservation_fee?.toLocaleString() || '100'}</strong> will be eligible for refund.
                       </p>
+                      <ul className="text-xs text-blue-700 mt-2 space-y-1 ml-4 list-disc">
+                        <li>The lawyer will review and manually process your refund</li>
+                        <li>Refund receipt will be sent to you once processed</li>
+                        <li>Processing time may vary depending on the lawyer's availability</li>
+                      </ul>
                       {!selectedAppointment.client_reschedule_used && (
-                        <p className="text-xs text-amber-700 mt-2">
-                          💡 <strong>Tip:</strong> Consider requesting a reschedule instead of cancelling.
+                        <p className="text-xs text-blue-700 mt-2 bg-blue-100 rounded p-2">
+                          💡 <strong>Tip:</strong> Consider requesting a reschedule instead to keep your appointment slot.
                         </p>
                       )}
                     </div>
