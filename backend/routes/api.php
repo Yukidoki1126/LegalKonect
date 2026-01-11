@@ -181,6 +181,9 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
     Route::post('/appointments/{id}/reject-payment', [ManualPaymentController::class, 'rejectPayment']);
     Route::get('/appointments/{id}/payment-proof', [ManualPaymentController::class, 'getPaymentProof']);
     
+    // Refund processing route (for lawyers)
+    Route::post('/appointments/{id}/process-refund', [ManualPaymentController::class, 'processRefund']);
+    
     // Transaction history (replacing old earnings/payout system)
     Route::get('/transactions', [LawyerDashboardController::class, 'getTransactionHistory']);
     

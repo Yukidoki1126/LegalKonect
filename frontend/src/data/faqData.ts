@@ -55,9 +55,9 @@ export const faqs: FAQ[] = [
   {
     id: 2,
     question: 'Can I cancel or reschedule my appointment?',
-    answer: 'Yes, you can cancel your appointment up to 24 hours before the scheduled time. Go to "My Appointments", find the appointment, and click "Cancel". For rescheduling, you\'ll need to cancel the current appointment and book a new one.',
+    answer: 'Yes! You can cancel up to 24 hours before the scheduled time. For rescheduling, go to "My Appointments", click "Reschedule", propose a new date and time, and the lawyer will review your request. You can also accept reschedule requests initiated by the lawyer.',
     category: 'Booking',
-    keywords: ['cancel', 'reschedule', 'change appointment', 'refund']
+    keywords: ['cancel', 'reschedule', 'change appointment', 'refund', 'change date']
   },
   {
     id: 3,
@@ -78,23 +78,23 @@ export const faqs: FAQ[] = [
   {
     id: 5,
     question: 'What payment methods do you accept?',
-    answer: 'We accept Credit/Debit Cards (Visa, Mastercard), GCash, and PayMaya. All payments are processed securely through PayMongo.',
+    answer: 'We accept GCash, PayMaya, and Bank Transfer. After booking, you will receive payment instructions. Simply complete the payment and upload your proof of payment (screenshot or receipt) for verification.',
     category: 'Payments',
-    keywords: ['payment', 'pay', 'gcash', 'paymaya', 'card', 'visa', 'mastercard', 'methods']
+    keywords: ['payment', 'pay', 'gcash', 'paymaya', 'bank transfer', 'methods', 'proof']
   },
   {
     id: 6,
     question: 'When do I need to pay for my appointment?',
-    answer: 'Payment is required immediately after booking to confirm your appointment. Your appointment will remain pending until payment is completed.',
+    answer: 'Payment is required immediately after booking. Complete your payment via GCash, PayMaya, or Bank Transfer, then upload proof of payment. Your appointment will be confirmed once the lawyer verifies your payment.',
     category: 'Payments',
-    keywords: ['when pay', 'payment timing', 'pay when', 'before appointment']
+    keywords: ['when pay', 'payment timing', 'pay when', 'before appointment', 'confirmation']
   },
   {
     id: 7,
-    question: 'Is my payment information secure?',
-    answer: 'Yes! We use PayMongo, a PCI-DSS compliant payment gateway. We never store your card details on our servers. All payment information is encrypted and securely processed.',
+    question: 'How do I upload proof of payment?',
+    answer: 'After making your payment via GCash, PayMaya, or Bank Transfer, go to your appointment details and click "Upload Payment Proof". Take a clear screenshot or photo of your receipt showing the transaction details, then upload it. The lawyer will verify and confirm your payment.',
     category: 'Payments',
-    keywords: ['secure', 'safety', 'safe', 'encryption', 'card details', 'security']
+    keywords: ['proof of payment', 'screenshot', 'receipt', 'upload', 'payment verification', 'confirm payment']
   },
   {
     id: 8,
@@ -115,16 +115,16 @@ export const faqs: FAQ[] = [
   {
     id: 10,
     question: 'How do I get paid for appointments?',
-    answer: 'Payments from clients go directly to your account. You can track your earnings in the Lawyer Dashboard under "Earnings". We process payouts on a weekly basis.',
+    answer: 'After completing an appointment, go to "Transactions" in your dashboard to request a payout. Add your bank details (account name, account number, and bank name), then submit your payout request. Admins will process your payout request and transfer the funds to your account.',
     category: 'For Lawyers',
-    keywords: ['lawyer payment', 'get paid', 'earnings', 'payout', 'lawyer money']
+    keywords: ['lawyer payment', 'get paid', 'earnings', 'payout', 'lawyer money', 'request payout', 'bank transfer']
   },
   {
     id: 11,
     question: 'Can I set my own availability?',
-    answer: 'Yes! In your Lawyer Dashboard, you can set your weekly availability, hourly rate, and mark specific dates as unavailable. You can also toggle your availability on/off.',
+    answer: 'Yes! In your Lawyer Dashboard, go to "Weekly Schedule" to set your working hours for each day of the week. You can specify different time slots for different days and toggle your overall availability on/off.',
     category: 'For Lawyers',
-    keywords: ['availability', 'schedule', 'working hours', 'lawyer hours', 'set times']
+    keywords: ['availability', 'schedule', 'working hours', 'lawyer hours', 'set times', 'weekly schedule']
   },
   {
     id: 12,
@@ -132,6 +132,13 @@ export const faqs: FAQ[] = [
     answer: 'You can decline pending appointments from your dashboard. Please provide a reason for declining. The client will be notified and their payment will be refunded.',
     category: 'For Lawyers',
     keywords: ['decline', 'reject appointment', 'refuse booking', 'say no']
+  },
+  {
+    id: 21,
+    question: 'Can I sync my appointments with Google Calendar?',
+    answer: 'Yes! Lawyers can connect their Google Calendar from the dashboard. Once connected, all confirmed appointments will automatically sync to your Google Calendar, helping you manage your schedule across platforms.',
+    category: 'For Lawyers',
+    keywords: ['google calendar', 'sync', 'calendar integration', 'google sync', 'schedule sync']
   },
 
   // ACCOUNT QUESTIONS

@@ -55,8 +55,8 @@ class FaqSeeder extends Seeder
             ],
             [
                 'category' => 'booking',
-                'question' => 'Can I cancel my appointment?',
-                'answer' => 'Yes, you can cancel appointments any time before the appointment date. Go to "My Appointments" in your dashboard, find the appointment you wish to cancel, and click the "Cancel" button. You\'ll need to provide a cancellation reason. Please note: Cancellations on the same day as the appointment may not be eligible for refunds.',
+                'question' => 'Can I cancel or reschedule my appointment?',
+                'answer' => 'Yes! You can cancel up to 24 hours before the scheduled time. For rescheduling, go to "My Appointments", click "Reschedule", propose a new date and time, and the lawyer will review your request. You can also accept reschedule requests initiated by the lawyer. Both parties must agree on the new schedule.',
                 'type' => 'static',
                 'order' => 2
             ],
@@ -79,28 +79,28 @@ class FaqSeeder extends Seeder
             [
                 'category' => 'payments',
                 'question' => 'What payment methods do you accept?',
-                'answer' => 'We accept Credit/Debit Cards (Visa, Mastercard, American Express), GCash, and PayMaya. All payments are processed securely through PayMongo, our trusted payment gateway partner.',
+                'answer' => 'We accept GCash, PayMaya, and Bank Transfer. After booking, you will receive payment instructions. Simply complete the payment and upload your proof of payment (screenshot or receipt) for verification.',
                 'type' => 'static',
                 'order' => 5
             ],
             [
                 'category' => 'payments',
                 'question' => 'When do I need to pay for my appointment?',
-                'answer' => 'Payment is required immediately after booking to confirm your appointment. Your appointment slot will be held pending payment completion. Once payment is successful, your appointment is automatically confirmed and the lawyer will be notified.',
+                'answer' => 'Payment is required immediately after booking. Complete your payment via GCash, PayMaya, or Bank Transfer, then upload proof of payment (screenshot or receipt). Your appointment will be confirmed once the lawyer verifies your payment.',
                 'type' => 'static',
                 'order' => 6
             ],
             [
                 'category' => 'payments',
-                'question' => 'Is my payment information secure?',
-                'answer' => 'Yes! We use PayMongo, a PCI-DSS Level 1 compliant payment gateway. This means your payment information is encrypted and processed with bank-level security. We never store your complete card details on our servers - all sensitive payment data is handled securely by PayMongo.',
+                'question' => 'How do I upload proof of payment?',
+                'answer' => 'After making your payment via GCash, PayMaya, or Bank Transfer, go to your appointment details and click "Upload Payment Proof". Take a clear screenshot or photo of your receipt showing the transaction details (amount, reference number, date), then upload it. The lawyer will verify and confirm your payment.',
                 'type' => 'static',
                 'order' => 7
             ],
             [
                 'category' => 'payments',
-                'question' => 'Will I receive a receipt?',
-                'answer' => 'Yes, you will receive a payment receipt via email immediately after successful payment. You can also view and download your payment receipts from your "My Appointments" dashboard.',
+                'question' => 'What happens after I upload my payment proof?',
+                'answer' => 'Once you upload your payment proof, the lawyer will receive a notification to verify your payment. They will check the payment details and confirm the transaction. Once confirmed, your appointment status will be updated to "Confirmed" and you will receive a notification. This process usually takes a few hours.',
                 'type' => 'static',
                 'order' => 8
             ],
@@ -116,14 +116,14 @@ class FaqSeeder extends Seeder
             [
                 'category' => 'for-lawyers',
                 'question' => 'How do I set my availability and schedule?',
-                'answer' => 'Once approved, go to your Lawyer Dashboard and navigate to "Schedule Management". You can: 1) Set weekly working hours for each day (Monday-Sunday), 2) Mark specific dates as unavailable, 3) Toggle your availability on/off using the availability switch, 4) Connect your Google Calendar for automatic synchronization. When you set your schedule, these time slots will be available for clients to book.',
+                'answer' => 'Once approved, go to your Lawyer Dashboard and navigate to "Weekly Schedule". You can: 1) Set working hours for each day of the week (Monday-Sunday), 2) Specify different time slots for different days, 3) Toggle your availability on/off using the availability switch, 4) Connect your Google Calendar for automatic appointment synchronization. Your set time slots will be available for clients to book.',
                 'type' => 'static',
                 'order' => 10
             ],
             [
                 'category' => 'for-lawyers',
                 'question' => 'How do I get paid for appointments?',
-                'answer' => 'When clients book and pay for appointments, 80% of the consultation fee goes to you (20% platform fee). You can track all your earnings in the "Earnings" section of your Lawyer Dashboard. To withdraw funds: 1) Go to Earnings page, 2) Configure your payout method (GCash or Bank Transfer), 3) Request a payout (minimum ₱500), 4) Admin will approve and process your payout, 5) Funds are transferred to your account. Payouts are typically processed within 3-5 business days after approval.',
+                'answer' => 'After completing appointments, go to "Transactions" in your dashboard to request a payout. Click "Request Payout", add your bank details (account name, account number, and bank name), enter the amount you want to withdraw, and submit your request. Admins will review and process your payout request. Funds are typically transferred to your account within 3-5 business days after approval.',
                 'type' => 'static',
                 'order' => 11
             ],

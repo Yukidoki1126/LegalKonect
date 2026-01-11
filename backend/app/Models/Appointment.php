@@ -45,6 +45,10 @@ class Appointment extends Model
         'payment_proof_uploaded_at',
         'payment_confirmed',
         'payment_confirmed_at',
+        // Refund fields
+        'refund_receipt',
+        'refund_processed_at',
+        'refund_notes',
     ];
 
     protected $casts = [
@@ -60,6 +64,7 @@ class Appointment extends Model
         'payment_confirmed' => 'boolean',
         'payment_confirmed_at' => 'datetime',
         'client_reschedule_used' => 'boolean',
+        'refund_processed_at' => 'datetime',
     ];
 
     

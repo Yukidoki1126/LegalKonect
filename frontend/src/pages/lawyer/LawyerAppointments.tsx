@@ -63,6 +63,10 @@ interface Appointment {
   payment_proof_uploaded_at?: string | null;
   payment_confirmed?: boolean;
   payment_confirmed_at?: string | null;
+  // Refund fields
+  refund_receipt?: string | null;
+  refund_processed_at?: string | null;
+  refund_notes?: string | null;
 }
 
 const LawyerAppointments: React.FC = () => {
@@ -80,12 +84,16 @@ const LawyerAppointments: React.FC = () => {
   const [showCaseTypeModal, setShowCaseTypeModal] = useState(false);
   const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
   const [showRejectPaymentModal, setShowRejectPaymentModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [showClientRescheduleModal, setShowClientRescheduleModal] = useState(false);
   const [paymentProofData, setPaymentProofData] = useState<{ url: string; method: string; uploadedAt: string } | null>(null);
   const [paymentProofLoading, setPaymentProofLoading] = useState(false);
   const [paymentProofError, setPaymentProofError] = useState('');
   const [paymentProofRetryCount, setPaymentProofRetryCount] = useState(0);
   const [rejectPaymentReason, setRejectPaymentReason] = useState('');
+  const [refundNotes, setRefundNotes] = useState('');
+  const [refundReceipt, setRefundReceipt] = useState<File | null>(null);
+  const [refundReceiptPreview, setRefundReceiptPreview] = useState<string | null>(null);
   const [lawyerSpecializations, setLawyerSpecializations] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedCaseTypeId, setSelectedCaseTypeId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -159,6 +167,18 @@ const LawyerAppointments: React.FC = () => {
 
     return () => unsubscribe();
   }, [activeTab]);
+
+  // Prevent body scroll when refund modal is open
+  useEffect(() => {
+    if (showRefundModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showRefundModal]);
 
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
 
@@ -538,6 +558,59 @@ const LawyerAppointments: React.FC = () => {
     setProposedDate(appointmentDate.toISOString().split('T')[0]); // Format: YYYY-MM-DD
     setProposedTime(appointment.appointment_time); // Format: HH:MM:SS or HH:MM
     setShowRescheduleModal(true);
+  };
+
+  const handleRefundClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setRefundNotes('');
+    setRefundReceipt(null);
+    setRefundReceiptPreview(null);
+    setShowRefundModal(true);
+  };
+
+  const handleRefundReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setRefundReceipt(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRefundReceiptPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRefundSubmit = async () => {
+    if (!selectedAppointment) return;
+
+    if (!refundReceipt) {
+      setSuccessMessage('Please upload a refund receipt');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const formData = new FormData();
+      formData.append('refund_receipt', refundReceipt);
+      if (refundNotes.trim()) {
+        formData.append('refund_notes', refundNotes);
+      }
+
+      await lawyerApi.processRefund(selectedAppointment.id, formData);
+      setShowRefundModal(false);
+      setSuccessMessage('Refund processed successfully! Client has been notified.');
+      setShowSuccessModal(true);
+      fetchAppointments();
+    } catch (err: any) {
+      console.error('Error processing refund:', err);
+      setShowRefundModal(false);
+      setSuccessMessage(err.response?.data?.message || 'Failed to process refund');
+      setShowSuccessModal(true);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleRescheduleSubmit = async () => {
@@ -1382,7 +1455,11 @@ const LawyerAppointments: React.FC = () => {
                   {appointment.reschedule_status === 'accepted' && (
                     <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-3 mb-3">
                       <p className="text-xs font-semibold text-green-900 mb-1">Reschedule Accepted</p>
-                      <p className="text-sm text-green-800">Client accepted your reschedule request. Appointment updated.</p>
+                      <p className="text-sm text-green-800">
+                        {appointment.reschedule_requested_by === 'lawyer' 
+                          ? 'Client accepted your reschedule request. Appointment updated.'
+                          : 'You accepted the client\'s reschedule request. Appointment updated.'}
+                      </p>
                     </div>
                   )}
 
