@@ -12,6 +12,7 @@ interface Appointment {
   appointment_time: string;
   status: string;
   consultation_fee: number;
+  reservation_fee?: number;
   payment_status: string;
   payment_confirmed?: boolean | null;
   payment_proof?: string | null;
