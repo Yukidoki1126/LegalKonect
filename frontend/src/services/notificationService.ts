@@ -28,16 +28,22 @@ class NotificationService {
   private isPolling: boolean = false;
   private callbacks: NotificationCallback[] = [];
   private newNotificationCallbacks: NewNotificationCallback[] = [];
-  private pollInterval: number = 5000; // 5 seconds when active
-  private inactiveInterval: number = 30000; // 30 seconds when inactive
+  private pollInterval: number = 3000; // 3 seconds when active (faster)
+  private inactiveInterval: number = 15000; // 15 seconds when inactive (faster)
   private isTabActive: boolean = true;
   private lastNotificationIds: Set<number> = new Set();
-  private isFirstLoad: boolean = true; // Track first load to skip showing old notifications
+  private isFirstLoad: boolean = true;
+  private isChecking: boolean = false; // Prevent concurrent checks
+  private retryCount: number = 0;
+  private maxRetries: number = 3;
 
   constructor() {
     // Listen for tab visibility changes
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', this.handleVisibilityChange);
+      
+      // Also listen for focus events for better responsiveness
+      window.addEventListener('focus', this.handleWindowFocus);
     }
   }
 
@@ -51,6 +57,13 @@ class NotificationService {
     
     // Adjust polling interval
     this.restartPolling();
+  };
+
+  private handleWindowFocus = () => {
+    // Immediate check when window gets focus
+    if (this.isPolling && !this.isChecking) {
+      this.checkNotifications();
+    }
   };
 
   private restartPolling() {
@@ -73,10 +86,11 @@ class NotificationService {
     if (this.isPolling) return;
     
     this.isPolling = true;
+    this.retryCount = 0; // Reset retry count
     this.checkNotifications(); // Check immediately
     this.restartPolling();
     
-    console.log('[NotificationService] Started polling');
+    console.log('[NotificationService] Started polling with', this.pollInterval + 'ms interval');
   }
 
   // Stop polling
@@ -107,17 +121,36 @@ class NotificationService {
 
   // Check for new notifications
   private async checkNotifications() {
+    // Prevent concurrent checks
+    if (this.isChecking) {
+      return;
+    }
+
+    this.isChecking = true;
+
     try {
       const params: any = {};
       if (this.lastCheckTime) {
         params.since = this.lastCheckTime;
       }
 
-      const response = await api.get<NotificationResponse>('/notifications', { params });
+      const response = await api.get<NotificationResponse>('/notifications', { 
+        params,
+        timeout: 5000 // 5 second timeout
+      });
       const { notifications, unread_count, has_new } = response.data;
 
+      // Reset retry count on success
+      this.retryCount = 0;
+
       // Notify all subscribers
-      this.callbacks.forEach(cb => cb(notifications, unread_count));
+      this.callbacks.forEach(cb => {
+        try {
+          cb(notifications, unread_count);
+        } catch (err) {
+          console.error('[NotificationService] Error in callback:', err);
+        }
+      });
 
       // On first load, just record existing notification IDs (don't show toasts)
       if (this.isFirstLoad) {
@@ -126,13 +159,27 @@ class NotificationService {
         console.log('[NotificationService] First load - recorded', notifications.length, 'existing notifications');
       } else {
         // Check for new notifications and trigger toast
+        const newNotifications: Notification[] = [];
+        
         notifications.forEach(notification => {
           if (!this.lastNotificationIds.has(notification.id) && !notification.read_at) {
-            // This is a new notification - show toast!
-            console.log('[NotificationService] New notification:', notification.title);
-            this.newNotificationCallbacks.forEach(cb => cb(notification));
+            newNotifications.push(notification);
           }
         });
+
+        // Show toasts for new notifications
+        if (newNotifications.length > 0) {
+          console.log('[NotificationService]', newNotifications.length, 'new notification(s)');
+          newNotifications.forEach(notification => {
+            this.newNotificationCallbacks.forEach(cb => {
+              try {
+                cb(notification);
+              } catch (err) {
+                console.error('[NotificationService] Error in new notification callback:', err);
+              }
+            });
+          });
+        }
 
         // Update tracked IDs
         this.lastNotificationIds = new Set(notifications.map(n => n.id));
@@ -140,8 +187,18 @@ class NotificationService {
 
       // Update last check time
       this.lastCheckTime = new Date().toISOString();
-    } catch (error) {
-      console.error('[NotificationService] Error checking notifications:', error);
+    } catch (error: any) {
+      console.error('[NotificationService] Error checking notifications:', error?.message || error);
+      
+      // Implement exponential backoff on errors
+      this.retryCount++;
+      if (this.retryCount <= this.maxRetries) {
+        const retryDelay = Math.min(1000 * Math.pow(2, this.retryCount), 10000);
+        console.log(`[NotificationService] Retrying in ${retryDelay}ms (attempt ${this.retryCount}/${this.maxRetries})`);
+        setTimeout(() => this.checkNotifications(), retryDelay);
+      }
+    } finally {
+      this.isChecking = false;
     }
   }
 
@@ -149,10 +206,12 @@ class NotificationService {
   async markAsRead(notificationId: number): Promise<void> {
     try {
       await api.post(`/notifications/${notificationId}/read`);
-      // Refresh notifications
+      // Force immediate check (bypasses isChecking flag)
+      this.isChecking = false;
       await this.checkNotifications();
     } catch (error) {
       console.error('[NotificationService] Error marking notification as read:', error);
+      throw error;
     }
   }
 
@@ -160,10 +219,12 @@ class NotificationService {
   async markAllAsRead(): Promise<void> {
     try {
       await api.post('/notifications/read-all');
-      // Refresh notifications
+      // Force immediate check (bypasses isChecking flag)
+      this.isChecking = false;
       await this.checkNotifications();
     } catch (error) {
       console.error('[NotificationService] Error marking all notifications as read:', error);
+      throw error;
     }
   }
 
@@ -174,7 +235,17 @@ class NotificationService {
 
   // Force an immediate check
   forceCheck() {
+    this.isChecking = false; // Bypass lock
     this.checkNotifications();
+  }
+
+  // Clean up resources
+  destroy() {
+    this.stop();
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      window.removeEventListener('focus', this.handleWindowFocus);
+    }
   }
 }
 

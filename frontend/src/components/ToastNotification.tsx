@@ -59,8 +59,8 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ position = 'top-r
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      notificationService.start(10000); // Poll every 10 seconds
-      console.log('[ToastNotification] Started notification polling');
+      notificationService.start(3000); // Poll every 3 seconds for faster updates
+      console.log('[ToastNotification] Started notification polling (3s interval)');
     }
 
     return () => {
@@ -71,26 +71,31 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ position = 'top-r
   // Subscribe to new notifications
   useEffect(() => {
     const unsubscribe = notificationService.onNewNotification((notification: Notification) => {
-      console.log('[ToastNotification] New notification received:', notification);
-      addToast({
-        type: getToastType(notification.type),
-        title: notification.title,
-        message: notification.message,
-        duration: 6000,
-      });
-
-      // Play notification sound (optional)
+      console.log('[ToastNotification] New notification received:', notification.title);
+      
       try {
-        const audio = new Audio('/notification.mp3');
-        audio.volume = 0.3;
-        audio.play().catch(() => {}); // Ignore if autoplay is blocked
-      } catch (e) {
-        // Ignore audio errors
+        addToast({
+          type: getToastType(notification.type),
+          title: notification.title,
+          message: notification.message,
+          duration: 6000,
+        });
+
+        // Play notification sound (optional)
+        try {
+          const audio = new Audio('/notification.mp3');
+          audio.volume = 0.3;
+          audio.play().catch(() => {}); // Ignore if autoplay is blocked
+        } catch (e) {
+          // Ignore audio errors
+        }
+      } catch (err) {
+        console.error('[ToastNotification] Error displaying toast:', err);
       }
     });
 
     return () => unsubscribe();
-  }, [addToast]);
+  }, [addToast, getToastType]);
 
   // Expose addToast globally for manual triggers
   useEffect(() => {

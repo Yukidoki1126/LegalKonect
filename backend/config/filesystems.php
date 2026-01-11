@@ -80,6 +80,20 @@ return [
             'throw' => false,
             'report' => false,
             'visibility' => 'public',
+            // Performance optimizations
+            'options' => [
+                'http' => [
+                    'connect_timeout' => 5,  // 5 seconds to establish connection
+                    'timeout' => 15,         // 15 seconds for request timeout
+                    'verify' => true,        // Verify SSL certificates
+                ],
+                // Connection pooling for better performance
+                'client' => [
+                    'connect_timeout' => 5,
+                    'timeout' => 15,
+                    'handler' => null,      // Uses default handler with connection pooling
+                ],
+            ],
         ],
 
         'r2-private' => [
@@ -94,6 +108,19 @@ return [
             'throw' => false,
             'report' => false,
             'visibility' => 'private',
+            // Performance optimizations
+            'options' => [
+                'http' => [
+                    'connect_timeout' => 5,
+                    'timeout' => 15,
+                    'verify' => true,
+                ],
+                'client' => [
+                    'connect_timeout' => 5,
+                    'timeout' => 15,
+                    'handler' => null,
+                ],
+            ],
         ],
 
     ],

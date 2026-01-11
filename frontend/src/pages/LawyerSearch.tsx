@@ -54,6 +54,9 @@ const LawyerSearch: React.FC = () => {
   const [specializations, setSpecializations] = useState<Specialization[]>(cachedSpecializations);
   const [loading, setLoading] = useState(!isCached);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -147,9 +150,57 @@ const LawyerSearch: React.FC = () => {
     return totalScore;
   };
 
+  // Listen for online/offline events
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('🟢 Network connection restored');
+      setIsOnline(true);
+      // Auto-retry when connection is restored
+      if (error && lawyers.length === 0) {
+        handleRetry();
+      }
+    };
+    
+    const handleOffline = () => {
+      console.log('🔴 Network connection lost');
+      setIsOnline(false);
+      setError('No internet connection. Please check your network.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [error, lawyers.length]);
+
+  // Retry handler
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    setError('');
+    await fetchData();
+    setIsRetrying(false);
+  };
+
   // Fetch lawyers and specializations with caching
   // Fetch data function (extracted for reuse)
   const fetchData = async (isBackgroundRefresh = false) => {
+    // Check if offline first
+    if (!navigator.onLine) {
+      console.log('⚠️ Offline - using cached data if available');
+      if (cachedLawyers.length > 0) {
+        setLawyers(cachedLawyers);
+        setSpecializations(cachedSpecializations);
+        setLoading(false);
+        return;
+      }
+      setError('No internet connection. Please check your network.');
+      setLoading(false);
+      return;
+    }
+
     // Skip cache check if this is a background refresh
     if (!isBackgroundRefresh && isCached && cachedLawyers.length > 0) {
       console.log('✅ Using cached lawyers data');
@@ -184,55 +235,114 @@ const LawyerSearch: React.FC = () => {
     if (!isBackgroundRefresh) setLoading(true);
     setError('');
 
-    try {
-      // Fetch both in parallel
-      const cacheBust = `t=${Date.now()}`;
-      const [lawyersResponse, specsResponse] = await Promise.all([
-        api.get(`/lawyers?fresh=1&${cacheBust}`),
-        api.get('/specializations')
-      ]);
+    const maxRetries = 3;
+    let lastError: any = null;
 
-      // Process lawyers
-      let lawyersData = lawyersResponse.data.lawyers || lawyersResponse.data;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Fetch both in parallel with timeout
+        const cacheBust = `t=${Date.now()}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      // Calculate distance if user has location
-      if (user?.latitude && user?.longitude) {
-        console.log(`👤 User location: ${user.latitude}, ${user.longitude}`);
-        lawyersData = lawyersData.map((lawyer: Lawyer) => {
-          if (lawyer.office_latitude && lawyer.office_longitude) {
-            const distance = calculateDistance(
-              user.latitude!,
-              user.longitude!,
-              parseFloat(lawyer.office_latitude),
-              parseFloat(lawyer.office_longitude)
-            );
-            console.log(`📍 ${lawyer.first_name} ${lawyer.last_name} (${lawyer.office_latitude}, ${lawyer.office_longitude}): ${distance.toFixed(2)} km from user`);
-            return { ...lawyer, distance };
-          }
-          console.log(`⚠️ ${lawyer.first_name} ${lawyer.last_name}: No coordinates`);
-          return lawyer;
-        });
+        const [lawyersResponse, specsResponse] = await Promise.all([
+          api.get(`/lawyers?fresh=1&${cacheBust}`, { signal: controller.signal }),
+          api.get('/specializations', { signal: controller.signal })
+        ]);
+
+        clearTimeout(timeoutId);
+
+        // Process lawyers
+        let lawyersData = lawyersResponse.data.lawyers || lawyersResponse.data;
+
+        // Calculate distance if user has location
+        if (user?.latitude && user?.longitude) {
+          console.log(`👤 User location: ${user.latitude}, ${user.longitude}`);
+          lawyersData = lawyersData.map((lawyer: Lawyer) => {
+            if (lawyer.office_latitude && lawyer.office_longitude) {
+              const distance = calculateDistance(
+                user.latitude!,
+                user.longitude!,
+                parseFloat(lawyer.office_latitude),
+                parseFloat(lawyer.office_longitude)
+              );
+              console.log(`📍 ${lawyer.first_name} ${lawyer.last_name} (${lawyer.office_latitude}, ${lawyer.office_longitude}): ${distance.toFixed(2)} km from user`);
+              return { ...lawyer, distance };
+            }
+            console.log(`⚠️ ${lawyer.first_name} ${lawyer.last_name}: No coordinates`);
+            return lawyer;
+          });
+        }
+
+        // Update both local and cached state
+        setLawyers(lawyersData);
+        setCachedLawyers(lawyersData);
+
+        // Process specializations
+        const specsData = specsResponse.data.specializations || specsResponse.data;
+        const specsArray = Array.isArray(specsData) ? specsData : [];
+
+        setSpecializations(specsArray);
+        setCachedSpecializations(specsArray);
+
+        console.log('✅ Data fetched and cached');
+        setRetryCount(0); // Reset retry count on success
+        setLoading(false);
+        return; // Success - exit
+
+      } catch (err: any) {
+        lastError = err;
+        console.error(`Attempt ${attempt}/${maxRetries} failed:`, err?.message || err);
+
+        // Check if it's a network error
+        const isNetworkError = 
+          err.code === 'ERR_NETWORK' ||
+          err.code === 'ECONNABORTED' ||
+          err.message?.includes('Network Error') ||
+          err.message?.includes('timeout') ||
+          err.name === 'AbortError';
+
+        // If not the last attempt and it's a network error, wait and retry
+        if (attempt < maxRetries && (isNetworkError || err.response?.status >= 500)) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff: 1s, 2s, 4s
+          console.log(`⏳ Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
       }
-
-      // Update both local and cached state
-      setLawyers(lawyersData);
-      setCachedLawyers(lawyersData);
-
-      // Process specializations
-      const specsData = specsResponse.data.specializations || specsResponse.data;
-      const specsArray = Array.isArray(specsData) ? specsData : [];
-
-      setSpecializations(specsArray);
-      setCachedSpecializations(specsArray);
-
-      console.log('✅ Data fetched and cached');
-
-    } catch (err: any) {
-      console.error('Error fetching data:', err);
-      setError(err.response?.data?.message || 'Failed to load lawyers');
-    } finally {
-      setLoading(false);
     }
+
+    // All retries failed
+    console.error('❌ All retry attempts failed:', lastError);
+    
+    // Use cached data if available
+    if (cachedLawyers.length > 0) {
+      console.log('📦 Using cached data due to fetch failure');
+      setLawyers(cachedLawyers);
+      setSpecializations(cachedSpecializations);
+      setError('Using cached data. Some information may be outdated.');
+    } else {
+      // Set user-friendly error message
+      const isNetworkError = 
+        lastError?.code === 'ERR_NETWORK' ||
+        lastError?.code === 'ECONNABORTED' ||
+        lastError?.message?.includes('Network Error') ||
+        lastError?.message?.includes('timeout') ||
+        lastError?.name === 'AbortError';
+
+      if (!navigator.onLine || isNetworkError) {
+        setError('Network connection issue. Please check your internet and try again.');
+      } else if (lastError?.response?.status === 500) {
+        setError('Server error. Our team has been notified. Please try again in a moment.');
+      } else if (lastError?.response?.status === 503) {
+        setError('Service temporarily unavailable. Please try again in a moment.');
+      } else {
+        setError(lastError?.response?.data?.message || 'Unable to load lawyers. Please try again.');
+      }
+    }
+    
+    setRetryCount(prev => prev + 1);
+    setLoading(false);
   };
 
   // Initial data fetch
@@ -509,17 +619,44 @@ const LawyerSearch: React.FC = () => {
               <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
                 <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
-              <div>
-                <h3 className="text-base font-semibold text-red-900 mb-2">Error loading lawyers</h3>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-red-900 mb-2">
+                  {!isOnline ? 'No Internet Connection' : 'Unable to Load Lawyers'}
+                </h3>
                 <p className="text-sm text-red-700 mb-4">{error}</p>
+                
+                {!isOnline && (
+                  <div className="bg-red-100/50 border border-red-200 rounded-lg p-3 mb-4">
+                    <p className="text-xs text-red-800">
+                      ⚠️ You appear to be offline. Please check your internet connection.
+                    </p>
+                  </div>
+                )}
+                
+                {cachedLawyers.length > 0 && (
+                  <p className="text-xs text-red-600 mb-4">
+                    💡 Showing cached data below. Click retry when your connection is restored.
+                  </p>
+                )}
+                
                 <button
-                  onClick={() => window.location.reload()}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                  onClick={handleRetry}
+                  disabled={isRetrying || !isOnline}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Try again
+                  {isRetrying ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Retrying...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      {retryCount > 0 ? `Retry (${retryCount} failed)` : 'Try again'}
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -548,6 +685,26 @@ const LawyerSearch: React.FC = () => {
             )}
           </div>
         ) : (
+          <>
+            {/* Show warning banner if using cached data due to error */}
+            {error && error.includes('cached') && (
+              <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-amber-800 font-medium">{error}</p>
+                  </div>
+                  <button
+                    onClick={handleRetry}
+                    disabled={isRetrying}
+                    className="text-xs px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium disabled:opacity-50"
+                  >
+                    {isRetrying ? 'Refreshing...' : 'Refresh'}
+                  </button>
+                </div>
+              </div>
+            )}
+            
           <div>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">

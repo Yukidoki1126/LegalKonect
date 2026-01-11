@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { cacheService } from '../../services/cacheService';
 import { notificationService } from '../../services/notificationService';
 import { STORAGE_URL } from '../../config/api.config';
+import OptimizedImage from '../../components/OptimizedImage';
 import {
   Calendar,
   Clock,
@@ -81,6 +82,9 @@ const LawyerAppointments: React.FC = () => {
   const [showRejectPaymentModal, setShowRejectPaymentModal] = useState(false);
   const [showClientRescheduleModal, setShowClientRescheduleModal] = useState(false);
   const [paymentProofData, setPaymentProofData] = useState<{ url: string; method: string; uploadedAt: string } | null>(null);
+  const [paymentProofLoading, setPaymentProofLoading] = useState(false);
+  const [paymentProofError, setPaymentProofError] = useState('');
+  const [paymentProofRetryCount, setPaymentProofRetryCount] = useState(0);
   const [rejectPaymentReason, setRejectPaymentReason] = useState('');
   const [lawyerSpecializations, setLawyerSpecializations] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedCaseTypeId, setSelectedCaseTypeId] = useState<number | null>(null);
@@ -390,21 +394,92 @@ const LawyerAppointments: React.FC = () => {
   };
 
   // Payment proof handlers
-  const handleViewPaymentProof = async (appointment: Appointment) => {
+  const handleViewPaymentProof = async (appointment: Appointment, isRetry = false) => {
     setSelectedAppointment(appointment);
-    try {
-      const data = await lawyerApi.getPaymentProof(appointment.id);
-      setPaymentProofData({
-        url: data.payment_proof_url,
-        method: data.payment_method_used,
-        uploadedAt: data.uploaded_at,
-      });
-      setShowPaymentProofModal(true);
-    } catch (err) {
-      console.error('Error fetching payment proof:', err);
-      setSuccessMessage('Failed to load payment proof');
-      setShowSuccessModal(true);
+    setPaymentProofLoading(true);
+    setPaymentProofError('');
+    
+    if (!isRetry) {
+      setPaymentProofData(null);
+      setPaymentProofRetryCount(0);
     }
+
+    const maxRetries = 3;
+    let lastError: any = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Loading payment proof (attempt ${attempt}/${maxRetries})...`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        
+        const data = await lawyerApi.getPaymentProof(appointment.id);
+        clearTimeout(timeoutId);
+        
+        // Ensure the URL is properly constructed
+        let proofUrl = data.payment_proof_url;
+        
+        // If the URL doesn't start with http, construct it properly
+        if (proofUrl && !proofUrl.startsWith('http')) {
+          if (proofUrl.startsWith('/storage')) {
+            proofUrl = STORAGE_URL + proofUrl;
+          } else {
+            proofUrl = `${STORAGE_URL}/storage/${proofUrl}`;
+          }
+        }
+        
+        console.log('Payment proof loaded successfully:', proofUrl);
+        
+        setPaymentProofData({
+          url: proofUrl,
+          method: data.payment_method_used,
+          uploadedAt: data.uploaded_at,
+        });
+        setPaymentProofLoading(false);
+        setShowPaymentProofModal(true);
+        return; // Success
+        
+      } catch (err: any) {
+        lastError = err;
+        console.error(`Attempt ${attempt}/${maxRetries} failed:`, err?.message || err);
+        
+        const isNetworkError = 
+          err.code === 'ERR_NETWORK' ||
+          err.code === 'ECONNABORTED' ||
+          err.message?.includes('Network Error') ||
+          err.message?.includes('timeout') ||
+          err.name === 'AbortError';
+        
+        // If not the last attempt and it's a network error, wait and retry
+        if (attempt < maxRetries && (isNetworkError || err.response?.status >= 500)) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+    }
+    
+    // All retries failed
+    console.error('Failed to load payment proof after', maxRetries, 'attempts');
+    
+    const isNetworkError = 
+      lastError?.code === 'ERR_NETWORK' ||
+      lastError?.code === 'ECONNABORTED' ||
+      lastError?.message?.includes('Network Error') ||
+      lastError?.message?.includes('timeout') ||
+      lastError?.name === 'AbortError';
+    
+    if (!navigator.onLine || isNetworkError) {
+      setPaymentProofError('Network connection issue. Please check your internet.');
+    } else {
+      setPaymentProofError(lastError?.response?.data?.message || 'Failed to load payment proof. Please try again.');
+    }
+    
+    setPaymentProofRetryCount(prev => prev + 1);
+    setPaymentProofLoading(false);
+    setShowPaymentProofModal(true); // Still show modal with error
   };
 
   const handleConfirmPayment = async () => {
@@ -2047,17 +2122,46 @@ const LawyerAppointments: React.FC = () => {
             </div>
 
             {/* Receipt Image */}
-            {paymentProofData && paymentProofData.url && (
+            {paymentProofLoading ? (
+              <div className="mb-4 flex flex-col items-center justify-center bg-gray-50 rounded-lg p-12">
+                <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                <p className="text-sm text-gray-600">Loading payment receipt...</p>
+              </div>
+            ) : paymentProofError ? (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-6">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-red-900 mb-1">Unable to Load Receipt</h4>
+                    <p className="text-sm text-red-700 mb-3">{paymentProofError}</p>
+                    {!navigator.onLine && (
+                      <p className="text-xs text-red-600 mb-3">
+                        ⚠️ You appear to be offline. Please check your internet connection.
+                      </p>
+                    )}
+                    <button
+                      onClick={() => selectedAppointment && handleViewPaymentProof(selectedAppointment, true)}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      {paymentProofRetryCount > 0 ? `Retry (${paymentProofRetryCount} failed)` : 'Retry'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : paymentProofData && paymentProofData.url ? (
               <div className="mb-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Receipt:</p>
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <img
+                  <OptimizedImage
                     src={paymentProofData.url}
                     alt="Payment Receipt"
                     className="w-full h-auto max-h-96 object-contain bg-gray-100"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150"><rect fill="%23f3f4f6" width="200" height="150"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af">Image not found</text></svg>';
-                    }}
+                    fallbackText="Receipt image unavailable"
+                    retryAttempts={3}
+                    retryDelay={2000}
                   />
                 </div>
                 <a
@@ -2071,6 +2175,10 @@ const LawyerAppointments: React.FC = () => {
                   </svg>
                   Open in new tab
                 </a>
+              </div>
+            ) : (
+              <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                <p className="text-sm text-gray-600">No receipt uploaded yet</p>
               </div>
             )}
 

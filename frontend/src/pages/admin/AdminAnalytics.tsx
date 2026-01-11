@@ -216,9 +216,9 @@ const AdminAnalytics: React.FC = () => {
                       labelStyle={{ color: '#111827' }}
                     />
                     <Legend />
-                    <Area type="monotone" dataKey="cancelled" stackId="1" stroke="#ef4444" fill="url(#colorCancelled)" name="Cancelled" />
-                    <Area type="monotone" dataKey="confirmed" stackId="1" stroke="#3b82f6" fill="url(#colorConfirmed)" name="Confirmed" />
-                    <Area type="monotone" dataKey="completed" stackId="1" stroke="#10b981" fill="url(#colorCompleted)" name="Completed" />
+                    <Area type="monotone" dataKey="cancelled" stroke="#ef4444" fill="url(#colorCancelled)" name="Cancelled" />
+                    <Area type="monotone" dataKey="completed" stroke="#10b981" fill="url(#colorCompleted)" name="Completed" />
+                    <Area type="monotone" dataKey="confirmed" stroke="#3b82f6" fill="url(#colorConfirmed)" name="Confirmed" />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (

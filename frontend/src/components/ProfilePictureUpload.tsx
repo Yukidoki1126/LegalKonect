@@ -118,15 +118,19 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   };
 
   const handleDeleteConfirm = async () => {
-    setShowDeleteConfirm(false);
-    setPreview(null);
     if (onDelete) {
       try {
+        setShowDeleteConfirm(false);
         await onDelete();
+        setPreview(null);
         // Success message is handled by parent component
       } catch (error) {
         console.error('Delete failed:', error);
+        setShowDeleteConfirm(false);
       }
+    } else {
+      setShowDeleteConfirm(false);
+      setPreview(null);
     }
   };
 
@@ -203,7 +207,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div key="delete-modal" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={(e) => e.target === e.currentTarget && handleDeleteCancel()}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-slideUp">
             <div className="text-center">
               <div className="w-14 h-14 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -221,12 +225,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
               <div className="flex gap-3">
                 <button
                   onClick={handleDeleteCancel}
+                  type="button"
                   className="flex-1 px-4 py-2.5 text-sm border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
+                  type="button"
                   className="flex-1 px-4 py-2.5 text-sm bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl hover:from-red-600 hover:to-rose-600 hover:shadow-lg transition-all font-semibold"
                 >
                   Delete
@@ -239,7 +245,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+        <div key="success-modal" className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg border border-gray-200 max-w-sm w-full p-6">
             <div className="text-center">
               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -256,6 +262,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
               <button
                 onClick={() => setShowSuccessModal(false)}
+                type="button"
                 className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
               >
                 Done

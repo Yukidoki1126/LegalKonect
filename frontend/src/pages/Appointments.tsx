@@ -862,6 +862,9 @@ const Appointments: React.FC = () => {
                         <button
                           onClick={() => {
                             setSelectedAppointment(appointment);
+                            // Pre-fill with current appointment date and time
+                            setClientRescheduleDate(appointment.appointment_date);
+                            setClientRescheduleTime(appointment.appointment_time);
                             setShowClientRescheduleModal(true);
                           }}
                           className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-medium hover:from-blue-600 hover:to-indigo-600 hover:shadow-lg transition-all flex items-center gap-2"
@@ -1104,6 +1107,11 @@ const Appointments: React.FC = () => {
                         type="button"
                         onClick={() => {
                           setShowCancelModal(false);
+                          // Pre-fill with current appointment date and time
+                          if (selectedAppointment) {
+                            setClientRescheduleDate(selectedAppointment.appointment_date);
+                            setClientRescheduleTime(selectedAppointment.appointment_time);
+                          }
                           setShowClientRescheduleModal(true);
                         }}
                         className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
@@ -1596,7 +1604,7 @@ const Appointments: React.FC = () => {
                   type="date"
                   value={clientRescheduleDate}
                   onChange={(e) => setClientRescheduleDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={selectedAppointment.appointment_date}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </div>

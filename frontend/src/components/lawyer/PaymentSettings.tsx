@@ -54,8 +54,33 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({ initialData, onUpdate
     }
   }, [initialData]);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showGcashModal || showBankModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to restore scroll on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showGcashModal, showBankModal]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Limit GCash number to 11 digits only
+    if (name === 'gcash_number') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 11);
+      setFormData(prev => ({
+        ...prev,
+        [name]: digitsOnly,
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value,
@@ -276,7 +301,8 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({ initialData, onUpdate
                   name="gcash_number"
                   value={formData.gcash_number || ''}
                   onChange={handleInputChange}
-                  placeholder="09XX XXX XXXX"
+                  placeholder="09XXXXXXXXX"
+                  maxLength={11}
                   className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
