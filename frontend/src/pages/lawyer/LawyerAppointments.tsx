@@ -2168,100 +2168,116 @@ const LawyerAppointments: React.FC = () => {
 
       {/* Refund Modal */}
       {showRefundModal && selectedAppointment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
-                Process Refund - {selectedAppointment.user.name}
-              </h3>
-              <button
-                onClick={() => setShowRefundModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Appointment Info */}
-            <div className="mb-4 bg-purple-50 rounded-lg p-3">
-              <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col transform transition-all animate-slideUp">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-gray-200 flex-shrink-0">
+              <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-gray-500">Reservation Fee:</span>
-                  <span className="ml-2 font-semibold">₱{(selectedAppointment.reservation_fee || 100).toLocaleString()}</span>
+                  <h3 className="text-lg font-bold text-gray-900">Process Refund</h3>
+                  <p className="text-sm text-gray-600 mt-1">{selectedAppointment.user.name}</p>
                 </div>
-                <div>
-                  <span className="text-gray-500">Status:</span>
-                  <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                    Cancelled
-                  </span>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-gray-500">Client:</span>
-                  <span className="ml-2">{selectedAppointment.user.name}</span>
-                </div>
+                <button
+                  onClick={() => setShowRefundModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             </div>
 
-            {/* Instructions */}
-            <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <p className="text-sm text-yellow-800">
-                <strong>⚠️ Important:</strong> Please upload proof of refund transaction (bank transfer screenshot, GCash/PayMaya receipt, etc.) to complete the refund process.
-              </p>
-            </div>
+            {/* Modal Body - Scrollable */}
+            <div className="p-5 overflow-y-auto flex-1">
+              {/* Appointment Info */}
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-xs font-semibold text-gray-700 mb-3">Refund Details</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600">Reservation Fee:</span>
+                    <span className="text-sm font-bold text-gray-900">₱{(selectedAppointment.reservation_fee || 100).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600">Status:</span>
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                      Cancelled
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600">Client Email:</span>
+                    <span className="text-xs font-medium text-gray-900">{selectedAppointment.user.email}</span>
+                  </div>
+                </div>
+              </div>
 
-            {/* Refund Receipt Upload */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Refund Receipt <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleRefundReceiptChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-              />
-              {refundReceipt && (
-                <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              {/* Instructions */}
+              <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  {refundReceipt.name}
-                </p>
-              )}
-            </div>
+                  <div>
+                    <p className="text-xs font-semibold text-yellow-900">Important</p>
+                    <p className="text-xs text-yellow-800 mt-1">
+                      Please upload proof of refund transaction (bank transfer screenshot, GCash/PayMaya receipt, etc.) to complete the refund process.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            {/* Refund Notes */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Refund Notes (Optional)
-              </label>
-              <textarea
-                value={refundNotes}
-                onChange={(e) => setRefundNotes(e.target.value)}
-                placeholder="Enter any additional notes about the refund (e.g., transaction reference, method used, etc.)..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-              />
-            </div>
+              {/* Refund Receipt Upload */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Refund Receipt <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleRefundReceiptChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                />
+                {refundReceipt && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-xs text-green-700 font-medium">{refundReceipt.name}</span>
+                  </div>
+                )}
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowRefundModal(false)}
-                disabled={actionLoading}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRefundSubmit}
-                disabled={actionLoading || !refundReceipt}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 transition-colors font-medium"
-              >
-                {actionLoading ? 'Processing...' : 'Submit Refund'}
-              </button>
+              {/* Refund Notes */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Refund Notes <span className="text-gray-500 font-normal text-xs">(Optional)</span>
+                </label>
+                <textarea
+                  value={refundNotes}
+                  onChange={(e) => setRefundNotes(e.target.value)}
+                  placeholder="Enter any additional notes about the refund (e.g., transaction reference, method used, etc.)..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm resize-none"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowRefundModal(false)}
+                  disabled={actionLoading}
+                  className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-all font-semibold text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRefundSubmit}
+                  disabled={actionLoading || !refundReceipt}
+                  className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all font-semibold text-sm"
+                >
+                  {actionLoading ? 'Processing...' : 'Submit Refund'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

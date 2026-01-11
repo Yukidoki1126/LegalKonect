@@ -66,6 +66,7 @@ const Appointments: React.FC = () => {
   const [showCancelSuccessModal, setShowCancelSuccessModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showRefundReceiptModal, setShowRefundReceiptModal] = useState(false);
   const [showRescheduleSuccessModal, setShowRescheduleSuccessModal] = useState(false);
   const [showDeclineConfirmModal, setShowDeclineConfirmModal] = useState(false);
   const [respondingToReschedule, setRespondingToReschedule] = useState(false);
@@ -794,10 +795,11 @@ const Appointments: React.FC = () => {
                                 <strong>Notes:</strong> {appointment.refund_notes}
                               </p>
                             )}
-                            <a
-                              href={appointment.refund_receipt}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => {
+                                setSelectedAppointment(appointment);
+                                setShowRefundReceiptModal(true);
+                              }}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -805,7 +807,7 @@ const Appointments: React.FC = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
                               View Refund Receipt
-                            </a>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1072,11 +1074,11 @@ const Appointments: React.FC = () => {
       {showCancelModal && selectedAppointment && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all animate-slideUp"
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col transform transition-all animate-slideUp"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="relative bg-gradient-to-br from-red-600 to-rose-700 p-6 rounded-t-2xl">
+            <div className="relative bg-gradient-to-br from-red-600 to-rose-700 p-5 rounded-t-2xl flex-shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -1084,68 +1086,68 @@ const Appointments: React.FC = () => {
                   setSelectedAppointment(null);
                   setCancelReason('');
                 }}
-                className="absolute top-4 right-4 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                className="absolute top-3 right-3 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">Cancel Appointment</h3>
-                  <p className="text-red-100 text-sm">This action cannot be undone</p>
+                  <h3 className="text-lg font-bold text-white">Cancel Appointment</h3>
+                  <p className="text-red-100 text-xs">This action cannot be undone</p>
                 </div>
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6">
+            {/* Modal Body - Scrollable */}
+            <div className="p-5 overflow-y-auto flex-1">
               {/* Appointment Details */}
-              <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Appointment Details</p>
+              <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Appointment Details</p>
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Lawyer:</span>
-                    <span className="text-sm font-semibold text-gray-900">{selectedAppointment.lawyer.first_name} {selectedAppointment.lawyer.last_name}</span>
+                    <span className="text-xs text-gray-600">Lawyer:</span>
+                    <span className="text-xs font-semibold text-gray-900">{selectedAppointment.lawyer.first_name} {selectedAppointment.lawyer.last_name}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Date:</span>
-                    <span className="text-sm font-semibold text-gray-900">{formatDate(selectedAppointment.appointment_date)}</span>
+                    <span className="text-xs text-gray-600">Date:</span>
+                    <span className="text-xs font-semibold text-gray-900">{formatDate(selectedAppointment.appointment_date)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Time:</span>
-                    <span className="text-sm font-semibold text-gray-900">{formatTime(selectedAppointment.appointment_time)}</span>
+                    <span className="text-xs text-gray-600">Time:</span>
+                    <span className="text-xs font-semibold text-gray-900">{formatTime(selectedAppointment.appointment_time)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Refund Policy Information for Paid */}
               {selectedAppointment.payment_status === 'paid' && (
-                <div className="mb-4 p-4 rounded-xl border-2 border-blue-200 bg-blue-50">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mb-3 p-3 rounded-lg border border-blue-200 bg-blue-50">
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-blue-900">Refund Policy</h4>
-                      <p className="text-sm text-blue-800 mt-0.5">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-blue-900">Refund Policy</h4>
+                      <p className="text-xs text-blue-800 mt-1 leading-relaxed">
                         Your reservation fee of <strong>₱{selectedAppointment.lawyer.reservation_fee?.toLocaleString() || '100'}</strong> will be eligible for refund.
                       </p>
-                      <ul className="text-xs text-blue-700 mt-2 space-y-1 ml-4 list-disc">
+                      <ul className="text-[11px] text-blue-700 mt-1.5 space-y-0.5 ml-3 list-disc leading-relaxed">
                         <li>The lawyer will review and manually process your refund</li>
                         <li>Refund receipt will be sent to you once processed</li>
                         <li>Processing time may vary depending on the lawyer's availability</li>
                       </ul>
                       {!selectedAppointment.client_reschedule_used && (
-                        <p className="text-xs text-blue-700 mt-2 bg-blue-100 rounded p-2">
+                        <p className="text-[11px] text-blue-700 mt-2 bg-blue-100 rounded p-1.5">
                           💡 <strong>Tip:</strong> Consider requesting a reschedule instead to keep your appointment slot.
                         </p>
                       )}
@@ -1156,16 +1158,16 @@ const Appointments: React.FC = () => {
 
               {/* Reschedule Option */}
               {!selectedAppointment.client_reschedule_used && selectedAppointment.payment_status === 'paid' && (
-                <div className="mb-4 p-4 rounded-xl border-2 border-blue-200 bg-blue-50">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mb-3 p-3 rounded-lg border border-blue-200 bg-blue-50">
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="text-sm font-bold text-blue-900">Request Reschedule Instead?</h4>
-                      <p className="text-sm text-blue-800 mt-0.5 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-blue-900">Request Reschedule Instead?</h4>
+                      <p className="text-xs text-blue-800 mt-1 mb-2 leading-relaxed">
                         You can request to reschedule this appointment to a different date/time. The lawyer will review and approve your request.
                       </p>
                       <button
@@ -1179,11 +1181,11 @@ const Appointments: React.FC = () => {
                           }
                           setShowClientRescheduleModal(true);
                         }}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                        className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         Request Reschedule
                       </button>
-                      <p className="text-xs text-blue-600 mt-2 italic">
+                      <p className="text-[11px] text-blue-600 mt-1.5 italic">
                         ⚠️ You can only request reschedule once per appointment
                       </p>
                     </div>
@@ -1192,8 +1194,8 @@ const Appointments: React.FC = () => {
               )}
 
               {/* Reason Input */}
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+              <div className="mb-3">
+                <label className="block text-xs font-semibold text-gray-900 mb-1.5">
                   Reason for Cancellation <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -1201,14 +1203,14 @@ const Appointments: React.FC = () => {
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder="Please provide a reason for canceling this appointment..."
                   rows={3}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all resize-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all resize-none text-xs"
                   autoFocus
                 />
-                <p className="mt-1 text-xs text-gray-500">This reason will be sent to the lawyer</p>
+                <p className="mt-1 text-[11px] text-gray-500">This reason will be sent to the lawyer</p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -1216,7 +1218,7 @@ const Appointments: React.FC = () => {
                     setSelectedAppointment(null);
                     setCancelReason('');
                   }}
-                  className="flex-1 px-4 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all"
+                  className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 transition-all"
                 >
                   Keep Appointment
                 </button>
@@ -1224,11 +1226,11 @@ const Appointments: React.FC = () => {
                   type="button"
                   onClick={handleCancelAppointment}
                   disabled={cancellingId !== null || !cancelReason.trim()}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 disabled:from-gray-400 disabled:to-gray-400 transition-all hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-3 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg text-xs font-semibold hover:from-red-700 hover:to-rose-700 disabled:from-gray-400 disabled:to-gray-400 transition-all disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                 >
                   {cancellingId !== null ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Cancelling...
                     </>
                   ) : (
@@ -1737,6 +1739,107 @@ const Appointments: React.FC = () => {
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Receipt Modal */}
+      {showRefundReceiptModal && selectedAppointment && selectedAppointment.refund_receipt && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden transform transition-all animate-slideUp">
+            {/* Modal Header */}
+            <div className="relative bg-gradient-to-br from-green-600 to-emerald-700 p-6 rounded-t-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRefundReceiptModal(false);
+                  setSelectedAppointment(null);
+                }}
+                className="absolute top-4 right-4 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Refund Receipt</h3>
+                  <p className="text-green-100 text-sm">
+                    Lawyer: {selectedAppointment.lawyer.first_name} {selectedAppointment.lawyer.last_name}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              {/* Refund Information */}
+              <div className="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600">Refund Amount:</span>
+                    <span className="ml-2 font-semibold text-gray-900">
+                      ₱{(selectedAppointment.reservation_fee || 100).toLocaleString()}
+                    </span>
+                  </div>
+                  {selectedAppointment.refund_processed_at && (
+                    <div>
+                      <span className="text-gray-600">Processed On:</span>
+                      <span className="ml-2 font-semibold text-gray-900">
+                        {new Date(selectedAppointment.refund_processed_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {selectedAppointment.refund_notes && (
+                  <div className="mt-3 pt-3 border-t border-green-200">
+                    <p className="text-xs font-semibold text-gray-700 mb-1">Notes from Lawyer:</p>
+                    <p className="text-sm text-gray-800">{selectedAppointment.refund_notes}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Receipt Image */}
+              <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                <img
+                  src={selectedAppointment.refund_receipt}
+                  alt="Refund Receipt"
+                  className="w-full h-auto max-h-[500px] object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+                  }}
+                />
+              </div>
+
+              {/* Download Link */}
+              <div className="mt-4 flex justify-center">
+                <a
+                  href={selectedAppointment.refund_receipt}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download Receipt
+                </a>
               </div>
             </div>
           </div>
