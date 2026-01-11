@@ -204,7 +204,7 @@ class NotificationService
     }
 
     /**
-     * Notify lawyer that client accepted reschedule
+     * Notify the requester that their reschedule was accepted
      */
     public static function notifyRescheduleAccepted(Appointment $appointment)
     {
@@ -212,21 +212,38 @@ class NotificationService
         $lawyerUser = $lawyer->user;
         $client = $appointment->user;
 
-        if (!$lawyerUser) return;
-
         $date = \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y');
 
-        Notification::create([
-            'user_id' => $lawyerUser->id,
-            'type' => 'reschedule_accepted',
-            'title' => 'Reschedule Accepted',
-            'message' => "{$client->name} accepted your reschedule request for {$date}",
-            'data' => [
-                'appointment_id' => $appointment->id,
-                'client_name' => $client->name,
-                'new_date' => $appointment->appointment_date,
-            ],
-        ]);
+        // Determine who should receive the notification based on who requested the reschedule
+        if ($appointment->reschedule_requested_by === 'client') {
+            // Client requested, lawyer accepted - notify the client
+            Notification::create([
+                'user_id' => $client->id,
+                'type' => 'reschedule_accepted',
+                'title' => 'Reschedule Accepted',
+                'message' => "{$lawyerUser->name} accepted your reschedule request for {$date}",
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'lawyer_name' => $lawyerUser->name,
+                    'new_date' => $appointment->appointment_date,
+                ],
+            ]);
+        } else {
+            // Lawyer requested, client accepted - notify the lawyer
+            if (!$lawyerUser) return;
+
+            Notification::create([
+                'user_id' => $lawyerUser->id,
+                'type' => 'reschedule_accepted',
+                'title' => 'Reschedule Accepted',
+                'message' => "{$client->name} accepted your reschedule request for {$date}",
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'client_name' => $client->name,
+                    'new_date' => $appointment->appointment_date,
+                ],
+            ]);
+        }
     }
 
     /**
@@ -238,18 +255,34 @@ class NotificationService
         $lawyerUser = $lawyer->user;
         $client = $appointment->user;
 
-        if (!$lawyerUser) return;
+        // Determine who should receive the notification based on who requested the reschedule
+        if ($appointment->reschedule_requested_by === 'client') {
+            // Client requested, lawyer declined - notify the client
+            Notification::create([
+                'user_id' => $client->id,
+                'type' => 'reschedule_declined',
+                'title' => 'Reschedule Declined',
+                'message' => "{$lawyerUser->name} declined your reschedule request",
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'lawyer_name' => $lawyerUser->name,
+                ],
+            ]);
+        } else {
+            // Lawyer requested, client declined - notify the lawyer
+            if (!$lawyerUser) return;
 
-        Notification::create([
-            'user_id' => $lawyerUser->id,
-            'type' => 'reschedule_declined',
-            'title' => 'Reschedule Declined',
-            'message' => "{$client->name} declined your reschedule request",
-            'data' => [
-                'appointment_id' => $appointment->id,
-                'client_name' => $client->name,
-            ],
-        ]);
+            Notification::create([
+                'user_id' => $lawyerUser->id,
+                'type' => 'reschedule_declined',
+                'title' => 'Reschedule Declined',
+                'message' => "{$client->name} declined your reschedule request",
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'client_name' => $client->name,
+                ],
+            ]);
+        }
     }
 
     /**

@@ -313,6 +313,21 @@ const LawyerCases: React.FC = () => {
     }
   };
 
+  const handleDeleteCase = async (caseId: number) => {
+    if (!window.confirm('Are you sure you want to delete this case? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await lawyerApi.deleteCase(caseId);
+      fetchCases(false);
+      setError('');
+    } catch (err: any) {
+      console.error('Failed to delete case', err);
+      setError(err.response?.data?.message || 'Failed to delete case');
+    }
+  };
+
   const openNewCaseModal = () => {
     fetchCompletedAppointments();
     setShowNewCaseModal(true);
@@ -793,6 +808,13 @@ const LawyerCases: React.FC = () => {
                       className="border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
                     >
                       Details
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCase(caseItem.id)}
+                      className="border border-red-300 text-red-600 px-3 py-1.5 rounded-md hover:bg-red-50 transition-colors text-sm font-medium"
+                      title="Delete case"
+                    >
+                      Remove
                     </button>
                   </div>
                 </div>

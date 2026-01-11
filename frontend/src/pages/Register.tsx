@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleSignInButton from '../components/GoogleSignInButton';
-import { Scale, Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, Briefcase, ArrowLeft } from 'lucide-react';
+import { Scale, Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, Briefcase, ArrowLeft, Check } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api.config';
 
@@ -21,6 +21,15 @@ const Register: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  
+  // Password requirement states
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+  });
 
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -51,10 +60,23 @@ const Register: React.FC = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    
+    // Update password requirements in real-time
+    if (name === 'password') {
+      setPasswordRequirements({
+        minLength: value.length >= 8,
+        hasUppercase: /[A-Z]/.test(value),
+        hasLowercase: /[a-z]/.test(value),
+        hasNumber: /[0-9]/.test(value),
+        hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(value),
+      });
+    }
   };
 
   const validatePassword = (password: string): string | null => {
@@ -305,9 +327,79 @@ const Register: React.FC = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-600">
-                Must include uppercase, lowercase, number, and special character
-              </p>
+              
+              {/* Real-time Password Requirements */}
+              {formData.password && (
+                <div className="mt-3 bg-gray-50 border border-gray-200 rounded-md p-4">
+                  <p className="text-sm font-semibold text-gray-900 mb-2">Password must have:</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                        passwordRequirements.minLength ? 'bg-green-500' : 'bg-gray-300'
+                      }`}>
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className={`text-sm transition-colors ${
+                        passwordRequirements.minLength ? 'text-green-700 font-medium' : 'text-gray-600'
+                      }`}>
+                        At least 8 characters
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                        passwordRequirements.hasUppercase ? 'bg-green-500' : 'bg-gray-300'
+                      }`}>
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className={`text-sm transition-colors ${
+                        passwordRequirements.hasUppercase ? 'text-green-700 font-medium' : 'text-gray-600'
+                      }`}>
+                        One uppercase letter
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                        passwordRequirements.hasLowercase ? 'bg-green-500' : 'bg-gray-300'
+                      }`}>
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className={`text-sm transition-colors ${
+                        passwordRequirements.hasLowercase ? 'text-green-700 font-medium' : 'text-gray-600'
+                      }`}>
+                        One lowercase letter
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                        passwordRequirements.hasNumber ? 'bg-green-500' : 'bg-gray-300'
+                      }`}>
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className={`text-sm transition-colors ${
+                        passwordRequirements.hasNumber ? 'text-green-700 font-medium' : 'text-gray-600'
+                      }`}>
+                        One number
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                        passwordRequirements.hasSpecialChar ? 'bg-green-500' : 'bg-gray-300'
+                      }`}>
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className={`text-sm transition-colors ${
+                        passwordRequirements.hasSpecialChar ? 'text-green-700 font-medium' : 'text-gray-600'
+                      }`}>
+                        One special character (@$!%*#?&)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Confirm Password */}

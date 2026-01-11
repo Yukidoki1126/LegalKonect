@@ -58,7 +58,7 @@ const LawyerSearch: React.FC = () => {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialization, setSelectedSpecialization] = useState('');
-  const [sortBy, setSortBy] = useState('rating');
+  const [sortBy, setSortBy] = useState('recommended');
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = (
@@ -304,6 +304,13 @@ const LawyerSearch: React.FC = () => {
       return matchesSearch && matchesSpecialization;
     })
     .sort((a, b) => {
+      // Recommended: Weighted scoring algorithm (Best Match)
+      if (sortBy === 'recommended') {
+        const scoreA = calculateWeightedScore(a);
+        const scoreB = calculateWeightedScore(b);
+        return scoreB - scoreA; // Higher score first
+      }
+
       // Distance: Nearest first
       if (sortBy === 'distance' && a.distance !== undefined && b.distance !== undefined) {
         return a.distance - b.distance;
@@ -428,6 +435,7 @@ const LawyerSearch: React.FC = () => {
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 text-gray-900 transition-all duration-200 hover:border-gray-300 bg-white appearance-none cursor-pointer"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
               >
+                <option value="recommended">⭐ Recommended (Best Match)</option>
                 <option value="rating">Rating (highest first)</option>
                 <option value="distance">Distance (nearest first)</option>
                 <option value="price">Price (lowest first)</option>

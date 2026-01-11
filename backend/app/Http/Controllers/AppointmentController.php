@@ -359,9 +359,10 @@ class AppointmentController extends Controller
     if ($type === 'upcoming') {
         $query->whereIn('status', ['pending', 'confirmed'])
               ->where(function($q) {
-                  // Include appointments with no reschedule status OR accepted reschedule status
+                  // Include appointments with no reschedule status, accepted, or declined reschedule status
                   $q->whereNull('reschedule_status')
-                    ->orWhere('reschedule_status', 'accepted');
+                    ->orWhere('reschedule_status', 'accepted')
+                    ->orWhere('reschedule_status', 'declined');
               })
               ->orderBy('created_at', 'desc');
     } elseif ($type === 'reschedule') {

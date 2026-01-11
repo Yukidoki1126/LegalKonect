@@ -260,6 +260,16 @@ export const lawyerApi = {
     return response.data;
   },
 
+  // Delete case
+  deleteCase: async (caseId: number) => {
+    const response = await axios.delete(`${API_URL}/lawyer/cases/${caseId}`, {
+      headers: getAuthHeader(),
+    });
+    // Invalidate cache after mutation
+    cacheService.invalidatePattern('/lawyer/cases');
+    return response.data;
+  },
+
   // Get case todos
   getCaseTodos: async (caseId: number) => {
     return cachedGet(`${API_URL}/lawyer/cases/${caseId}/todos`, 20000);
