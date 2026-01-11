@@ -211,26 +211,21 @@ class FaqSeeder extends Seeder
         ];
 
         foreach ($faqs as $faq) {
-            // Check if FAQ with this question already exists
-            $existing = DB::table('faqs')
-                ->where('category_id', $categoryIds[$faq['category']])
-                ->where('question', $faq['question'])
-                ->exists();
-            
-            if (!$existing) {
-                DB::table('faqs')->insert([
+            // Update or insert FAQ - this will update existing FAQs with new answers
+            DB::table('faqs')->updateOrInsert(
+                [
                     'category_id' => $categoryIds[$faq['category']],
                     'question' => $faq['question'],
+                ],
+                [
                     'answer' => $faq['answer'],
                     'type' => $faq['type'],
                     'dynamic_endpoint' => null,
                     'order' => $faq['order'],
                     'is_active' => true,
-                    'views' => 0,
-                    'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now(),
-                ]);
-            }
+                ]
+            );
         }
 
         $this->command->info('FAQs seeded successfully!');
