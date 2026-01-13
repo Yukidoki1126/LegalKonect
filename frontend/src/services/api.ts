@@ -11,8 +11,6 @@ const api = axios.create({
   timeout: 30000, // 30 second timeout for R2 operations
   // Enable connection reuse
   maxRedirects: 5,
-  // Better error handling
-  validateStatus: (status) => status < 500, // Don't reject on client errors
 });
 
 // Add token to every request
