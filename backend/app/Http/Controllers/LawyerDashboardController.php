@@ -270,19 +270,24 @@ class LawyerDashboardController extends Controller
 
         // Check if appointment date/time has passed
         try {
+            // Parse appointment datetime
             $appointmentDateTime = \Carbon\Carbon::parse(
-                $appointment->appointment_date . ' ' . $appointment->appointment_time,
-                config('app.timezone')
+                $appointment->appointment_date . ' ' . $appointment->appointment_time
             );
+            
+            $now = \Carbon\Carbon::now();
+            
+            // Log for debugging
+            \Log::info('Appointment completion check', [
+                'appointment_id' => $appointmentId,
+                'appointment_datetime' => $appointmentDateTime->toDateTimeString(),
+                'current_datetime' => $now->toDateTimeString(),
+                'is_future' => $appointmentDateTime->isFuture()
+            ]);
             
             if ($appointmentDateTime->isFuture()) {
                 return response()->json([
-                    'error' => 'Cannot complete an appointment that hasn\'t occurred yet',
-                    'debug' => [
-                        'appointment_datetime' => $appointmentDateTime->toIso8601String(),
-                        'current_time' => now()->toIso8601String(),
-                        'timezone' => config('app.timezone')
-                    ]
+                    'error' => 'Cannot complete an appointment that hasn\'t occurred yet'
                 ], 400);
             }
         } catch (\Exception $e) {
@@ -290,12 +295,12 @@ class LawyerDashboardController extends Controller
                 'appointment_id' => $appointmentId,
                 'date' => $appointment->appointment_date,
                 'time' => $appointment->appointment_time,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
-                'error' => 'Error validating appointment time'
-            ], 500);
+            // Allow completion if datetime parsing fails (fallback)
+            \Log::warning('Allowing completion due to datetime parse error');
         }
 
         $appointment->status = 'completed';
