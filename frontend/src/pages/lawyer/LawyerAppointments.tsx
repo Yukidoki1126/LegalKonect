@@ -390,12 +390,29 @@ const LawyerAppointments: React.FC = () => {
 
   // Helper to check if appointment time has passed
   const hasAppointmentPassed = (appointment: Appointment) => {
+    if (!appointment.appointment_date || !appointment.appointment_time) {
+      console.warn('Invalid appointment date/time:', appointment);
+      return false;
+    }
+
     const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
     const now = new Date();
+    
+    // Check if date is valid
+    if (isNaN(appointmentDateTime.getTime())) {
+      console.error('Failed to parse appointment date/time:', {
+        appointmentDate: appointment.appointment_date,
+        appointmentTime: appointment.appointment_time,
+        appointment
+      });
+      return false;
+    }
+    
     const hasPassed = appointmentDateTime <= now;
     
     // Debug logging
     console.log('Checking appointment time:', {
+      appointmentId: appointment.id,
       appointmentDate: appointment.appointment_date,
       appointmentTime: appointment.appointment_time,
       appointmentDateTime: appointmentDateTime.toISOString(),
