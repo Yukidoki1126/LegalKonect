@@ -58,6 +58,30 @@ Route::prefix('lawyers')->group(function () {
 
 Route::get('/specializations', [LawyerController::class, 'specializations']);
 
+// Public storage proxy route for R2 images with CORS headers
+Route::get('/storage/{path}', function ($path) {
+    try {
+        $storage = Storage::disk('r2');
+        
+        if (!$storage->exists($path)) {
+            return response()->json(['error' => 'File not found'], 404);
+        }
+        
+        $file = $storage->get($path);
+        $mimeType = $storage->mimeType($path);
+        
+        return response($file)
+            ->header('Content-Type', $mimeType)
+            ->header('Cache-Control', 'public, max-age=31536000')
+            ->header('Access-Control-Allow-Origin', '*')
+            ->header('Access-Control-Allow-Methods', 'GET, HEAD')
+            ->header('Access-Control-Allow-Headers', '*');
+    } catch (\Exception $e) {
+        \Log::error('Storage proxy error: ' . $e->getMessage());
+        return response()->json(['error' => 'Error loading file'], 500);
+    }
+})->where('path', '.*');
+
 // Public FAQ routes
 Route::prefix('faqs')->group(function () {
     Route::get('/categories', [FaqController::class, 'categories']);
