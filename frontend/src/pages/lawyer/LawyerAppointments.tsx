@@ -395,7 +395,11 @@ const LawyerAppointments: React.FC = () => {
       return false;
     }
 
-    const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+    // Extract date part if appointment_date contains time component
+    const dateStr = appointment.appointment_date.split('T')[0];
+    const timeStr = appointment.appointment_time;
+    
+    const appointmentDateTime = new Date(`${dateStr}T${timeStr}`);
     const now = new Date();
     
     // Check if date is valid
@@ -403,6 +407,8 @@ const LawyerAppointments: React.FC = () => {
       console.error('Failed to parse appointment date/time:', {
         appointmentDate: appointment.appointment_date,
         appointmentTime: appointment.appointment_time,
+        dateStr,
+        timeStr,
         appointment
       });
       return false;
@@ -413,8 +419,10 @@ const LawyerAppointments: React.FC = () => {
     // Debug logging
     console.log('Checking appointment time:', {
       appointmentId: appointment.id,
-      appointmentDate: appointment.appointment_date,
-      appointmentTime: appointment.appointment_time,
+      rawDate: appointment.appointment_date,
+      rawTime: appointment.appointment_time,
+      dateStr,
+      timeStr,
       appointmentDateTime: appointmentDateTime.toISOString(),
       now: now.toISOString(),
       hasPassed
