@@ -132,15 +132,12 @@ class User extends Authenticatable
         
         $disk = env('FILESYSTEM_DISK', 'public');
         
-        // For R2 storage, construct the full public URL
+        // For R2 storage, use backend proxy to avoid CORS issues
         if ($disk === 'r2' || $disk === 'r2-private') {
-            $publicUrl = env('R2_PUBLIC_URL');
-            if ($publicUrl) {
-                // Remove any trailing slash from public URL and leading slash from path
-                $publicUrl = rtrim($publicUrl, '/');
-                $path = ltrim($this->profile_picture, '/');
-                return $publicUrl . '/' . $path;
-            }
+            $apiUrl = env('APP_URL', 'http://localhost:8000');
+            $apiUrl = rtrim($apiUrl, '/');
+            $path = ltrim($this->profile_picture, '/');
+            return $apiUrl . '/api/storage/' . $path;
         }
         
         // Fallback to Storage::url for local/public disk

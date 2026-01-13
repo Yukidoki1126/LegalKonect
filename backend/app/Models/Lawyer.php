@@ -248,14 +248,12 @@ public function getProfilePhotoUrlAttribute()
     
     $disk = env('FILESYSTEM_DISK', 'public');
     
-    // For R2 storage, construct the full public URL
+    // For R2 storage, use backend proxy to avoid CORS issues
     if ($disk === 'r2' || $disk === 'r2-private') {
-        $publicUrl = env('R2_PUBLIC_URL');
-        if ($publicUrl) {
-            $publicUrl = rtrim($publicUrl, '/');
-            $path = ltrim($this->profile_photo, '/');
-            return $publicUrl . '/' . $path;
-        }
+        $apiUrl = env('APP_URL', 'http://localhost:8000');
+        $apiUrl = rtrim($apiUrl, '/');
+        $path = ltrim($this->profile_photo, '/');
+        return $apiUrl . '/api/storage/' . $path;
     }
     
     return Storage::disk($disk)->url($this->profile_photo);
