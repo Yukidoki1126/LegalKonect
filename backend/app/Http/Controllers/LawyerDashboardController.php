@@ -268,6 +268,13 @@ class LawyerDashboardController extends Controller
             ], 404);
         }
 
+        // Check if reservation fee has been paid
+        if ($appointment->payment_status !== 'paid') {
+            return response()->json([
+                'error' => 'Cannot complete appointment - reservation fee has not been paid'
+            ], 400);
+        }
+
         // Check if appointment date/time has passed
         try {
             // Parse appointment datetime

@@ -18,11 +18,11 @@ class Kernel extends ConsoleKernel
                  ->timezone('Asia/Manila')
                  ->appendOutputTo(storage_path('logs/appointment-reminders.log'));
         
-        // Alternative: Run every hour during business hours (for testing)
-        // $schedule->command('appointments:send-reminders')
-        //          ->hourly()
-        //          ->between('8:00', '18:00')
-        //          ->timezone('Asia/Manila');
+        // Process unpaid appointments (send reminders and auto-cancel)
+        $schedule->command('appointments:process-unpaid')
+                 ->hourly()
+                 ->timezone('Asia/Manila')
+                 ->appendOutputTo(storage_path('logs/unpaid-appointments.log'));
     }
 
     /**
