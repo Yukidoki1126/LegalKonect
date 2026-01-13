@@ -269,14 +269,33 @@ class LawyerDashboardController extends Controller
         }
 
         // Check if appointment date/time has passed
-        $appointmentDateTime = \Carbon\Carbon::parse(
-            $appointment->appointment_date . ' ' . $appointment->appointment_time
-        );
-        
-        if ($appointmentDateTime->isFuture()) {
+        try {
+            $appointmentDateTime = \Carbon\Carbon::parse(
+                $appointment->appointment_date . ' ' . $appointment->appointment_time,
+                config('app.timezone')
+            );
+            
+            if ($appointmentDateTime->isFuture()) {
+                return response()->json([
+                    'error' => 'Cannot complete an appointment that hasn\'t occurred yet',
+                    'debug' => [
+                        'appointment_datetime' => $appointmentDateTime->toIso8601String(),
+                        'current_time' => now()->toIso8601String(),
+                        'timezone' => config('app.timezone')
+                    ]
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error parsing appointment datetime', [
+                'appointment_id' => $appointmentId,
+                'date' => $appointment->appointment_date,
+                'time' => $appointment->appointment_time,
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
-                'error' => 'Cannot complete an appointment that hasn\'t occurred yet'
-            ], 400);
+                'error' => 'Error validating appointment time'
+            ], 500);
         }
 
         $appointment->status = 'completed';

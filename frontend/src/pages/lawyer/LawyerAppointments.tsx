@@ -392,7 +392,18 @@ const LawyerAppointments: React.FC = () => {
   const hasAppointmentPassed = (appointment: Appointment) => {
     const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
     const now = new Date();
-    return appointmentDateTime <= now;
+    const hasPassed = appointmentDateTime <= now;
+    
+    // Debug logging
+    console.log('Checking appointment time:', {
+      appointmentDate: appointment.appointment_date,
+      appointmentTime: appointment.appointment_time,
+      appointmentDateTime: appointmentDateTime.toISOString(),
+      now: now.toISOString(),
+      hasPassed
+    });
+    
+    return hasPassed;
   };
 
   const handleCompleteClick = (appointment: Appointment) => {
