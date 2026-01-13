@@ -17,10 +17,10 @@ interface Payment {
 interface PaymentSummary {
   total_payments: number;
   total_amount: number;
-  total_revenue: number;
-  platform_fees: number;
   card_payments: number;
   gcash_payments: number;
+  pending_amount: number;
+  paid_amount: number;
 }
 
 const AdminPayments: React.FC = () => {
@@ -135,18 +135,77 @@ const AdminPayments: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Transactions</h1>
-        <p className="text-sm sm:text-base text-gray-600">View all transactions and payment reports</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Transactions</h1>
+          <p className="text-sm sm:text-base text-gray-600">Track all payment transactions and methods</p>
+        </div>
+        <button
+          onClick={() => {
+            // Export to CSV
+            const csv = [
+              ['Transaction ID', 'Client', 'Lawyer', 'Amount', 'Method', 'Status', 'Date'],
+              ...filteredPayments.map(p => [
+                `#${p.id}`,
+                p.client_name,
+                p.lawyer_name,
+                `₱${p.amount}`,
+                p.payment_method,
+                p.payment_status,
+                new Date(p.created_at).toLocaleDateString()
+              ])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+          }}
+          className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Export CSV
+        </button>
       </div>
 
-      {/* Summary Stats */}
+      {/* Total Amount Summary */}
+      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-blue-100 text-sm font-medium">Total Transaction Amount</p>
+            <p className="text-3xl font-bold mt-1">₱{(summary?.total_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+            <p className="text-blue-100 text-xs mt-2">Payments go directly to lawyers</p>
+          </div>
+          <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="bg-white/10 rounded-lg p-3">
+            <div className="text-blue-100 text-xs">Paid</div>
+            <div className="font-semibold text-lg">₱{(summary?.paid_amount || 0).toLocaleString()}</div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-3">
+            <div className="text-blue-100 text-xs">Pending</div>
+            <div className="font-semibold text-lg">₱{(summary?.pending_amount || 0).toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Method Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
         <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-xs sm:text-sm font-medium">Total Transactions</p>
               <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{summary?.total_payments || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">All payment methods</p>
             </div>
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-xl flex items-center justify-center">
               <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,6 +225,9 @@ const AdminPayments: React.FC = () => {
                   Bank
                 </span>
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {summary?.total_payments ? ((summary.card_payments / summary.total_payments) * 100).toFixed(0) : 0}% of total
+              </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,6 +247,9 @@ const AdminPayments: React.FC = () => {
                   GCash
                 </span>
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {summary?.total_payments ? ((summary.gcash_payments / summary.total_payments) * 100).toFixed(0) : 0}% of total
+              </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-50 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,6 +294,7 @@ const AdminPayments: React.FC = () => {
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Transaction</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Client</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Lawyer</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Amount</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Method</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Date</th>
@@ -238,7 +304,7 @@ const AdminPayments: React.FC = () => {
             <tbody className="divide-y divide-gray-200">
               {filteredPayments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-600">
                     <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
                     </svg>
@@ -253,6 +319,10 @@ const AdminPayments: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.client_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{payment.lawyer_name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-gray-900">₱{payment.amount?.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">Direct to lawyer</div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPaymentMethodBadge(payment.payment_method)}`}>
                         {payment.payment_method ? payment.payment_method.charAt(0).toUpperCase() + payment.payment_method.slice(1) : 'Pending'}
@@ -415,6 +485,15 @@ const AdminPayments: React.FC = () => {
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-500">Amount</span>
                 <span className="text-lg font-bold text-gray-900">₱{selectedTransaction.amount?.toLocaleString()}</span>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                <div className="text-sm text-blue-800">
+                  <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Payment sent directly to lawyer
+                </div>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

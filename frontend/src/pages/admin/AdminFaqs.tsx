@@ -181,21 +181,16 @@ const AdminFaqs = () => {
   const handleDeleteConfirm = async () => {
     if (!deletingFaqId) return;
 
-    const token = sessionStorage.getItem('admin_token');
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/faqs/${deletingFaqId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        await fetchFaqs();
-        setShowDeleteModal(false);
-        setDeletingFaqId(null);
-        setDeletingFaqQuestion('');
-      }
-    } catch (error) {
+      await adminApi.delete(`/faqs/${deletingFaqId}`);
+      await fetchFaqs();
+      setShowDeleteModal(false);
+      setDeletingFaqId(null);
+      setDeletingFaqQuestion('');
+    } catch (error: any) {
       console.error('Error deleting FAQ:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to delete FAQ. Please try again.';
+      alert(errorMessage);
     }
   };
 

@@ -392,7 +392,7 @@ const confirmToggleStatus = async () => {
                     </td>
                     <td className="px-3 py-3 border-r border-transparent">
                       <span className="text-sm text-gray-900 font-medium whitespace-nowrap">
-                        ₱{lawyer.consultation_fee ? (lawyer.consultation_fee >= 1000 ? (lawyer.consultation_fee / 1000).toFixed(0) + 'k' : lawyer.consultation_fee.toString()) : '0'}
+                        ₱{lawyer.consultation_fee ? lawyer.consultation_fee.toLocaleString() : '0'}
                       </span>
                     </td>
                     <td className="px-3 py-3 border-r border-transparent">
