@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import api from '../services/api';
+import { cacheService } from '../services/cacheService';
 
 interface Lawyer {
   id: number;
@@ -144,7 +145,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await api.post('/auth/login', { email, password });
       const { token: newToken, user: newUser, redirect } = response.data;
 
+      // Check if user data exists in response
+      if (!newUser) {
+        throw new Error('Invalid response from server. Please try again.');
+      }
+
       console.log('Login response:', { newUser, redirect, role: newUser.role });
+
+      // Clear all cached data on login to ensure fresh profile data
+      cacheService.clear();
 
       // Check if this is an admin or super admin login
       if (newUser.role === 'admin' || newUser.role === 'super_admin') {
@@ -224,7 +233,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return redirectPath;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.message || 'Login failed');
+        // Check for validation errors from Laravel
+        const errorData = error.response?.data;
+        
+        if (errorData?.errors) {
+          // Laravel validation errors
+          const firstError = Object.values(errorData.errors)[0];
+          const errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+          throw new Error(errorMessage as string);
+        }
+        
+        // Regular error message
+        throw new Error(errorData?.message || 'Login failed. Please check your credentials.');
       }
       throw error;
     }

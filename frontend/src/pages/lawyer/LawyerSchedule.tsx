@@ -473,40 +473,64 @@ const LawyerSchedule: React.FC = () => {
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Daily Limit <span className="text-gray-500 font-normal">(Optional)</span>
                     </label>
-                    <input
-                      type="number"
-                      name="daily_appointment_limit"
-                      value={formData.daily_appointment_limit ?? ''}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        daily_appointment_limit: e.target.value ? parseInt(e.target.value) : null
-                      }))}
-                      min="1"
-                      max="50"
-                      placeholder="Unlimited"
-                      className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Max appointments per day
-                    </p>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="daily_appointment_limit"
+                        value={formData.daily_appointment_limit ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value.trim();
+                          setFormData(prev => ({
+                            ...prev,
+                            daily_appointment_limit: value === '' || value === null ? null : parseInt(value)
+                          }));
+                        }}
+                        onKeyDown={(e) => {
+                          // Allow clearing the field with backspace/delete
+                          if (e.key === 'Backspace' || e.key === 'Delete') {
+                            const input = e.currentTarget;
+                            if (input.value.length === 1) {
+                              e.preventDefault();
+                              setFormData(prev => ({ ...prev, daily_appointment_limit: null }));
+                            }
+                          }
+                        }}
+                        min="1"
+                        max="50"
+                        placeholder="Unlimited"
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-20"
+                      />
+                      {formData.daily_appointment_limit !== null && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, daily_appointment_limit: null }))}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-1 hover:bg-blue-50 rounded transition-colors"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+                  <div className="flex gap-2 sm:gap-3 w-full sm:w-auto sm:mb-0">
                     <button
                       type="button"
                       onClick={closeModals}
-                      className="flex-1 px-4 py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                      className="flex-1 sm:flex-initial px-4 py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      className="flex-1 sm:flex-initial px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                     >
                       {editingSchedule ? 'Update' : 'Add'}
                     </button>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500 mt-1 sm:hidden">
+                  Max appointments per day
+                </p>
               </div>
             </form>
           </div>

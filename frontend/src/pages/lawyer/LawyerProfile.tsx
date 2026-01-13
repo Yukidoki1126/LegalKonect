@@ -103,7 +103,8 @@ const LawyerProfile: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
-      const data = await lawyerApi.getProfile();
+      // Use fresh profile data (bypass cache) to ensure latest photo URL
+      const data = await lawyerApi.getProfileFresh();
       console.log('Profile data:', data);
       console.log('Profile photo URL:', data.profile_photo_url);
       console.log('Profile photo:', data.profile_photo);

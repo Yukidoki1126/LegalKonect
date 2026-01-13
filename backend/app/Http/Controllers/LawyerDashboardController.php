@@ -268,6 +268,17 @@ class LawyerDashboardController extends Controller
             ], 404);
         }
 
+        // Check if appointment date/time has passed
+        $appointmentDateTime = \Carbon\Carbon::parse(
+            $appointment->appointment_date . ' ' . $appointment->appointment_time
+        );
+        
+        if ($appointmentDateTime->isFuture()) {
+            return response()->json([
+                'error' => 'Cannot complete an appointment that hasn\'t occurred yet'
+            ], 400);
+        }
+
         $appointment->status = 'completed';
         $appointment->save();
 

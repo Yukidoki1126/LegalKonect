@@ -68,7 +68,14 @@ class AuthController extends Controller
     // First, check if it's an admin
     $admin = \App\Models\Admin::where('email', $request->email)->first();
     
-    if ($admin && Hash::check($request->password, $admin->password)) {
+    if ($admin) {
+        // Admin account found, check password
+        if (!Hash::check($request->password, $admin->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Incorrect password. Please try again.'],
+            ]);
+        }
+
         // Check if admin account is active
         if (!$admin->is_active) {
             throw ValidationException::withMessages([
@@ -98,9 +105,17 @@ class AuthController extends Controller
     // If not admin, check users table
     $user = User::where('email', $request->email)->first();
 
-    if (!$user || !Hash::check($request->password, $user->password)) {
+    // Check if user account exists
+    if (!$user) {
         throw ValidationException::withMessages([
-            'email' => ['The provided credentials are incorrect.'],
+            'email' => ['Account not found. Please check your email address.'],
+        ]);
+    }
+
+    // Check password
+    if (!Hash::check($request->password, $user->password)) {
+        throw ValidationException::withMessages([
+            'email' => ['Incorrect password. Please try again.'],
         ]);
     }
 

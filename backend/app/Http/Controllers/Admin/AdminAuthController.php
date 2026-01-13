@@ -23,9 +23,17 @@ class AdminAuthController extends Controller
         // Find admin in admins table
         $admin = Admin::where('email', $request->email)->first();
 
-        if (!$admin || !Hash::check($request->password, $admin->password)) {
+        // Check if admin account exists
+        if (!$admin) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => ['Account not found. Please check your email address.'],
+            ]);
+        }
+
+        // Check password
+        if (!Hash::check($request->password, $admin->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Incorrect password. Please try again.'],
             ]);
         }
 

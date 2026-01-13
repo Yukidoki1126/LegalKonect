@@ -69,9 +69,17 @@ class LawyerAuthController extends Controller
 
         $lawyer = Lawyer::where('email', $request->email)->first();
 
-        if (!$lawyer || !Hash::check($request->password, $lawyer->password)) {
+        // Check if lawyer account exists
+        if (!$lawyer) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => ['Account not found. Please check your email address.'],
+            ]);
+        }
+
+        // Check password
+        if (!Hash::check($request->password, $lawyer->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Incorrect password. Please try again.'],
             ]);
         }
 

@@ -388,6 +388,13 @@ const LawyerAppointments: React.FC = () => {
     }
   };
 
+  // Helper to check if appointment time has passed
+  const hasAppointmentPassed = (appointment: Appointment) => {
+    const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+    const now = new Date();
+    return appointmentDateTime <= now;
+  };
+
   const handleCompleteClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setShowCompleteModal(true);
@@ -1516,7 +1523,7 @@ const LawyerAppointments: React.FC = () => {
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-3 w-full">
                     {/* Primary Action - Complete */}
-                    {appointment.status === 'confirmed' && !appointment.reschedule_status && (
+                    {appointment.status === 'confirmed' && !appointment.reschedule_status && hasAppointmentPassed(appointment) && (
                       <button
                         onClick={() => handleCompleteClick(appointment)}
                         disabled={actionLoading}
@@ -1527,6 +1534,16 @@ const LawyerAppointments: React.FC = () => {
                         </svg>
                         Complete
                       </button>
+                    )}
+
+                    {/* Show info when appointment hasn't passed yet */}
+                    {appointment.status === 'confirmed' && !appointment.reschedule_status && !hasAppointmentPassed(appointment) && (
+                      <div className="w-full bg-blue-50 border border-blue-200 px-4 py-2.5 rounded-xl text-xs">
+                        <p className="text-blue-800">
+                          <Clock className="w-3.5 h-3.5 inline mr-1" />
+                          Appointment can be completed after the scheduled time
+                        </p>
+                      </div>
                     )}
 
                     {/* Secondary Actions Row */}

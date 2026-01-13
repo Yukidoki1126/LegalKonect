@@ -29,13 +29,17 @@ class NotificationService {
   private callbacks: NotificationCallback[] = [];
   private newNotificationCallbacks: NewNotificationCallback[] = [];
   private pollInterval: number = 3000; // 3 seconds when active (faster)
-  private inactiveInterval: number = 15000; // 15 seconds when inactive (faster)
+  private inactiveInterval: number = 10000; // 10 seconds when inactive (slightly faster)
+  private backgroundInterval: number = 30000; // 30 seconds when deeply backgrounded
   private isTabActive: boolean = true;
+  private isWindowFocused: boolean = true;
   private lastNotificationIds: Set<number> = new Set();
   private isFirstLoad: boolean = true;
   private isChecking: boolean = false; // Prevent concurrent checks
   private retryCount: number = 0;
   private maxRetries: number = 3;
+  private missedCheckCount: number = 0; // Track missed checks while inactive
+  private lastSuccessfulCheck: number = Date.now(); // Track last successful check
 
   constructor() {
     // Listen for tab visibility changes
@@ -44,14 +48,21 @@ class NotificationService {
       
       // Also listen for focus events for better responsiveness
       window.addEventListener('focus', this.handleWindowFocus);
+      window.addEventListener('blur', this.handleWindowBlur);
     }
   }
 
   private handleVisibilityChange = () => {
+    const wasActive = this.isTabActive;
     this.isTabActive = !document.hidden;
     
-    // Immediately check for updates when tab becomes active
-    if (this.isTabActive && this.isPolling) {
+    console.log('[NotificationService] Tab visibility changed:', this.isTabActive ? 'active' : 'inactive');
+    
+    // When tab becomes active after being inactive, do a catch-up check
+    if (this.isTabActive && !wasActive && this.isPolling) {
+      console.log('[NotificationService] Tab became active - performing catch-up check');
+      this.missedCheckCount = 0;
+      this.isChecking = false; // Force immediate check
       this.checkNotifications();
     }
     
@@ -60,10 +71,25 @@ class NotificationService {
   };
 
   private handleWindowFocus = () => {
-    // Immediate check when window gets focus
-    if (this.isPolling && !this.isChecking) {
+    const wasFocused = this.isWindowFocused;
+    this.isWindowFocused = true;
+    
+    // Check time since last successful check
+    const timeSinceLastCheck = Date.now() - this.lastSuccessfulCheck;
+    
+    // If window regained focus and it's been a while, force immediate check
+    if (!wasFocused && this.isPolling) {
+      console.log('[NotificationService] Window focused after', Math.round(timeSinceLastCheck / 1000), 'seconds - checking for updates');
+      this.isChecking = false; // Bypass concurrent check lock
       this.checkNotifications();
     }
+  };
+
+  private handleWindowBlur = () => {
+    this.isWindowFocused = false;
+    console.log('[NotificationService] Window blurred - switching to slower polling');
+    this.missedCheckCount = 0;
+    this.restartPolling();
   };
 
   private restartPolling() {
@@ -72,7 +98,21 @@ class NotificationService {
     }
     
     if (this.isPolling) {
-      const interval = this.isTabActive ? this.pollInterval : this.inactiveInterval;
+      // Determine polling interval based on tab and window state
+      let interval = this.pollInterval; // Default: active
+      
+      if (!this.isTabActive && !this.isWindowFocused) {
+        // Tab not visible AND window not focused - very slow polling
+        interval = this.backgroundInterval;
+      } else if (!this.isTabActive || !this.isWindowFocused) {
+        // Either tab not visible OR window not focused - moderate polling
+        interval = this.inactiveInterval;
+      }
+      
+      console.log('[NotificationService] Polling interval set to', interval + 'ms', 
+        '(tab:', this.isTabActive ? 'active' : 'inactive', 
+        '/ window:', this.isWindowFocused ? 'focused' : 'blurred', ')');
+      
       this.intervalId = setInterval(() => this.checkNotifications(), interval);
     }
   }
@@ -123,15 +163,26 @@ class NotificationService {
   private async checkNotifications() {
     // Prevent concurrent checks
     if (this.isChecking) {
+      console.log('[NotificationService] Check already in progress, skipping...');
       return;
     }
 
     this.isChecking = true;
 
     try {
+      // When tab is inactive, track missed checks to do a fuller sync on return
+      if (!this.isTabActive) {
+        this.missedCheckCount++;
+      }
+
       const params: any = {};
-      if (this.lastCheckTime) {
+      // If we've missed checks while inactive, get a longer history
+      if (this.lastCheckTime && this.missedCheckCount < 3) {
         params.since = this.lastCheckTime;
+      }
+      // If we missed many checks, do a full refresh
+      else if (this.missedCheckCount >= 3) {
+        console.log('[NotificationService] Performing full refresh after', this.missedCheckCount, 'missed checks');
       }
 
       const response = await api.get<NotificationResponse>('/notifications', { 
@@ -142,6 +193,7 @@ class NotificationService {
 
       // Reset retry count on success
       this.retryCount = 0;
+      this.lastSuccessfulCheck = Date.now(); // Track successful check time
 
       // Notify all subscribers
       this.callbacks.forEach(cb => {
@@ -245,6 +297,7 @@ class NotificationService {
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', this.handleVisibilityChange);
       window.removeEventListener('focus', this.handleWindowFocus);
+      window.removeEventListener('blur', this.handleWindowBlur);
     }
   }
 }

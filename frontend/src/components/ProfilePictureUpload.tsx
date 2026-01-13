@@ -22,6 +22,9 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevPictureRef = useRef<string | null | undefined>(currentPicture);
 
@@ -35,6 +38,11 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
     if (!prevPicture && currentPicture) {
       setPreview(null);
     }
+
+    // Reset error states when picture changes
+    setImageError(false);
+    setImageLoading(true);
+    setRetryCount(0);
 
     prevPictureRef.current = currentPicture;
   }, [currentPicture]);
@@ -140,6 +148,27 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
   const displayImage = preview || getImageUrl(currentPicture);
 
+  // Handle image load error with retry
+  const handleImageError = () => {
+    console.error('Failed to load profile image:', displayImage);
+    
+    // Retry up to 2 times with a delay
+    if (retryCount < 2) {
+      setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        setImageError(false);
+      }, 1000 * (retryCount + 1)); // 1s, 2s delays
+    } else {
+      setImageError(true);
+      setImageLoading(false);
+    }
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
   return (
     <>
       <div className={`relative ${className}`}>
@@ -156,12 +185,26 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
             onDragOver={handleDrag}
             onDrop={handleDrop}
           >
-            {displayImage ? (
-              <img
-                src={displayImage}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
+            {displayImage && !imageError ? (
+              <>
+                {imageLoading && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-3 border-blue-200 border-t-blue-600"></div>
+                  </div>
+                )}
+                <img
+                  key={`${displayImage}-${retryCount}`}
+                  src={displayImage}
+                  alt="Profile"
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${
+                    imageLoading ? 'opacity-0' : 'opacity-100'
+                  }`}
+                  crossOrigin="anonymous"
+                  loading="eager"
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
+              </>
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
                 <User className="w-12 h-12 text-blue-400" />
