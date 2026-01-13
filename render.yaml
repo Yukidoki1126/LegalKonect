@@ -97,6 +97,58 @@ services:
         source: /*
         destination: /index.html
 
+  # Cron Job for Laravel Scheduler
+  - type: cron
+    name: legalkonect-scheduler
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    schedule: "* * * * *"  # Every minute
+    dockerCommand: php artisan schedule:run
+    envVars:
+      - key: APP_NAME
+        value: LegalKonect
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_KEY
+        sync: false
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: legalkonect-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: legalkonect-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: legalkonect-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: legalkonect-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: legalkonect-db
+          property: password
+      - key: MAIL_MAILER
+        value: resend
+      - key: RESEND_KEY
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        value: noreply@legalkonect.com
+      - key: MAIL_FROM_NAME
+        value: LegalKonect
+
 databases:
   - name: legalkonect-db
     databaseName: legalkonect
