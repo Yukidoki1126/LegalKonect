@@ -142,26 +142,36 @@ const AdminPayments: React.FC = () => {
         </div>
         <button
           onClick={() => {
-            // Export to CSV
+            // Export to CSV with proper formatting
+            const escapeCsvField = (field: any) => {
+              const str = String(field || '');
+              // Escape quotes and wrap in quotes if contains comma, quote, or newline
+              if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                return `"${str.replace(/"/g, '""')}"`;
+              }
+              return str;
+            };
+
             const csv = [
-              ['Transaction ID', 'Client', 'Lawyer', 'Amount', 'Method', 'Status', 'Date'],
+              ['Transaction ID', 'Client', 'Lawyer', 'Amount (PHP)', 'Method', 'Status', 'Date'],
               ...filteredPayments.map(p => [
-                `#${p.id}`,
-                p.client_name,
-                p.lawyer_name,
-                `₱${p.amount}`,
-                p.payment_method,
+                p.id,
+                escapeCsvField(p.client_name),
+                escapeCsvField(p.lawyer_name),
+                p.amount, // Just the number without symbol
+                escapeCsvField(p.payment_method || 'pending'),
                 p.payment_status,
-                new Date(p.created_at).toLocaleDateString()
+                new Date(p.created_at).toLocaleDateString('en-CA') // YYYY-MM-DD format
               ])
             ].map(row => row.join(',')).join('\n');
             
-            const blob = new Blob([csv], { type: 'text/csv' });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
+            window.URL.revokeObjectURL(url);
           }}
           className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
         >

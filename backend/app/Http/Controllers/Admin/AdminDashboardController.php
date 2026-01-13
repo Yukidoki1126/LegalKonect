@@ -214,13 +214,22 @@ class AdminDashboardController extends Controller
         // Also count total appointments for display
         $totalAppointments = Appointment::count();
 
-        $totalReservationFees = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+        // Calculate total amount from all appointments (both paid and unpaid)
+        $totalAmount = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+            ->selectRaw('SUM(COALESCE(lawyers.reservation_fee, 100)) as total')
+            ->value('total') ?? 0;
+        
+        // Count paid amounts
+        $paidAmount = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
             ->where('appointments.payment_status', 'paid')
             ->selectRaw('SUM(COALESCE(lawyers.reservation_fee, 100)) as total')
             ->value('total') ?? 0;
-
-        // Platform revenue is the percentage we keep
-        $totalAmount = $totalReservationFees * ($platformFeePercentage / 100);
+            
+        // Count unpaid amounts
+        $pendingAmount = Appointment::join('lawyers', 'appointments.lawyer_id', '=', 'lawyers.id')
+            ->where('appointments.payment_status', 'unpaid')
+            ->selectRaw('SUM(COALESCE(lawyers.reservation_fee, 100)) as total')
+            ->value('total') ?? 0;
 
         // Transform the data - show platform fee (what platform earns)
         $paymentsData = $payments->map(function ($appointment) use ($platformFeePercentage) {
@@ -257,8 +266,8 @@ class AdminDashboardController extends Controller
                 'total_payments' => $totalAppointments,
                 'paid_payments' => $summary->total_payments ?? 0,
                 'total_amount' => $totalAmount,
-                'total_revenue' => $totalReservationFees,
-                'platform_fees' => $totalAmount,
+                'paid_amount' => $paidAmount,
+                'pending_amount' => $pendingAmount,
                 'card_payments' => $summary->card_payments ?? 0,
                 'gcash_payments' => $summary->gcash_payments ?? 0
             ]

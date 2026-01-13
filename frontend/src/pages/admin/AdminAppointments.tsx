@@ -49,9 +49,6 @@ const AdminAppointments: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPayment, setFilterPayment] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAppointments, setSelectedAppointments] = useState<number[]>([]);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [showBulkActions, setShowBulkActions] = useState(false);
 
   useEffect(() => {
     loadAppointments();
@@ -224,53 +221,9 @@ const AdminAppointments: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Appointments Management</h1>
-          <p className="text-gray-600">Manage scheduling and appointment lifecycle</p>
-        </div>
-        {selectedAppointments.length > 0 && (
-          <div className="relative">
-            <button
-              onClick={() => setShowBulkActions(!showBulkActions)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              {selectedAppointments.length} Selected
-            </button>
-            {showBulkActions && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                <button
-                  onClick={() => { handleBulkAction('confirm'); setShowBulkActions(false); }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Confirm All
-                </button>
-                <button
-                  onClick={() => { handleBulkAction('cancel'); setShowBulkActions(false); }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Cancel All
-                </button>
-                <div className="border-t border-gray-200"></div>
-                <button
-                  onClick={() => { setSelectedAppointments([]); setShowBulkActions(false); }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Clear Selection
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Appointments Management</h1>
+        <p className="text-gray-600">View and monitor all appointments on the platform</p>
       </div>
 
       {/* Stats Summary */}
@@ -378,14 +331,6 @@ const AdminAppointments: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-4 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedAppointments.length === filteredAppointments.length && filteredAppointments.length > 0}
-                    onChange={toggleSelectAll}
-                    className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
-                  />
-                </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Client
                 </th>
@@ -401,29 +346,18 @@ const AdminAppointments: React.FC = () => {
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Booked On
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredAppointments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-600">
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-600">
                     No appointments found
                   </td>
                 </tr>
               ) : (
                 filteredAppointments.map((appointment) => (
                   <tr key={appointment.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedAppointments.includes(appointment.id)}
-                        onChange={() => toggleSelectAppointment(appointment.id)}
-                        className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
-                      />
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
@@ -482,18 +416,6 @@ const AdminAppointments: React.FC = () => {
                         month: 'short',
                         day: 'numeric',
                       })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <button
-                        onClick={() => setSelectedAppointment(appointment)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        View
-                      </button>
                     </td>
                   </tr>
                 ))
@@ -597,153 +519,6 @@ const AdminAppointments: React.FC = () => {
       <div className="text-center text-gray-600 text-sm">
         Showing {filteredAppointments.length} appointments
       </div>
-
-      {/* Appointment Detail Modal */}
-      {selectedAppointment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" onClick={() => setSelectedAppointment(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Appointment Details</h3>
-                    <p className="text-sm text-white/80">ID: #{selectedAppointment.id}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedAppointment(null)}
-                  className="text-white/80 hover:text-white transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-              {/* Client Info */}
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                <div className="text-xs font-semibold text-blue-800 mb-3">Client Information</div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-blue-700">Name</span>
-                    <span className="text-sm font-semibold text-blue-900">{selectedAppointment.client_name}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-blue-700">Email</span>
-                    <span className="text-sm font-semibold text-blue-900">{selectedAppointment.client_email}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Lawyer Info */}
-              <div className="bg-green-50 border border-green-100 rounded-lg p-4">
-                <div className="text-xs font-semibold text-green-800 mb-3">Lawyer Information</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-green-700">Assigned Lawyer</span>
-                  <span className="text-sm font-semibold text-green-900">{selectedAppointment.lawyer_name}</span>
-                </div>
-              </div>
-
-              {/* Appointment Details */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-500">Date</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {new Date(selectedAppointment.appointment_date).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-500">Time</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {selectedAppointment.time_slot ? (() => {
-                      try {
-                        if (selectedAppointment.time_slot.includes('T')) {
-                          return new Date(selectedAppointment.time_slot).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                          });
-                        }
-                        return new Date(`2000-01-01T${selectedAppointment.time_slot}`).toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        });
-                      } catch {
-                        return selectedAppointment.time_slot;
-                      }
-                    })() : 'N/A'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-500">Status</span>
-                  <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedAppointment.status)}`}>
-                    {selectedAppointment.status}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-500">Consultation Fee</span>
-                  <span className="text-lg font-bold text-gray-900">₱{selectedAppointment.consultation_fee?.toLocaleString()}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-500">Payment Status</span>
-                  <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getPaymentColor(selectedAppointment.payment_status)}`}>
-                    {selectedAppointment.payment_status}
-                  </span>
-                </div>
-
-                {selectedAppointment.payment_method && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-500">Payment Method</span>
-                    <span className="text-sm font-medium text-gray-900 capitalize">{selectedAppointment.payment_method}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-500">Booked On</span>
-                  <span className="text-sm text-gray-900">
-                    {new Date(selectedAppointment.created_at).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-              <button
-                onClick={() => setSelectedAppointment(null)}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
