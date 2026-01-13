@@ -77,7 +77,7 @@ const AdminAppointments: React.FC = () => {
       return;
     }
 
-    if (!confirm(`Are you sure you want to ${action} ${selectedAppointments.length} appointments?`)) {
+    if (!window.confirm(`Are you sure you want to ${action} ${selectedAppointments.length} appointments?`)) {
       return;
     }
 
