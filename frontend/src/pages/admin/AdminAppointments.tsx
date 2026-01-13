@@ -54,46 +54,6 @@ const AdminAppointments: React.FC = () => {
     loadAppointments();
   }, [pagination.currentPage]);
 
-  const toggleSelectAll = () => {
-    if (selectedAppointments.length === filteredAppointments.length) {
-      setSelectedAppointments([]);
-    } else {
-      setSelectedAppointments(filteredAppointments.map(a => a.id));
-    }
-  };
-
-  const toggleSelectAppointment = (id: number) => {
-    setSelectedAppointments(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const handleBulkAction = async (action: string) => {
-    if (selectedAppointments.length === 0) {
-      alert('Please select appointments first');
-      return;
-    }
-
-    if (!window.confirm(`Are you sure you want to ${action} ${selectedAppointments.length} appointments?`)) {
-      return;
-    }
-
-    try {
-      // Call API for bulk action
-      await adminApi.post('/appointments/bulk-action', {
-        appointment_ids: selectedAppointments,
-        action: action
-      });
-      
-      alert(`Successfully ${action}ed ${selectedAppointments.length} appointments`);
-      setSelectedAppointments([]);
-      loadAppointments();
-    } catch (error: any) {
-      console.error('Bulk action error:', error);
-      alert(error.response?.data?.message || `Failed to ${action} appointments`);
-    }
-  };
-
   const loadAppointments = async () => {
     try {
       setLoading(true);
