@@ -61,18 +61,15 @@ Route::get('/specializations', [LawyerController::class, 'specializations']);
 // Public storage proxy route for R2 images with CORS headers
 Route::get('/storage/{path}', function ($path) {
     try {
-        $storage = Storage::disk('r2');
+        // Get R2 public URL and redirect to it
+        $publicUrl = env('R2_PUBLIC_URL');
         
-        if (!$storage->exists($path)) {
-            return response()->json(['error' => 'File not found'], 404);
+        if (!$publicUrl) {
+            return response()->json(['error' => 'R2 public URL not configured'], 500);
         }
         
-        $file = $storage->get($path);
-        $mimeType = $storage->mimeType($path);
-        
-        return response($file)
-            ->header('Content-Type', $mimeType)
-            ->header('Cache-Control', 'public, max-age=31536000')
+        // Redirect to the R2 public URL with proper CORS headers
+        return redirect($publicUrl . '/' . $path, 301)
             ->header('Access-Control-Allow-Origin', '*')
             ->header('Access-Control-Allow-Methods', 'GET, HEAD')
             ->header('Access-Control-Allow-Headers', '*');
