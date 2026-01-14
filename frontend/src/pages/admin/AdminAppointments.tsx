@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import adminApi, { clearAdminCache } from '../../services/adminApi';
 
 interface Appointment {
@@ -49,6 +49,27 @@ const AdminAppointments: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPayment, setFilterPayment] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Dropdown states
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [paymentDropdownOpen, setPaymentDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+  const paymentDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+        setStatusDropdownOpen(false);
+      }
+      if (paymentDropdownRef.current && !paymentDropdownRef.current.contains(event.target as Node)) {
+        setPaymentDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     loadAppointments();
@@ -259,29 +280,81 @@ const AdminAppointments: React.FC = () => {
             />
           </div>
 
-          {/* Status Filter */}
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all min-w-[150px]"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+          {/* Status Filter - Custom Dropdown */}
+          <div className="relative min-w-[150px]" ref={statusDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all flex items-center justify-between"
+            >
+              <span>{filterStatus === 'all' ? 'All Status' : filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}</span>
+              <svg
+                className={`w-4 h-4 text-gray-500 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {statusDropdownOpen && (
+              <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => {
+                      setFilterStatus(status);
+                      setStatusDropdownOpen(false);
+                    }}
+                    className={`w-full px-4 py-2.5 text-left hover:bg-blue-50 transition-colors ${
+                      filterStatus === status ? 'bg-blue-500 text-white hover:bg-blue-600' : 'text-gray-900'
+                    }`}
+                  >
+                    {status === 'all' ? 'All Status' : status.charAt(0).toUpperCase() + status.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-          {/* Payment Filter */}
-          <select
-            value={filterPayment}
-            onChange={(e) => setFilterPayment(e.target.value)}
-            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all min-w-[150px]"
-          >
-            <option value="all">All Payments</option>
-            <option value="paid">Paid</option>
-            <option value="unpaid">Unpaid</option>
-          </select>
+          {/* Payment Filter - Custom Dropdown */}
+          <div className="relative min-w-[150px]" ref={paymentDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setPaymentDropdownOpen(!paymentDropdownOpen)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all flex items-center justify-between"
+            >
+              <span>{filterPayment === 'all' ? 'All Payments' : filterPayment.charAt(0).toUpperCase() + filterPayment.slice(1)}</span>
+              <svg
+                className={`w-4 h-4 text-gray-500 transition-transform ${paymentDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {paymentDropdownOpen && (
+              <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                {['all', 'paid', 'unpaid'].map((payment) => (
+                  <button
+                    key={payment}
+                    type="button"
+                    onClick={() => {
+                      setFilterPayment(payment);
+                      setPaymentDropdownOpen(false);
+                    }}
+                    className={`w-full px-4 py-2.5 text-left hover:bg-blue-50 transition-colors ${
+                      filterPayment === payment ? 'bg-blue-500 text-white hover:bg-blue-600' : 'text-gray-900'
+                    }`}
+                  >
+                    {payment === 'all' ? 'All Payments' : payment.charAt(0).toUpperCase() + payment.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

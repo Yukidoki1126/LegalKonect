@@ -1,6 +1,7 @@
 // src/pages/LawyerSearch.tsx - REDESIGNED
 // Professional, minimal design - clean layout, no gradients, consistent spacing
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLawyers } from '../context/LawyersContext';
 import LawyerCard from '../components/LawyerCard';
@@ -38,6 +39,14 @@ const LawyerCardSkeleton: React.FC = () => (
 
 const LawyerSearch: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, navigate]);
   
   // Get cache from context
   const { 

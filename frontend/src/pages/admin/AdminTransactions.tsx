@@ -34,31 +34,10 @@ const AdminPayments: React.FC = () => {
   });
   const [filterMethod, setFilterMethod] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTransaction, setSelectedTransaction] = useState<Payment | null>(null);
 
   useEffect(() => {
     loadPayments();
   }, [pagination.currentPage]);
-
-  // Prevent body scroll when modal is open and prevent layout shift
-  useEffect(() => {
-    const header = document.getElementById('admin-header');
-    if (selectedTransaction) {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.overflow = 'hidden';
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-      if (header) header.style.paddingRight = `${scrollbarWidth}px`;
-    } else {
-      document.body.style.overflow = 'unset';
-      document.body.style.paddingRight = '';
-      if (header) header.style.paddingRight = '';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-      document.body.style.paddingRight = '';
-      if (header) header.style.paddingRight = '';
-    };
-  }, [selectedTransaction]);
 
   const loadPayments = async () => {
     try {
@@ -308,13 +287,12 @@ const AdminPayments: React.FC = () => {
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Method</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredPayments.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-gray-600">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
                     <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
                     </svg>
@@ -353,18 +331,6 @@ const AdminPayments: React.FC = () => {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <button
-                        onClick={() => setSelectedTransaction(payment)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        View
-                      </button>
                     </td>
                   </tr>
                 ))
@@ -410,22 +376,12 @@ const AdminPayments: React.FC = () => {
                     <div className="text-gray-900 truncate">{payment.lawyer_name}</div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                <div className="pt-3 border-t border-gray-200">
                   <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
                     payment.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                   }`}>
                     {payment.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
                   </span>
-                  <button
-                    onClick={() => setSelectedTransaction(payment)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    View
-                  </button>
                 </div>
               </div>
             ))
@@ -458,115 +414,7 @@ const AdminPayments: React.FC = () => {
         )}
       </div>
 
-      {/* Transaction Details Modal */}
-      {selectedTransaction && (
-      <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[9999] p-4" style={{ margin: 0 }}>
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
-          <div className={`px-6 py-4 ${
-            selectedTransaction.payment_method === 'gcash' 
-              ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
-              : 'bg-gradient-to-r from-blue-500 to-blue-600'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">Transaction #{selectedTransaction.id}</h3>
-                  <p className="text-sm text-white/80">{selectedTransaction.payment_method?.toUpperCase()} Payment</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedTransaction(null)}
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
 
-          <div className="p-6 space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-500">Amount</span>
-                <span className="text-lg font-bold text-gray-900">₱{selectedTransaction.amount?.toLocaleString()}</span>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                <div className="text-sm text-blue-800">
-                  <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Payment sent directly to lawyer
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-500">Status</span>
-                <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                  selectedTransaction.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                }`}>
-                  {selectedTransaction.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-500">Payment Method</span>
-                <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getPaymentMethodBadge(selectedTransaction.payment_method)}`}>
-                  {selectedTransaction.payment_method?.toUpperCase()}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-500">Client</span>
-                <span className="text-sm font-medium text-gray-900">{selectedTransaction.client_name}</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-500">Lawyer</span>
-                <span className="text-sm font-medium text-gray-900">{selectedTransaction.lawyer_name}</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-500">Date & Time</span>
-                <span className="text-sm text-gray-900">
-                  {new Date(selectedTransaction.created_at).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
-              </div>
-
-              {selectedTransaction.payment_reference && (
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-500">Reference</span>
-                  <span className="text-xs font-mono text-gray-600 max-w-[200px] truncate">
-                    {selectedTransaction.payment_reference}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <button
-              onClick={() => setSelectedTransaction(null)}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors text-sm"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-      )}
     </div>
   );
 };

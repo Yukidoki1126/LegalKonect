@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { cacheService } from '../services/cacheService';
 import ReviewModal from '../components/ReviewModal';
@@ -54,6 +55,15 @@ interface Appointment {
 const Appointments: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, navigate]);
+  
   const [activeTab, setActiveTab] = useState<'upcoming' | 'reschedule' | 'cancelled' | 'past'>('upcoming');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);

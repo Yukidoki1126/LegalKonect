@@ -1,5 +1,6 @@
 // src/pages/Profile.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLawyers } from '../context/LawyersContext';
 import LocationPickerWithMap from '../components/LocationPickerWithMap';
@@ -9,6 +10,15 @@ import api, { authAPI } from '../services/api';
 const Profile: React.FC = () => {
   const { user, updateUser } = useAuth();
   const { invalidateCache } = useLawyers();
+  const navigate = useNavigate();
+  
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, navigate]);
+  
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingPicture, setUploadingPicture] = useState(false);

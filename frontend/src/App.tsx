@@ -30,9 +30,9 @@ import ToastNotification from './components/ToastNotification';
 import LawyerLayout from './pages/lawyer/LawyerLayout';
 import LawyerDashboard from './pages/lawyer/LawyerDashboard';
 import LawyerAppointments from './pages/lawyer/LawyerAppointments';
-import LawyerTransactionHistory from './pages/lawyer/LawyerTransactionHistory';
-import LawyerProfile from './pages/lawyer/LawyerProfile';
-import LawyerSchedule from './pages/lawyer/LawyerSchedule';
+import LawyerTransactions from './pages/lawyer/LawyerTransactions';
+import LawyerProfileSettings from './pages/lawyer/LawyerProfileSettings';
+import LawyerWeeklySchedule from './pages/lawyer/LawyerWeeklySchedule';
 import LawyerGoogleCalendar from './pages/lawyer/LawyerGoogleCalendar';
 import LawyerCases from './pages/LawyerCases';
 
@@ -42,7 +42,7 @@ import AdminOverview from './pages/admin/AdminOverview';
 import AdminLawyers from './pages/admin/AdminLawyers';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminUsers from './pages/admin/AdminUsers';
-import AdminPayments from './pages/admin/AdminPayments';
+import AdminTransactions from './pages/admin/AdminTransactions';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminFaqs from './pages/admin/AdminFaqs';
 import AdminVerifications from './pages/admin/AdminVerifications';
@@ -147,10 +147,10 @@ function AppContent() {
           <Route path="appointments" element={<LawyerAppointments />} />
           <Route path="cases" element={<LawyerCases />} />
           <Route path="calendar" element={<LawyerGoogleCalendar />} />
-          <Route path="schedule" element={<LawyerSchedule />} />
-          <Route path="earnings" element={<LawyerTransactionHistory />} />
-          <Route path="transactions" element={<LawyerTransactionHistory />} />
-          <Route path="profile" element={<LawyerProfile />} />
+          <Route path="schedule" element={<LawyerWeeklySchedule />} />
+          <Route path="earnings" element={<LawyerTransactions />} />
+          <Route path="transactions" element={<LawyerTransactions />} />
+          <Route path="profile" element={<LawyerProfileSettings />} />
         </Route>
 
         {/* Admin Routes */}
@@ -161,7 +161,7 @@ function AppContent() {
           <Route path="verifications" element={<AdminVerifications />} />
           <Route path="appointments" element={<AdminAppointments />} />
           <Route path="users" element={<AdminUsers />} />
-          <Route path="payments" element={<AdminPayments />} />
+          <Route path="payments" element={<AdminTransactions />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="faqs" element={<AdminFaqs />} />
           <Route path="admins" element={<AdminManagement />} />

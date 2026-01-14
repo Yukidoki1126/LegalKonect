@@ -26,6 +26,14 @@ export default function Home() {
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
+        
+        // Check if user is admin or super_admin
+        if (user.role === 'admin' || user.role === 'super_admin') {
+          navigate('/admin', { replace: true });
+          return;
+        }
+        
+        // Check if user is a lawyer
         if (user.lawyer) {
           if (user.lawyer.status === 'approved') {
             navigate('/lawyer/dashboard', { replace: true });
@@ -33,6 +41,7 @@ export default function Home() {
             navigate('/pending-approval', { replace: true });
           }
         } else {
+          // Regular client user
           navigate('/lawyers', { replace: true });
         }
       } catch (error) {

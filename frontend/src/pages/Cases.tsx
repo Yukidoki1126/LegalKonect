@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import CaseStatusTracker from '../components/CaseStatusTracker';
 import api from '../services/api';
 import { cacheService } from '../services/cacheService';
@@ -52,6 +53,15 @@ let casesCache: Case[] | null = null;
 
 const Cases: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, navigate]);
+  
   const [cases, setCases] = useState<Case[]>(casesCache || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

@@ -61,7 +61,6 @@ const AdminFaqs = () => {
     question: '',
     answer: '',
     type: 'static',
-    order: 0,
     is_active: true
   });
 
@@ -74,16 +73,18 @@ const AdminFaqs = () => {
     await fetchCategories();
   };
 
-  const fetchFaqs = async () => {
+  const fetchFaqs = async (showLoader = true) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       const response = await adminApi.get('/faqs');
-      setFaqs(Array.isArray(response.data) ? response.data : []);
+      const faqData = Array.isArray(response.data) ? response.data : 
+                      Array.isArray(response.data.data) ? response.data.data : [];
+      setFaqs([...faqData]); // Force new array reference for React re-render
     } catch (error) {
       console.error('Error fetching FAQs:', error);
       setFaqs([]);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
@@ -164,11 +165,15 @@ const AdminFaqs = () => {
       });
 
       if (response.ok) {
-        await fetchFaqs();
         handleCloseModal();
+        await fetchFaqs(false); // Refresh without loader
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to save FAQ');
       }
     } catch (error) {
       console.error('Error saving FAQ:', error);
+      alert('Failed to save FAQ. Please try again.');
     }
   };
 
@@ -183,10 +188,10 @@ const AdminFaqs = () => {
 
     try {
       await adminApi.delete(`/faqs/${deletingFaqId}`);
-      await fetchFaqs();
       setShowDeleteModal(false);
       setDeletingFaqId(null);
       setDeletingFaqQuestion('');
+      await fetchFaqs(false); // Refresh without loader
     } catch (error: any) {
       console.error('Error deleting FAQ:', error);
       const errorMessage = error.response?.data?.message || 'Failed to delete FAQ. Please try again.';
@@ -207,7 +212,6 @@ const AdminFaqs = () => {
       question: faq.question,
       answer: faq.answer,
       type: faq.type,
-      order: faq.order,
       is_active: faq.is_active
     });
     setShowModal(true);
@@ -221,7 +225,6 @@ const AdminFaqs = () => {
       question: '',
       answer: '',
       type: 'static',
-      order: 0,
       is_active: true
     });
   };
@@ -748,18 +751,6 @@ const AdminFaqs = () => {
                     className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     placeholder="Enter the answer..."
                     required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Order
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.order}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
