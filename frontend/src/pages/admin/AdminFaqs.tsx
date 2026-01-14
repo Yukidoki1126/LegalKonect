@@ -79,7 +79,8 @@ const AdminFaqs = () => {
       const response = await adminApi.get('/faqs');
       const faqData = Array.isArray(response.data) ? response.data : 
                       Array.isArray(response.data.data) ? response.data.data : [];
-      setFaqs([...faqData]); // Force new array reference for React re-render
+      // Force state update by creating a completely new array reference
+      setFaqs(faqData.map((faq: FAQ) => ({ ...faq })));
     } catch (error) {
       console.error('Error fetching FAQs:', error);
       setFaqs([]);

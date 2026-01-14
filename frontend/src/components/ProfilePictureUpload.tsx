@@ -50,12 +50,22 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   const getImageUrl = (path: string | null | undefined) => {
     if (!path) return null;
     console.log('ProfilePictureUpload - getImageUrl called with:', path);
-    // If it's already a full URL (http/https), use it directly
+    
+    // If it's a full URL, check if it's the old backend storage URL
     if (path.startsWith('http://') || path.startsWith('https://')) {
+      // Extract the path from old backend storage URLs
+      if (path.includes('/api/storage/')) {
+        const pathPart = path.split('/api/storage/')[1];
+        const constructedUrl = `${R2_PUBLIC_URL}/${pathPart}`;
+        console.log('ProfilePictureUpload - Converted old backend URL to R2:', constructedUrl);
+        return constructedUrl;
+      }
+      // If it's already an R2 URL or other valid URL, use it directly
       console.log('ProfilePictureUpload - Using full URL:', path);
       return path;
     }
-    // Use R2 public URL directly instead of proxying through backend
+    
+    // Use R2 public URL directly for relative paths
     const constructedUrl = `${R2_PUBLIC_URL}/${path}`;
     console.log('ProfilePictureUpload - Constructed R2 URL:', constructedUrl);
     return constructedUrl;
