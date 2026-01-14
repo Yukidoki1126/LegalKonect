@@ -165,8 +165,10 @@ const AdminFaqs = () => {
       });
 
       if (response.ok) {
+        // Fetch updated list first
+        await fetchFaqs(false);
+        // Then close modal
         handleCloseModal();
-        await fetchFaqs(false); // Refresh without loader
       } else {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to save FAQ');
@@ -188,10 +190,12 @@ const AdminFaqs = () => {
 
     try {
       await adminApi.delete(`/faqs/${deletingFaqId}`);
+      // Fetch updated list first
+      await fetchFaqs(false);
+      // Then close modal and reset state
       setShowDeleteModal(false);
       setDeletingFaqId(null);
       setDeletingFaqQuestion('');
-      await fetchFaqs(false); // Refresh without loader
     } catch (error: any) {
       console.error('Error deleting FAQ:', error);
       const errorMessage = error.response?.data?.message || 'Failed to delete FAQ. Please try again.';

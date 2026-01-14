@@ -1,6 +1,6 @@
 import React, { useState, useRef, memo, useEffect } from 'react';
 import { User, Camera, Trash2, Upload, CheckCircle } from 'lucide-react';
-import { STORAGE_URL } from '../config/api.config';
+import { R2_PUBLIC_URL } from '../config/api.config';
 
 interface ProfilePictureUploadProps {
   currentPicture?: string | null;
@@ -49,10 +49,16 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
   const getImageUrl = (path: string | null | undefined) => {
     if (!path) return null;
+    console.log('ProfilePictureUpload - getImageUrl called with:', path);
     // If it's already a full URL (http/https), use it directly
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    // Otherwise, construct the URL using STORAGE_URL with /api prefix
-    return `${STORAGE_URL}/api/storage/${path}`;
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      console.log('ProfilePictureUpload - Using full URL:', path);
+      return path;
+    }
+    // Use R2 public URL directly instead of proxying through backend
+    const constructedUrl = `${R2_PUBLIC_URL}/${path}`;
+    console.log('ProfilePictureUpload - Constructed R2 URL:', constructedUrl);
+    return constructedUrl;
   };
 
   const showSuccess = (message: string) => {

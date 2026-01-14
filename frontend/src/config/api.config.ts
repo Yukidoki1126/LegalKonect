@@ -33,11 +33,17 @@ const STORAGE_URL = isProduction
   ? BASE_URL
   : (process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000');
 
+// R2 Public URL for direct image access
+const R2_PUBLIC_URL = isProduction
+  ? 'http://pub-c2fcfa5dc7b4d5cfb4fefcfb8a61cfbfe.r2.dev'
+  : (process.env.REACT_APP_R2_PUBLIC_URL || 'http://localhost:8000/storage');
+
 console.log('API Config:', { isProduction, API_BASE_URL, hostname: window.location.hostname });
 
-export { API_BASE_URL, STORAGE_URL };
+export { API_BASE_URL, STORAGE_URL, R2_PUBLIC_URL };
 
 export default {
   apiUrl: API_BASE_URL,
   storageUrl: STORAGE_URL,
+  r2PublicUrl: R2_PUBLIC_URL,
 };

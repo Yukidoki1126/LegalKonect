@@ -264,11 +264,11 @@ const AdminAppointments: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -284,7 +284,11 @@ const AdminAppointments: React.FC = () => {
           <div className="relative min-w-[150px]" ref={statusDropdownRef}>
             <button
               type="button"
-              onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+              onClick={(e) => {
+                e.preventDefault();
+                setStatusDropdownOpen(!statusDropdownOpen);
+                setPaymentDropdownOpen(false);
+              }}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all flex items-center justify-between"
             >
               <span>{filterStatus === 'all' ? 'All Status' : filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}</span>
@@ -298,12 +302,13 @@ const AdminAppointments: React.FC = () => {
               </svg>
             </button>
             {statusDropdownOpen && (
-              <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+              <div className="absolute z-[100] mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
                 {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map((status) => (
                   <button
                     key={status}
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
                       setFilterStatus(status);
                       setStatusDropdownOpen(false);
                     }}
@@ -322,7 +327,11 @@ const AdminAppointments: React.FC = () => {
           <div className="relative min-w-[150px]" ref={paymentDropdownRef}>
             <button
               type="button"
-              onClick={() => setPaymentDropdownOpen(!paymentDropdownOpen)}
+              onClick={(e) => {
+                e.preventDefault();
+                setPaymentDropdownOpen(!paymentDropdownOpen);
+                setStatusDropdownOpen(false);
+              }}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all flex items-center justify-between"
             >
               <span>{filterPayment === 'all' ? 'All Payments' : filterPayment.charAt(0).toUpperCase() + filterPayment.slice(1)}</span>
@@ -336,12 +345,13 @@ const AdminAppointments: React.FC = () => {
               </svg>
             </button>
             {paymentDropdownOpen && (
-              <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+              <div className="absolute z-[100] mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
                 {['all', 'paid', 'unpaid'].map((payment) => (
                   <button
                     key={payment}
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
                       setFilterPayment(payment);
                       setPaymentDropdownOpen(false);
                     }}

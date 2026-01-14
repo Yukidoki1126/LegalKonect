@@ -44,6 +44,8 @@ const AdminAnalytics: React.FC = () => {
     try {
       setLoading(true);
       const response = await adminApi.get(`/descriptive-analytics?days=${period}`);
+      console.log('Analytics data loaded:', response.data);
+      console.log('Cancellation reasons:', response.data.cancellation_reasons);
       setDescriptive(response.data);
       setDataLoaded(true);
     } catch (error) {
