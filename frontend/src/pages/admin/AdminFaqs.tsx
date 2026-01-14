@@ -164,9 +164,9 @@ const AdminFaqs = () => {
         body: JSON.stringify(formData)
       });
 
-      if (resear cache and close modal
+      if (response.ok) {
+        // Clear cache and close modal
         clearAdminCache();
-        // Close modal first to show loading state
         handleCloseModal();
         // Then fetch updated list
         await fetchFaqs(true);
