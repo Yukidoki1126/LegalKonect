@@ -190,9 +190,10 @@ const AdminFaqs = () => {
     if (!deletingFaqId) return;
 
     try {
-      awaitear cache
+      // Delete the FAQ
+      await adminApi.delete(`/faqs/${deletingFaqId}`);
+      // Clear cache
       clearAdminCache();
-      // Cl adminApi.delete(`/faqs/${deletingFaqId}`);
       // Close modal and reset state first
       setShowDeleteModal(false);
       setDeletingFaqId(null);
