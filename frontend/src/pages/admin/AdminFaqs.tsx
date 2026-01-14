@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, Search, Eye, MessageCircle, TrendingUp, AlertCircle } from 'lucide-react';
-import adminApi from '../../services/adminApi';
+import adminApi, { clearAdminCache } from '../../services/adminApi';
 import PageTransition from '../../components/PageTransition';
 import { API_BASE_URL } from '../../config/api.config';
 
@@ -76,7 +76,8 @@ const AdminFaqs = () => {
   const fetchFaqs = async (showLoader = true) => {
     try {
       if (showLoader) setLoading(true);
-      const response = await adminApi.get('/faqs');
+      // Add timestamp to prevent caching
+      const response = await adminApi.get(`/faqs?_t=${Date.now()}`);
       const faqData = Array.isArray(response.data) ? response.data : 
                       Array.isArray(response.data.data) ? response.data.data : [];
       // Force state update by creating a completely new array reference
@@ -145,9 +146,7 @@ const AdminFaqs = () => {
     };
   }, [showModal, showDeleteModal]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     const token = sessionStorage.getItem('admin_token');
     const url = editingFaq
       ? `${API_BASE_URL}/admin/faqs/${editingFaq.id}`
@@ -165,7 +164,8 @@ const AdminFaqs = () => {
         body: JSON.stringify(formData)
       });
 
-      if (response.ok) {
+      if (resear cache and close modal
+        clearAdminCache();
         // Close modal first to show loading state
         handleCloseModal();
         // Then fetch updated list
@@ -190,7 +190,9 @@ const AdminFaqs = () => {
     if (!deletingFaqId) return;
 
     try {
-      await adminApi.delete(`/faqs/${deletingFaqId}`);
+      awaitear cache
+      clearAdminCache();
+      // Cl adminApi.delete(`/faqs/${deletingFaqId}`);
       // Close modal and reset state first
       setShowDeleteModal(false);
       setDeletingFaqId(null);
