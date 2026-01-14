@@ -1132,29 +1132,31 @@ const LawyerCases: React.FC = () => {
 
                     {/* Add New Todo Form */}
                     <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <input
                           type="text"
                           value={newTodo.title}
                           onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-                          placeholder="What should the client bring? (e.g., Valid ID, Birth Certificate)"
+                          placeholder="What should the client bring?"
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white text-sm"
                         />
-                        <input
-                          type="date"
-                          value={newTodo.due_date}
-                          onChange={(e) => setNewTodo({ ...newTodo, due_date: e.target.value })}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 bg-white text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCreateTodo}
-                          disabled={!newTodo.title.trim() || !newTodo.due_date}
-                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                        >
-                          Add Item
-                        </button>
+                        <div className="flex gap-2">
+                          <input
+                            type="date"
+                            value={newTodo.due_date}
+                            onChange={(e) => setNewTodo({ ...newTodo, due_date: e.target.value })}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 bg-white text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCreateTodo}
+                            disabled={!newTodo.title.trim() || !newTodo.due_date}
+                            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                          >
+                            Add Item
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -1216,18 +1218,18 @@ const LawyerCases: React.FC = () => {
               </div>
 
               {/* Action Buttons Footer */}
-              <div className="flex-shrink-0 border-t border-gray-200 px-5 py-3 bg-gray-50 rounded-b-lg">
-                <div className="flex gap-3">
+              <div className="flex-shrink-0 border-t border-gray-200 px-4 sm:px-5 py-3 bg-gray-50 rounded-b-lg">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setShowUpdateModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition text-sm"
+                    className="w-full sm:flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition text-sm"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpdateCase}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition text-sm"
+                    className="w-full sm:flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition text-sm"
                   >
                     Update Case
                   </button>
