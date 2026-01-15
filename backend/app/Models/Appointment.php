@@ -67,6 +67,8 @@ class Appointment extends Model
         'refund_processed_at' => 'datetime',
     ];
 
+    protected $appends = ['refund_receipt_url', 'payment_proof_url'];
+
     
     /**
      * Get the client-selected specialization
@@ -181,6 +183,32 @@ class Appointment extends Model
 
         // Extract just HH:MM from time format like "12:00:00.0000000"
         return substr($value, 0, 5);
+    }
+
+    /**
+     * Get the refund receipt URL
+     */
+    public function getRefundReceiptUrlAttribute()
+    {
+        if (!$this->refund_receipt) {
+            return null;
+        }
+
+        $disk = env('FILESYSTEM_DISK', 'public');
+        return \Storage::disk($disk)->url($this->refund_receipt);
+    }
+
+    /**
+     * Get the payment proof URL
+     */
+    public function getPaymentProofUrlAttribute()
+    {
+        if (!$this->payment_proof) {
+            return null;
+        }
+
+        $disk = env('FILESYSTEM_DISK', 'public');
+        return \Storage::disk($disk)->url($this->payment_proof);
     }
 
     /**

@@ -47,9 +47,11 @@ interface Appointment {
   confirmed_specialization?: { id: number; name: string } | null;
   // Refund fields
   refund_receipt?: string | null;
+  refund_receipt_url?: string | null;
   refund_processed_at?: string | null;
   refund_notes?: string | null;
   cancellation_reason?: string | null;
+  payment_proof_url?: string | null;
 }
 
 const Appointments: React.FC = () => {
@@ -1772,7 +1774,7 @@ const Appointments: React.FC = () => {
       )}
 
       {/* Refund Receipt Modal */}
-      {showRefundReceiptModal && selectedAppointment && selectedAppointment.refund_receipt && (
+      {showRefundReceiptModal && selectedAppointment && selectedAppointment.refund_receipt_url && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden transform transition-all animate-slideUp">
             {/* Modal Header */}
@@ -1842,7 +1844,7 @@ const Appointments: React.FC = () => {
               {/* Receipt Image */}
               <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
                 <img
-                  src={selectedAppointment.refund_receipt}
+                  src={selectedAppointment.refund_receipt_url}
                   alt="Refund Receipt"
                   className="w-full h-auto max-h-[500px] object-contain"
                   onError={(e) => {
@@ -1855,7 +1857,7 @@ const Appointments: React.FC = () => {
               {/* Download Link */}
               <div className="mt-4 flex justify-center">
                 <a
-                  href={selectedAppointment.refund_receipt}
+                  href={selectedAppointment.refund_receipt_url}
                   download
                   target="_blank"
                   rel="noopener noreferrer"

@@ -24,14 +24,27 @@ class PaymentFinalWarningMail extends Mailable
             $this->appointment->appointment_date . ' ' . $this->appointment->appointment_time
         );
 
+        // Get client name with fallback
+        $clientName = $this->appointment->user->name ?? 'Valued Client';
+        
+        // Get lawyer name with fallback
+        $lawyerName = 'Your Lawyer';
+        if ($this->appointment->lawyer) {
+            if ($this->appointment->lawyer->user && $this->appointment->lawyer->user->name) {
+                $lawyerName = $this->appointment->lawyer->user->name;
+            } else {
+                $lawyerName = $this->appointment->lawyer->first_name . ' ' . $this->appointment->lawyer->last_name;
+            }
+        }
+
         return $this->subject('⚠️ Final Warning - Payment Required in 24 Hours')
             ->view('emails.payment-final-warning')
             ->with([
-                'clientName' => $this->appointment->user->name,
-                'lawyerName' => $this->appointment->lawyer->user->name,
+                'clientName' => $clientName,
+                'lawyerName' => $lawyerName,
                 'appointmentDate' => $appointmentDateTime->format('F d, Y'),
                 'appointmentTime' => $appointmentDateTime->format('g:i A'),
-                'reservationFee' => $this->appointment->reservation_fee,
+                'reservationFee' => $this->appointment->reservation_fee ?? $this->appointment->lawyer->reservation_fee ?? 100,
                 'appointmentId' => $this->appointment->id,
             ]);
     }

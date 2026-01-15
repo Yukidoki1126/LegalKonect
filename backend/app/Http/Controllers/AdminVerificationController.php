@@ -7,6 +7,9 @@ use App\Services\LawyerVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\LawyerVerificationApproved;
+use App\Mail\LawyerVerificationRejected;
 
 class AdminVerificationController extends Controller
 {
@@ -130,7 +133,21 @@ class AdminVerificationController extends Controller
                 // Also update the lawyer's status to 'approved'
                 $lawyer->update(['status' => 'approved']);
 
-                // TODO: Send email notification to lawyer
+                // Send email notification to lawyer
+                try {
+                    Mail::to($lawyer->user->email)->send(
+                        new LawyerVerificationApproved($lawyer, $validated['notes'] ?? null)
+                    );
+                    Log::info('Verification approved email sent', [
+                        'lawyer_id' => $lawyer->id,
+                        'email' => $lawyer->user->email
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send verification approved email', [
+                        'lawyer_id' => $lawyer->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
                 return response()->json([
                     'message' => 'Lawyer verified and approved successfully',
@@ -171,18 +188,36 @@ class AdminVerificationController extends Controller
                 'notes' => 'required|string|min:10|max:1000'
             ]);
 
+            // Get the admin's user ID from the users table (for foreign key constraint)
+            $adminUser = \App\Models\User::where('email', $admin->email)->first();
+            $verifiedById = $adminUser ? $adminUser->id : $admin->id;
+
             $success = $this->verificationService->updateVerificationStatus(
                 $lawyer,
-                $admin->id,
+                $verifiedById,
                 'rejected',
                 $validated['notes']
             );
 
             if ($success) {
-                // Also update the lawyer's status to 'rejected'
-                $lawyer->update(['status' => 'rejected']);
-
-                // TODO: Send email notification to lawyer with rejection reason
+                // Keep the lawyer status as 'pending' - verification_status is what tracks rejection
+                // The 'status' enum doesn't have 'rejected' as a valid value
+                
+                // Send email notification to lawyer with rejection reason
+                try {
+                    Mail::to($lawyer->user->email)->send(
+                        new LawyerVerificationRejected($lawyer, $validated['notes'])
+                    );
+                    Log::info('Verification rejected email sent', [
+                        'lawyer_id' => $lawyer->id,
+                        'email' => $lawyer->user->email
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send verification rejected email', [
+                        'lawyer_id' => $lawyer->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
                 return response()->json([
                     'message' => 'Lawyer verification rejected',

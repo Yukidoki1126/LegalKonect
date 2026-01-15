@@ -26,6 +26,7 @@ class ProcessUnpaidAppointments extends Command
         // Find all confirmed appointments that are unpaid
         $unpaidAppointments = Appointment::where('status', 'confirmed')
             ->where('payment_status', '!=', 'paid')
+            ->with(['user', 'lawyer.user']) // Eager load relationships
             ->get();
 
         $reminders48h = 0;
@@ -34,6 +35,12 @@ class ProcessUnpaidAppointments extends Command
 
         foreach ($unpaidAppointments as $appointment) {
             try {
+                // Skip if user or email is missing
+                if (!$appointment->user || !$appointment->user->email) {
+                    $this->warn("Skipping appointment #{$appointment->id} - missing user or email");
+                    continue;
+                }
+
                 $appointmentDateTime = Carbon::parse(
                     $appointment->appointment_date . ' ' . $appointment->appointment_time
                 );
