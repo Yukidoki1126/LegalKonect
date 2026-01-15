@@ -190,6 +190,19 @@ const Appointments: React.FC = () => {
     };
   }, [showCancelModal]);
 
+  // Prevent background scroll when reschedule modal is open
+  useEffect(() => {
+    if (showClientRescheduleModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showClientRescheduleModal]);
+
   const handleCancelClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setCancelReason('');
@@ -875,12 +888,12 @@ const Appointments: React.FC = () => {
 
                     {/* Client used reschedule indicator */}
                     {appointment.client_reschedule_used && appointment.reschedule_status !== 'pending' && (appointment.status === 'pending' || appointment.status === 'confirmed') && (
-                      <div className="mb-4 p-3 bg-gray-50 border-l-4 border-gray-400 rounded">
-                        <p className="text-sm text-gray-700">
-                          <svg className="w-4 h-4 inline mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+                        <p className="text-sm text-blue-900">
+                          <svg className="w-4 h-4 inline mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <strong>Reschedule Used:</strong> You've already used your one-time reschedule for this appointment.
+                          <strong className="text-blue-700">Reschedule Used:</strong> You've already used your one-time reschedule for this appointment.
                         </p>
                       </div>
                     )}
@@ -896,9 +909,11 @@ const Appointments: React.FC = () => {
 
                     {/* Reschedule Declined Notification */}
                     {appointment.reschedule_status === 'declined' && (
-                      <div className="mb-4 p-3 bg-gray-50 border-l-4 border-gray-500 rounded">
-                        <p className="text-sm text-gray-900">
-                          <strong className="text-gray-700">Reschedule Declined:</strong> You declined the lawyer's reschedule request. The appointment was cancelled.
+                      <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded">
+                        <p className="text-sm text-red-900">
+                          <strong className="text-red-700">Reschedule Declined:</strong> {appointment.reschedule_requested_by === 'client' 
+                            ? 'Lawyer declined your reschedule request. The appointment was cancelled.'
+                            : 'You declined the lawyer\'s reschedule request. The appointment was cancelled.'}
                         </p>
                       </div>
                     )}
@@ -1612,10 +1627,10 @@ const Appointments: React.FC = () => {
 
       {/* Client Request Reschedule Modal */}
       {showClientRescheduleModal && selectedAppointment && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full transform transition-all animate-slideUp">
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl max-w-lg w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto transform transition-all animate-slideUp my-0 sm:my-auto">
             {/* Modal Header */}
-            <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-t-2xl">
+            <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-4 sm:p-8 rounded-t-none sm:rounded-t-2xl">
               <button
                 type="button"
                 onClick={() => {
@@ -1625,57 +1640,57 @@ const Appointments: React.FC = () => {
                   setClientRescheduleTime('');
                   setSelectedAppointment(null);
                 }}
-                className="absolute top-4 right-4 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-white">Request Reschedule</h3>
-                  <p className="text-blue-100 text-sm mt-1">Propose a new date for your appointment</p>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white">Request Reschedule</h3>
+                  <p className="text-blue-100 text-xs sm:text-sm mt-1">Propose a new date for your appointment</p>
                 </div>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="p-8">
+            <div className="p-4 sm:p-8 pb-20 sm:pb-8">{/* Added bottom padding for mobile */}
               {/* Current Appointment Info */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                <p className="text-sm font-semibold text-gray-900 mb-2">Current Appointment:</p>
-                <p className="text-sm text-gray-700">
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <p className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">Current Appointment:</p>
+                <p className="text-xs sm:text-sm text-gray-700">
                   <span className="font-medium">Lawyer:</span> {selectedAppointment.lawyer.first_name} {selectedAppointment.lawyer.last_name}
                 </p>
-                <p className="text-sm text-gray-700">
+                <p className="text-xs sm:text-sm text-gray-700">
                   <span className="font-medium">Date:</span> {formatDate(selectedAppointment.appointment_date)}
                 </p>
-                <p className="text-sm text-gray-700">
+                <p className="text-xs sm:text-sm text-gray-700">
                   <span className="font-medium">Time:</span> {formatTime(selectedAppointment.appointment_time)}
                 </p>
               </div>
 
               {/* One-time Warning */}
-              <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
-                <div className="flex items-start gap-3">
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
+                <div className="flex items-start gap-2 sm:gap-3">
                   <svg className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  <p className="text-sm text-amber-800">
+                  <p className="text-xs sm:text-sm text-amber-800">
                     <strong>One-time only:</strong> You can only request reschedule once per appointment. Make sure to choose a date/time that works for you.
                   </p>
                 </div>
               </div>
 
               {/* Proposed Date */}
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+              <div className="mb-3 sm:mb-4">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-2">
                   Proposed Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -1683,26 +1698,26 @@ const Appointments: React.FC = () => {
                   value={clientRescheduleDate}
                   onChange={(e) => setClientRescheduleDate(e.target.value)}
                   min={selectedAppointment.appointment_date}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </div>
 
               {/* Proposed Time */}
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+              <div className="mb-3 sm:mb-4">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-2">
                   Proposed Time <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="time"
                   value={clientRescheduleTime}
                   onChange={(e) => setClientRescheduleTime(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </div>
 
               {/* Reason */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+              <div className="mb-4 sm:mb-6">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-2">
                   Reason for Reschedule <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -1710,12 +1725,12 @@ const Appointments: React.FC = () => {
                   onChange={(e) => setClientRescheduleReason(e.target.value)}
                   placeholder="Please explain why you need to reschedule (e.g., emergency, schedule conflict)..."
                   rows={3}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none text-sm"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none text-xs sm:text-sm"
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -1726,7 +1741,7 @@ const Appointments: React.FC = () => {
                     setSelectedAppointment(null);
                   }}
                   disabled={submittingClientReschedule}
-                  className="flex-1 px-5 py-3.5 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"
+                  className="w-full sm:flex-1 px-4 sm:px-5 py-3 sm:py-3.5 text-sm sm:text-base border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1734,7 +1749,7 @@ const Appointments: React.FC = () => {
                   type="button"
                   onClick={handleClientRescheduleSubmit}
                   disabled={submittingClientReschedule || !clientRescheduleReason.trim() || !clientRescheduleDate || !clientRescheduleTime}
-                  className="flex-1 px-5 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all hover:shadow-lg disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full sm:flex-1 px-4 sm:px-5 py-3 sm:py-3.5 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all hover:shadow-lg disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submittingClientReschedule ? (
                     <>
@@ -1743,7 +1758,7 @@ const Appointments: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       Send Reschedule Request

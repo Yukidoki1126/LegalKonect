@@ -201,7 +201,6 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
                   className={`w-full h-full object-cover transition-opacity duration-300 ${
                     imageLoading ? 'opacity-0' : 'opacity-100'
                   }`}
-                  crossOrigin="anonymous"
                   loading="eager"
                   onLoad={handleImageLoad}
                   onError={handleImageError}

@@ -139,16 +139,24 @@ class LawyerScheduleController extends Controller
             ], 422);
         }
 
+        // Prepare update data
+        $updateData = [
+            'day_of_week' => $validated['day_of_week'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'is_active' => $validated['is_active'] ?? $schedule->is_active,
+            'updated_at' => now(),
+        ];
+
+        // Handle daily_appointment_limit: if key exists in validated, use it (even if null)
+        // Otherwise, keep the existing value
+        if (array_key_exists('daily_appointment_limit', $validated)) {
+            $updateData['daily_appointment_limit'] = $validated['daily_appointment_limit'];
+        }
+
         DB::table('lawyer_schedules')
             ->where('id', $id)
-            ->update([
-                'day_of_week' => $validated['day_of_week'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'is_active' => $validated['is_active'] ?? $schedule->is_active,
-                'daily_appointment_limit' => $validated['daily_appointment_limit'] ?? $schedule->daily_appointment_limit,
-                'updated_at' => now(),
-            ]);
+            ->update($updateData);
 
         $updatedSchedule = DB::table('lawyer_schedules')->where('id', $id)->first();
 

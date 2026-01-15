@@ -118,62 +118,62 @@ const AdminAnalytics: React.FC = () => {
           <>
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-500 text-sm font-medium mb-1">Verified Lawyers</p>
-                    <p className="text-3xl font-bold text-gray-900 break-words">{descriptive.total_lawyers?.toLocaleString() || 0}</p>
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Verified Lawyers</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{descriptive.total_lawyers?.toLocaleString() || 0}</p>
                     <p className="text-gray-400 text-xs mt-1">verified lawyers</p>
                   </div>
-                  <Users className="w-12 h-12 text-purple-500 bg-purple-50 rounded-xl p-2 flex-shrink-0" />
+                  <Users className="w-10 h-10 sm:w-12 sm:h-12 text-purple-500 bg-purple-50 rounded-xl p-2 flex-shrink-0" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-500 text-sm font-medium mb-1">Total Clients</p>
-                    <p className="text-3xl font-bold text-gray-900 break-words">{descriptive.total_clients.toLocaleString()}</p>
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Total Clients</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{descriptive.total_clients.toLocaleString()}</p>
                     <p className="text-gray-400 text-xs mt-1">in this period</p>
                   </div>
-                  <Users className="w-12 h-12 text-green-500 bg-green-50 rounded-xl p-2 flex-shrink-0" />
+                  <Users className="w-10 h-10 sm:w-12 sm:h-12 text-green-500 bg-green-50 rounded-xl p-2 flex-shrink-0" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-500 text-sm font-medium mb-1">Appointments</p>
-                    <p className="text-3xl font-bold text-gray-900 break-words">
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Appointments</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                       {(descriptive.total_appointments ?? 0).toLocaleString()}
                     </p>
                     <p className="text-gray-400 text-xs mt-1">total bookings</p>
                   </div>
-                  <Calendar className="w-12 h-12 text-orange-500 bg-orange-50 rounded-xl p-2 flex-shrink-0" />
+                  <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-orange-500 bg-orange-50 rounded-xl p-2 flex-shrink-0" />
                 </div>
               </div>
             </div>
 
             {/* Most Requested Legal Expertise */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="flex items-center space-x-3 mb-6">
-                <BarChart3 className="w-6 h-6 text-purple-600" />
-                <h3 className="text-xl font-bold text-gray-900">Most Requested Legal Expertise</h3>
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" />
+                <h3 className="text-base sm:text-xl font-bold text-gray-900">Most Requested Legal Expertise</h3>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {descriptive.top_specializations.map((spec, index) => {
                   const maxCount = descriptive.top_specializations[0]?.appointment_count || 1;
                   const percentage = (spec.appointment_count / maxCount) * 100;
 
                   return (
                     <div key={index}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-900 font-medium">#{index + 1} {spec.name}</span>
-                        <span className="text-purple-600 font-bold">{spec.appointment_count} appointments</span>
+                      <div className="flex items-start sm:items-center justify-between mb-2 gap-2">
+                        <span className="text-sm sm:text-base text-gray-900 font-medium flex-1 min-w-0">#{index + 1} {spec.name}</span>
+                        <span className="text-xs sm:text-base text-purple-600 font-bold whitespace-nowrap flex-shrink-0">{spec.appointment_count} appointment{spec.appointment_count !== 1 ? 's' : ''}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 sm:h-3">
                         <div
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500"
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-2.5 sm:h-3 rounded-full transition-all duration-500"
                           style={{ width: `${percentage}%` }}
                         ></div>
                       </div>

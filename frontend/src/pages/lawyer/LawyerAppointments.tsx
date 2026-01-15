@@ -1510,7 +1510,11 @@ const LawyerAppointments: React.FC = () => {
                   {appointment.reschedule_status === 'declined' && (
                     <div className="bg-gray-50 border-l-4 border-gray-500 rounded-lg p-3 mb-3">
                       <p className="text-xs font-semibold text-gray-900 mb-1">Reschedule Declined</p>
-                      <p className="text-sm text-gray-800">Client declined the reschedule. Appointment cancelled.</p>
+                      <p className="text-sm text-gray-800">
+                        {appointment.reschedule_requested_by === 'lawyer' 
+                          ? 'Client declined your reschedule request. Appointment cancelled.'
+                          : 'You declined the client\'s reschedule request. Appointment cancelled.'}
+                      </p>
                     </div>
                   )}
 

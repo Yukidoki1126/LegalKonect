@@ -28,6 +28,15 @@ class EnsureLawyer
         ], 403);
     }
     
+    // Check if lawyer account is suspended
+    if ($user->lawyer->status === 'suspended') {
+        return response()->json([
+            'message' => 'Your account has been suspended. Please contact support for more information.',
+            'suspended' => true,
+            'status' => 'suspended'
+        ], 403);
+    }
+    
     if ($user->lawyer->status !== 'approved') {
         return response()->json(['message' => 'Your lawyer profile is pending approval.'], 403);
     }

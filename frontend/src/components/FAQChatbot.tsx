@@ -418,42 +418,42 @@ const FAQChatbot: React.FC = () => {
   };
 
   const renderWelcome = () => (
-    <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-      <div className="mb-6" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-        <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
-          <MessageCircle className="w-8 h-8 text-white" />
+    <div className="flex flex-col items-center justify-center h-full p-4 sm:p-6 text-center overflow-y-auto">
+      <div className="mb-4 sm:mb-6" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+          <MessageCircle className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
         </div>
       </div>
 
-      <h3 className="text-2xl font-bold text-gray-900 mb-2" style={{ animation: 'fadeIn 0.6s ease-out' }}>
+      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2" style={{ animation: 'fadeIn 0.6s ease-out' }}>
         How can we help you?
       </h3>
-      <p className="text-gray-600 mb-6 text-base" style={{ animation: 'fadeIn 0.7s ease-out' }}>
+      <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6" style={{ animation: 'fadeIn 0.7s ease-out' }}>
         Choose an option below to get started
       </p>
 
-      <div className="w-full space-y-3 mb-6">
+      <div className="w-full space-y-2 sm:space-y-3 mb-4 sm:mb-6">
         <button
           onClick={goToChat}
-          className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium transform hover:scale-105 active:scale-95"
+          className="w-full bg-blue-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-md hover:bg-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base font-medium transform hover:scale-105 active:scale-95"
           style={{ animation: 'fadeIn 0.8s ease-out' }}
         >
-          <Search className="w-5 h-5" />
+          <Search className="w-4 h-4 sm:w-5 sm:h-5" />
           <span>Ask a Question</span>
         </button>
 
         <button
           onClick={goToCategories}
-          className="w-full bg-white border border-gray-300 text-gray-700 py-3 px-6 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center justify-center space-x-2 font-medium transform hover:scale-105 active:scale-95"
+          className="w-full bg-white border border-gray-300 text-gray-700 py-2.5 sm:py-3 px-4 sm:px-6 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base font-medium transform hover:scale-105 active:scale-95"
           style={{ animation: 'fadeIn 0.9s ease-out' }}
         >
-          <Home className="w-5 h-5" />
+          <Home className="w-4 h-4 sm:w-5 sm:h-5" />
           <span>Browse FAQs</span>
         </button>
       </div>
 
-      <div className="w-full bg-gray-50 rounded-lg p-4 border border-gray-200" style={{ animation: 'fadeIn 1s ease-out' }}>
-        <p className="text-sm font-semibold text-gray-700 mb-3">Popular Questions</p>
+      <div className="w-full bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200" style={{ animation: 'fadeIn 1s ease-out' }}>
+        <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Popular Questions</p>
         <div className="space-y-2">
           {popularQuestions.slice(0, 3).map((q, i) => (
             <button
@@ -462,7 +462,7 @@ const FAQChatbot: React.FC = () => {
                 goToChat();
                 setTimeout(() => handleSendMessage(q), 500);
               }}
-              className="w-full text-left text-sm text-gray-700 hover:text-blue-600 bg-white hover:bg-gray-50 p-3 rounded-md transition-all duration-200 border border-gray-200 transform hover:-translate-y-0.5"
+              className="w-full text-left text-xs sm:text-sm text-gray-700 hover:text-blue-600 bg-white hover:bg-gray-50 p-2 sm:p-3 rounded-md transition-all duration-200 border border-gray-200 transform hover:-translate-y-0.5"
               style={{ animation: `fadeIn 0.3s ease-out ${1.1 + i * 0.1}s both` }}
             >
               {q}
@@ -471,7 +471,7 @@ const FAQChatbot: React.FC = () => {
         </div>
       </div>
 
-      <div className="mt-6 text-xs text-gray-600" style={{ animation: 'fadeIn 1.4s ease-out' }}>
+      <div className="mt-4 sm:mt-6 text-xs text-gray-600" style={{ animation: 'fadeIn 1.4s ease-out' }}>
         Or contact us at <span className="text-blue-600 font-medium">support@legalkonect.com</span>
       </div>
     </div>
@@ -479,41 +479,41 @@ const FAQChatbot: React.FC = () => {
 
   const renderCategories = () => (
     <div className="flex flex-col h-full">
-      <div className="border-b border-gray-200 p-4 flex items-center space-x-3 bg-white">
+      <div className="border-b border-gray-200 p-3 sm:p-4 flex items-center space-x-2 sm:space-x-3 bg-white">
         <button
           onClick={goToWelcome}
-          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md p-2 transition-colors"
+          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md p-1.5 sm:p-2 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">Browse by Category</h3>
-          <p className="text-sm text-gray-600">Select a topic to explore</p>
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Browse by Category</h3>
+          <p className="text-xs sm:text-sm text-gray-600">Select a topic to explore</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3 bg-gray-50">
         {categories.map((category, index) => (
           <button
             key={category.id}
             onClick={() => handleCategoryClick(category)}
-            className="w-full bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-600 hover:shadow-md transition-all duration-200 text-left transform hover:-translate-y-1"
+            className="w-full bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:border-blue-600 hover:shadow-md transition-all duration-200 text-left transform hover:-translate-y-1"
             style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s both` }}
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3 flex-1">
-                <div className="text-2xl transition-transform duration-200 group-hover:scale-110">{category.icon}</div>
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
+                <div className="text-xl sm:text-2xl transition-transform duration-200 group-hover:scale-110">{category.icon}</div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-base text-gray-900">
+                  <h4 className="font-semibold text-sm sm:text-base text-gray-900">
                     {category.name}
                   </h4>
-                  <p className="text-sm text-gray-600">{category.description}</p>
-                  <span className="inline-block mt-2 text-xs text-gray-500">
+                  <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">{category.description}</p>
+                  <span className="inline-block mt-1 sm:mt-2 text-xs text-gray-500">
                     {category.faqs_count} question{category.faqs_count !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
-              <ChevronLeft className="w-5 h-5 text-gray-400 transform rotate-180 transition-transform duration-200 group-hover:translate-x-1" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transform rotate-180 transition-transform duration-200 group-hover:translate-x-1 flex-shrink-0" />
             </div>
           </button>
         ))}
@@ -569,20 +569,20 @@ const FAQChatbot: React.FC = () => {
 
   const renderChat = () => (
     <div className="flex flex-col h-full">
-      <div className="bg-blue-600 text-white p-4 flex items-center space-x-3 border-b border-blue-700">
+      <div className="bg-blue-600 text-white p-3 sm:p-4 flex items-center space-x-2 sm:space-x-3 border-b border-blue-700">
         <button
           onClick={goToWelcome}
-          className="text-white hover:bg-blue-700 rounded-md p-2 transition-colors"
+          className="text-white hover:bg-blue-700 rounded-md p-1.5 sm:p-2 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>
-          <h3 className="font-semibold text-base">FAQ Assistant</h3>
+          <h3 className="font-semibold text-sm sm:text-base">FAQ Assistant</h3>
           <p className="text-xs text-blue-100">Online</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3 bg-gray-50">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -595,7 +595,7 @@ const FAQChatbot: React.FC = () => {
               className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
+                className={`max-w-[85%] sm:max-w-[80%] rounded-lg p-2.5 sm:p-3 text-sm ${
                   message.isBot
                     ? 'bg-white border border-gray-200 text-gray-900'
                     : 'bg-blue-600 text-white'
@@ -682,22 +682,22 @@ const FAQChatbot: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-gray-200 p-4 bg-white">
+      <div className="border-t border-gray-200 p-3 sm:p-4 bg-white">
         <div className="flex space-x-2">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your question here..."
-            className="flex-1 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors text-sm"
+            placeholder="Type your question..."
+            className="flex-1 border border-gray-300 rounded-md px-3 sm:px-4 py-2 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors text-sm"
           />
           <button
             onClick={() => handleSendMessage()}
             disabled={!inputText.trim() || loading || isTyping}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
+            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
@@ -709,16 +709,16 @@ const FAQChatbot: React.FC = () => {
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 bg-blue-600 text-white p-3 sm:p-4 rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
           aria-label="Open FAQ Chat"
         >
-          <MessageCircle className="w-6 h-6" />
+          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       )}
 
       {isOpen && (
         <div
-          className="fixed bottom-6 right-6 w-[440px] h-[680px] bg-white rounded-lg shadow-xl flex flex-col z-50 border border-gray-200 overflow-hidden"
+          className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[440px] sm:h-[680px] w-full h-full bg-white sm:rounded-lg shadow-xl flex flex-col z-50 border-0 sm:border sm:border-gray-200 overflow-hidden"
           style={{ animation: 'slideIn 0.3s ease-out' }}
         >
           <button

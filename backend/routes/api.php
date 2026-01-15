@@ -61,21 +61,32 @@ Route::get('/specializations', [LawyerController::class, 'specializations']);
 // Public storage proxy route for R2 images with CORS headers
 Route::get('/storage/{path}', function ($path) {
     try {
-        // Get R2 public URL and redirect to it
+        // Get R2 public URL
         $publicUrl = env('R2_PUBLIC_URL');
         
         if (!$publicUrl) {
             return response()->json(['error' => 'R2 public URL not configured'], 500);
         }
         
-        // Redirect to the R2 public URL with proper CORS headers
-        return redirect($publicUrl . '/' . $path, 301)
+        $fileUrl = $publicUrl . '/' . $path;
+        
+        // Fetch the file from R2
+        $client = new \GuzzleHttp\Client(['timeout' => 10]);
+        $response = $client->get($fileUrl);
+        
+        // Get content type from R2 response
+        $contentType = $response->getHeader('Content-Type')[0] ?? 'application/octet-stream';
+        
+        // Return the file with proper CORS headers
+        return response($response->getBody(), 200)
+            ->header('Content-Type', $contentType)
             ->header('Access-Control-Allow-Origin', '*')
             ->header('Access-Control-Allow-Methods', 'GET, HEAD')
-            ->header('Access-Control-Allow-Headers', '*');
+            ->header('Access-Control-Allow-Headers', '*')
+            ->header('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
     } catch (\Exception $e) {
-        \Log::error('Storage proxy error: ' . $e->getMessage());
-        return response()->json(['error' => 'Error loading file'], 500);
+        \Log::error('Storage proxy error: ' . $e->getMessage(), ['path' => $path]);
+        return response()->json(['error' => 'File not found'], 404);
     }
 })->where('path', '.*');
 

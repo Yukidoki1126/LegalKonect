@@ -5,6 +5,7 @@ import LawyerRejected from './LawyerRejected';
 
 interface LawyerStatus {
   verification_status: 'pending' | 'verified' | 'rejected';
+  status?: 'suspended' | 'approved' | 'pending';
   first_name: string;
   last_name: string;
   verification_notes?: string;
@@ -27,14 +28,26 @@ const LawyerLayout: React.FC = () => {
       const lawyer = response.lawyer || response;
       setLawyerStatus({
         verification_status: lawyer.verification_status,
+        status: lawyer.status,
         first_name: lawyer.first_name,
         last_name: lawyer.last_name,
         verification_notes: lawyer.verification_notes,
       });
     } catch (error: any) {
-      // Check if the error response indicates rejection
+      // Check if the error response indicates rejection or suspension
       const errorData = error.response?.data;
-      if (errorData?.rejected === true || errorData?.verification_status === 'rejected') {
+      
+      // Check for suspended status
+      if (errorData?.suspended === true || errorData?.status === 'suspended') {
+        setLawyerStatus({
+          verification_status: 'verified',
+          status: 'suspended',
+          first_name: 'Lawyer',
+          last_name: '',
+        });
+      }
+      // Check for rejected status
+      else if (errorData?.rejected === true || errorData?.verification_status === 'rejected') {
         setLawyerStatus({
           verification_status: 'rejected',
           first_name: errorData.first_name || 'Lawyer',
@@ -75,6 +88,73 @@ const LawyerLayout: React.FC = () => {
     );
   }
 
+  // Show suspended page if lawyer is suspended
+  if (lawyerStatus?.status === 'suspended') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-lg w-full">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 px-8 py-10 text-center">
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full mx-auto flex items-center justify-center mb-4">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold text-white mb-2">Account Suspended</h1>
+              <p className="text-red-100">Your lawyer account has been temporarily suspended</p>
+            </div>
+            <div className="p-8">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <p className="text-red-800 text-sm leading-relaxed">
+                  Your account has been suspended by an administrator. This may be due to a violation of our terms of service or other policy concerns.
+                </p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-blue-900 font-medium mb-2">What you can do:</p>
+                <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
+                  <li>Contact our support team for more information</li>
+                  <li>Review our terms of service and community guidelines</li>
+                  <li>Wait for further communication from our team</li>
+                </ul>
+              </div>
+              <div className="mb-6">
+                <a
+                  href="mailto:support@legalkonect.com"
+                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Contact Support: support@legalkonect.com
+                </a>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => window.location.href = '/'}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Go to Homepage
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+          <p className="text-center text-gray-500 text-xs mt-6">
+            © {new Date().getFullYear()} LegalKonect. All rights reserved.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Show rejected page if lawyer is rejected
   if (lawyerStatus?.verification_status === 'rejected') {
     return (
@@ -90,12 +170,12 @@ const LawyerLayout: React.FC = () => {
       {/* Top Navigation */}
       <nav className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
         <div className="px-4 lg:px-6">
-          <div className="flex justify-between h-14">
-            <div className="flex items-center">
+          <div className="flex justify-between items-center h-14">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden mr-3 p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
@@ -106,25 +186,27 @@ const LawyerLayout: React.FC = () => {
                 </svg>
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <img 
                   src="/legalkonect.png" 
                   alt="LegalKonect" 
-                  className="w-8 h-8 rounded-full object-cover"
+                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                 />
-                <span className="text-lg font-semibold text-gray-900">LegalKonect</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-base sm:text-lg font-semibold text-gray-900 whitespace-nowrap">LegalKonect</span>
+                  <span className="hidden sm:inline text-sm text-gray-500 whitespace-nowrap">Lawyer Portal</span>
+                </div>
               </div>
-              <span className="ml-3 text-sm text-gray-500">Lawyer Portal</span>
             </div>
 
-           <div className="flex items-center">
-  <button
-    onClick={handleLogout}
-    className="text-red-600 hover:text-red-700 px-3 py-1.5 text-sm font-medium hover:bg-red-50 rounded-md transition-colors"
-  >
-    Logout
-  </button>
-</div>
+            <div className="flex items-center flex-shrink-0 ml-2">
+              <button
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium hover:bg-red-50 rounded-md transition-colors whitespace-nowrap"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </nav>

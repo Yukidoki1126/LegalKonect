@@ -246,12 +246,13 @@ const LawyerDetail: React.FC = () => {
                 <div className="flex-1 text-center sm:text-left w-full">
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{fullName}</h1>
 
-                  {/* Specializations - Modern Pills */}
-                  <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
+                  {/* Specializations - Responsive Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
                     {lawyer.specializations.map((spec) => (
                       <span
                         key={spec.id}
-                        className="px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200"
+                        className="px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs sm:text-sm font-medium border border-blue-200 text-center truncate"
+                        title={spec.name}
                       >
                         {spec.name}
                       </span>
@@ -259,12 +260,12 @@ const LawyerDetail: React.FC = () => {
                   </div>
 
                   {/* Key Stats - Minimal */}
-                  <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-sm text-gray-600">
-                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg w-full sm:w-auto justify-center">
-                      <Shield className="w-4 h-4 text-green-600" />
-                      <span>License: <span className="font-semibold text-gray-800">{lawyer.license_number}</span></span>
+                  <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                    <div className="flex items-center gap-2 bg-gray-50 px-2.5 sm:px-3 py-1.5 rounded-lg w-full sm:w-auto justify-center">
+                      <Shield className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <span className="truncate">License: <span className="font-semibold text-gray-800">{lawyer.license_number}</span></span>
                     </div>
-                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg w-full sm:w-auto justify-center">
+                    <div className="flex items-center gap-2 bg-gray-50 px-2.5 sm:px-3 py-1.5 rounded-lg w-full sm:w-auto justify-center">
                       <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
