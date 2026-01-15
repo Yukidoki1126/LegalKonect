@@ -9,8 +9,7 @@ import {
   TrendingUp, 
   Clock, 
   ArrowRight,
-  User,
-  DollarSign
+  User
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -71,6 +70,7 @@ const LawyerDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-refresh dashboard stats every 60 seconds
@@ -82,6 +82,7 @@ const LawyerDashboard: React.FC = () => {
     }, 60000);
 
     return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchDashboardData = async () => {

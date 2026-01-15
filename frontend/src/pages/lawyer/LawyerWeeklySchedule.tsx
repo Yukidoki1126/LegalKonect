@@ -3,12 +3,7 @@ import { lawyerApi } from '../../services/lawyerApi';
 import { 
   Calendar, 
   Clock, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  X, 
-  Check,
-  AlertCircle
+  Plus
 } from 'lucide-react';
 
 interface Schedule {

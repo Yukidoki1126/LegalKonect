@@ -189,7 +189,7 @@ class NotificationService {
         params,
         timeout: 5000 // 5 second timeout
       });
-      const { notifications, unread_count, has_new } = response.data;
+      const { notifications, unread_count } = response.data;
 
       // Reset retry count on success
       this.retryCount = 0;

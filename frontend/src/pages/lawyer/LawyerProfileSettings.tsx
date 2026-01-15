@@ -12,12 +12,10 @@ import {
   Save,
   Briefcase,
   MapPin,
-  Phone,
-  FileText,
-  DollarSign
+  FileText
 } from 'lucide-react';
 
-interface LawyerProfile {
+interface LawyerProfileData {
   id: number;
   first_name: string;
   last_name: string;
