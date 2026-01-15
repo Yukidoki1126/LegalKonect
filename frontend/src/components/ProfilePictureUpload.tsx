@@ -49,12 +49,19 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
   const getImageUrl = (path: string | null | undefined) => {
     if (!path) return null;
+    
+    let url: string;
     // If it's already a full URL, use it directly
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
+      url = path;
+    } else {
+      // Use backend proxy with /api/storage/
+      url = `${STORAGE_URL}/api/storage/${path}`;
     }
-    // Use backend proxy with /api/storage/
-    return `${STORAGE_URL}/api/storage/${path}`;
+    
+    // Add cache-busting parameter to force fresh load on page refresh
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}_=${Date.now()}`;
   };
 
   const showSuccess = (message: string) => {
