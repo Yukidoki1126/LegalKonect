@@ -371,6 +371,10 @@ const Appointments: React.FC = () => {
     if (appointment.status === 'cancelled') {
       return { label: 'Cancelled', color: 'bg-red-100 text-red-800 border border-red-300' };
     }
+    // For completed appointments with paid status, show Fully Paid
+    if (appointment.status === 'completed' && appointment.payment_status === 'paid') {
+      return { label: 'Fully Paid', color: 'bg-green-100 text-green-800 border border-green-300' };
+    }
     if (appointment.status === 'completed') {
       return { label: 'Completed', color: 'bg-blue-100 text-blue-800 border border-blue-300' };
     }
@@ -742,7 +746,12 @@ const Appointments: React.FC = () => {
                         </svg>
                         <div>
                           <span className="font-medium">₱{appointment.consultation_fee.toLocaleString()}</span>
-                          {appointment.payment_status === 'paid' && (
+                          {appointment.payment_status === 'paid' && appointment.status === 'completed' && (
+                            <span className="text-xs text-green-600 ml-2 font-semibold">
+                              (Fully Paid)
+                            </span>
+                          )}
+                          {appointment.payment_status === 'paid' && appointment.status !== 'completed' && (
                             <span className="text-xs text-gray-500 ml-2">
                               (Paid: ₱{(appointment.lawyer.reservation_fee || 100).toLocaleString()},
                               Balance: ₱{(appointment.consultation_fee - (appointment.lawyer.reservation_fee || 100)).toLocaleString()})

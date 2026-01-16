@@ -97,6 +97,7 @@ class AdminDashboardController extends Controller
                 'email' => $lawyer->user->email ?? null,
                 'specialization' => $lawyer->specializations->pluck('name')->join(', '),
                 'status' => $lawyer->status,
+                'verification_status' => $lawyer->verification_status,
                 'is_available' => $lawyer->is_available,
                 'consultation_fee' => $lawyer->hourly_rate,
                 'total_appointments' => $lawyer->appointments()->count(),

@@ -7,6 +7,8 @@ import { cacheService } from '../services/cacheService';
 interface Lawyer {
   id: number;
   status: 'pending' | 'approved' | 'suspended';
+  verification_status?: 'pending' | 'verified' | 'rejected';
+  verification_notes?: string;
   first_name?: string;
   last_name?: string;
   bio?: string;

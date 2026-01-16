@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, Users, Clock, Star, Calendar, BarChart3, PieChart, AlertCircle } from 'lucide-react';
 import adminApi from '../../services/adminApi';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface DescriptiveAnalytics {
   top_specializations: { name: string; appointment_count: number }[];
@@ -191,21 +191,7 @@ const AdminAnalytics: React.FC = () => {
               </div>
               {descriptive.appointment_trends && descriptive.appointment_trends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={descriptive.appointment_trends}>
-                    <defs>
-                      <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorConfirmed" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorCancelled" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
+                  <BarChart data={descriptive.appointment_trends}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                       dataKey="date"
@@ -218,10 +204,10 @@ const AdminAnalytics: React.FC = () => {
                       labelStyle={{ color: '#111827' }}
                     />
                     <Legend />
-                    <Area type="monotone" dataKey="cancelled" stroke="#ef4444" fill="url(#colorCancelled)" name="Cancelled" />
-                    <Area type="monotone" dataKey="completed" stroke="#10b981" fill="url(#colorCompleted)" name="Completed" />
-                    <Area type="monotone" dataKey="confirmed" stroke="#3b82f6" fill="url(#colorConfirmed)" name="Confirmed" />
-                  </AreaChart>
+                    <Bar dataKey="completed" fill="#10b981" name="Completed" />
+                    <Bar dataKey="confirmed" fill="#3b82f6" name="Confirmed" />
+                    <Bar dataKey="cancelled" fill="#ef4444" name="Cancelled" />
+                  </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-400">

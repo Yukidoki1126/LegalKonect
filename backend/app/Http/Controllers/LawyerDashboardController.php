@@ -40,18 +40,16 @@ class LawyerDashboardController extends Controller
                 ->where('status', 'completed')
                 ->count(),
 
-            // Calculate earnings from confirmed/paid appointments
-            'total_earnings' => $lawyer->appointments()
-                ->where('payment_status', 'paid')
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->sum('consultation_fee'),
+            // Calculate earnings from earning records (properly accounts for reservation fee vs full fee)
+            'total_earnings' => $lawyer->earnings()
+                ->whereIn('status', ['pending', 'completed'])
+                ->sum('gross_amount'),
 
-            'this_month_earnings' => $lawyer->appointments()
-                ->where('payment_status', 'paid')
-                ->whereIn('status', ['confirmed', 'completed'])
+            'this_month_earnings' => $lawyer->earnings()
+                ->whereIn('status', ['pending', 'completed'])
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
-                ->sum('consultation_fee'),
+                ->sum('gross_amount'),
 
             // Review stats
             'average_rating' => $lawyer->rating ?? 0,
@@ -403,34 +401,30 @@ class LawyerDashboardController extends Controller
         $lawyer = $request->user()->lawyer;
 
         $earnings = [
-            'total' => $lawyer->appointments()
-                ->where('payment_status', 'paid')
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->sum('consultation_fee'),
+            'total' => $lawyer->earnings()
+                ->whereIn('status', ['pending', 'completed'])
+                ->sum('gross_amount'),
                 
-            'this_month' => $lawyer->appointments()
-                ->where('payment_status', 'paid')
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->whereMonth('appointment_date', now()->month)
-                ->whereYear('appointment_date', now()->year)
-                ->sum('consultation_fee'),
+            'this_month' => $lawyer->earnings()
+                ->whereIn('status', ['pending', 'completed'])
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->sum('gross_amount'),
                 
-            'last_month' => $lawyer->appointments()
-                ->where('payment_status', 'paid')
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->whereMonth('appointment_date', now()->subMonth()->month)
-                ->whereYear('appointment_date', now()->subMonth()->year)
-                ->sum('consultation_fee'),
+            'last_month' => $lawyer->earnings()
+                ->whereIn('status', ['pending', 'completed'])
+                ->whereMonth('created_at', now()->subMonth()->month)
+                ->whereYear('created_at', now()->subMonth()->year)
+                ->sum('gross_amount'),
                 
-            'monthly_breakdown' => $lawyer->appointments()
+            'monthly_breakdown' => $lawyer->earnings()
                 ->select(
-                    DB::raw('YEAR(appointment_date) as year'),
-                    DB::raw('MONTH(appointment_date) as month'),
-                    DB::raw('SUM(consultation_fee) as total')
+                    DB::raw('YEAR(created_at) as year'),
+                    DB::raw('MONTH(created_at) as month'),
+                    DB::raw('SUM(gross_amount) as total')
                 )
-                ->where('payment_status', 'paid')
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->groupBy(DB::raw('YEAR(appointment_date)'), DB::raw('MONTH(appointment_date)'))
+                ->whereIn('status', ['pending', 'completed'])
+                ->groupBy(DB::raw('YEAR(created_at)'), DB::raw('MONTH(created_at)'))
                 ->orderBy('year', 'desc')
                 ->orderBy('month', 'desc')
                 ->limit(12)
@@ -1004,11 +998,38 @@ class LawyerDashboardController extends Controller
             }
 
             $perPage = $request->get('per_page', 20);
+            $dateFilter = $request->get('date_filter'); // '7days', '1month', '3months', '1year'
+
+            // Build query
+            $query = $lawyer->appointments()
+                ->with('user:id,name,email')
+                ->whereIn('status', ['completed', 'confirmed']);
+
+            // Apply date filter
+            if ($dateFilter) {
+                $startDate = null;
+                switch ($dateFilter) {
+                    case '7days':
+                        $startDate = now()->subDays(7);
+                        break;
+                    case '1month':
+                        $startDate = now()->subMonth();
+                        break;
+                    case '3months':
+                        $startDate = now()->subMonths(3);
+                        break;
+                    case '1year':
+                        $startDate = now()->subYear();
+                        break;
+                }
+                
+                if ($startDate) {
+                    $query->where('appointment_date', '>=', $startDate);
+                }
+            }
 
             // Get completed appointments with payment confirmed
-            $transactions = $lawyer->appointments()
-                ->with('user:id,name,email')
-                ->whereIn('status', ['completed', 'confirmed'])
+            $transactions = $query
                 ->orderBy('appointment_date', 'desc')
                 ->paginate($perPage);
 

@@ -24,6 +24,7 @@ import ClientOnlyRoute from './components/ClientOnlyRoute';
 import FAQChatbot from './components/FAQChatbot';
 import LawyerRegister from './pages/LawyerRegister';
 import PendingApproval from './pages/PendingApproval';
+import VerificationRejected from './pages/VerificationRejected';
 import ToastNotification from './components/ToastNotification';
 
 // Lawyer Dashboard Imports
@@ -58,6 +59,7 @@ function AppContent() {
                       location.pathname === '/reset-password' ||
                       location.pathname === '/lawyer/register' ||
                       location.pathname === '/pending-approval' ||
+                      location.pathname === '/verification-rejected' ||
                       location.pathname === '/terms' ||
                       location.pathname === '/privacy';
 
@@ -77,6 +79,7 @@ function AppContent() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/lawyer/register" element={<LawyerRegister />} />
         <Route path="/pending-approval" element={<PendingApproval />} />
+        <Route path="/verification-rejected" element={<VerificationRejected />} />
         <Route
           path="/profile"
           element={

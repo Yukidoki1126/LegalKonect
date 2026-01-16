@@ -824,6 +824,10 @@ const LawyerAppointments: React.FC = () => {
     if (appointment.status === 'cancelled') {
       return { label: 'Cancelled', color: 'bg-red-100 text-red-800 border border-red-300' };
     }
+    // For completed appointments with paid status, show Fully Paid
+    if (appointment.status === 'completed' && appointment.payment_status === 'paid') {
+      return { label: 'Fully Paid', color: 'bg-green-100 text-green-800 border border-green-300' };
+    }
     if (appointment.status === 'completed') {
       return { label: 'Completed', color: 'bg-blue-100 text-blue-800 border border-blue-300' };
     }
@@ -1539,21 +1543,25 @@ const LawyerAppointments: React.FC = () => {
                   {/* Fee Section */}
                   <div className="text-left lg:text-right mb-2 pb-3 border-b border-gray-100 w-full">
                     <p className="text-2xl font-bold text-gray-900">
-                      ₱{(appointment.reservation_fee || 100).toLocaleString()}
+                      ₱{appointment.consultation_fee ? appointment.consultation_fee.toLocaleString() : (appointment.reservation_fee || 100).toLocaleString()}
                     </p>
-                    {appointment.payment_status === 'paid' ? (
-                      <p className="text-xs text-green-600 font-medium">Reservation Fee Paid</p>
+                    {appointment.status === 'completed' && appointment.payment_status === 'paid' ? (
+                      <p className="text-xs text-green-600 font-medium">✓ Fully Paid</p>
+                    ) : appointment.payment_status === 'paid' ? (
+                      <>
+                        <p className="text-xs text-green-600 font-medium">Reservation Fee Paid</p>
+                        {appointment.consultation_fee && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Balance Due: ₱{(appointment.consultation_fee - (appointment.reservation_fee || 100)).toLocaleString()}
+                          </p>
+                        )}
+                      </>
                     ) : appointment.payment_proof ? (
                       <p className="text-xs text-orange-600 font-medium">Payment Proof Pending Review</p>
                     ) : (
                       <p className="text-xs text-red-600 font-medium">Reservation Fee Unpaid</p>
                     )}
-                    {appointment.consultation_fee && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Balance Due: ₱{(appointment.consultation_fee - (appointment.reservation_fee || 100)).toLocaleString()}
-                      </p>
-                    )}
-                    {appointment.payment_method && (
+                    {appointment.payment_method && appointment.status !== 'completed' && (
                       <p className="text-xs text-gray-500 mt-0.5">
                         via {appointment.payment_method}
                       </p>
@@ -1903,13 +1911,19 @@ const LawyerAppointments: React.FC = () => {
                     <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
+                    <span>Payment will be marked as "Fully Paid"</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
                     <span>Client will be able to leave a review</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    <span>Consultation fee will be finalized</span>
+                    <span>Consultation fee will be finalized in your earnings</span>
                   </li>
                 </ul>
               </div>

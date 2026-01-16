@@ -39,16 +39,17 @@ export default function LawyerTransactionHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | 'confirmed' | 'pending'>('all');
+  const [dateFilter, setDateFilter] = useState<string>('');
 
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [dateFilter]);
 
   const fetchTransactions = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await lawyerApi.getTransactionHistory();
+      const response = await lawyerApi.getTransactionHistory(1, dateFilter || undefined);
       setTransactions(response.transactions || []);
       setSummary(response.summary || null);
     } catch (err: unknown) {
@@ -184,24 +185,50 @@ export default function LawyerTransactionHistory() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {[
-            { key: 'all', label: 'All Transactions' },
-            { key: 'confirmed', label: 'Confirmed' },
-            { key: 'pending', label: 'Pending' }
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key as typeof filter)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                filter === key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          {/* Status Filter */}
+          <div className="flex gap-2 overflow-x-auto">
+            {[
+              { key: 'all', label: 'All Transactions' },
+              { key: 'confirmed', label: 'Confirmed' },
+              { key: 'pending', label: 'Pending' }
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key as typeof filter)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  filter === key
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="flex gap-2 overflow-x-auto">
+            {[
+              { key: '', label: 'All Time' },
+              { key: '7days', label: 'Last 7 Days' },
+              { key: '1month', label: 'Last Month' },
+              { key: '3months', label: 'Last 3 Months' },
+              { key: '1year', label: 'Last Year' }
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setDateFilter(key)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  dateFilter === key
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Transactions List */}

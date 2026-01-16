@@ -1002,6 +1002,7 @@ class AppointmentController extends Controller
                     'reschedule_reason' => $validated['reason'],
                     'proposed_date' => $proposedDateTime,
                     'reschedule_requested_at' => now(),
+                    'reschedule_requested_by' => 'lawyer',
                 ];
 
                 // Store original date if not already stored
@@ -1029,6 +1030,13 @@ class AppointmentController extends Controller
                         'appointment_id' => $appointment->id,
                         'error' => $emailError->getMessage(),
                     ]);
+                }
+
+                // Create notification for the client about reschedule request
+                try {
+                    $this->notificationService->rescheduleRequested($appointment);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create bulk reschedule notification: ' . $e->getMessage());
                 }
 
             } catch (\Exception $e) {

@@ -178,10 +178,9 @@ public function upcomingAppointments()
 // Helper: Calculate total earnings
 public function totalEarnings()
 {
-    return $this->appointments()
-        ->where('payment_status', 'paid')
-        ->whereIn('status', ['confirmed', 'completed'])
-        ->sum('consultation_fee');
+    return $this->earnings()
+        ->whereIn('status', ['pending', 'completed'])
+        ->sum('gross_amount');
 }
 
 public function reviews()
@@ -193,50 +192,6 @@ public function reviews()
 public function earnings()
 {
     return $this->hasMany(Earning::class);
-}
-
-// Payouts relationships
-public function payouts()
-{
-    return $this->hasMany(Payout::class);
-}
-
-// Helper: Get available balance (completed earnings - paid payouts)
-public function getAvailableBalanceAttribute()
-{
-    $totalEarnings = $this->earnings()
-        ->where('status', 'completed')
-        ->sum('net_amount');
-
-    $totalPayouts = $this->payouts()
-        ->whereIn('status', ['approved', 'processing', 'paid'])
-        ->sum('amount');
-
-    return max(0, $totalEarnings - $totalPayouts);
-}
-
-// Helper: Get total platform fees
-public function getTotalPlatformFeesAttribute()
-{
-    return $this->earnings()
-        ->where('status', 'completed')
-        ->sum('platform_fee');
-}
-
-// Helper: Get total earnings (net amount)
-public function getTotalNetEarningsAttribute()
-{
-    return $this->earnings()
-        ->where('status', 'completed')
-        ->sum('net_amount');
-}
-
-// Helper: Get pending payout requests
-public function getPendingPayoutsAttribute()
-{
-    return $this->payouts()
-        ->where('status', 'pending')
-        ->sum('amount');
 }
 
 // Helper: Get profile photo URL

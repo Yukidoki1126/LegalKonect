@@ -38,18 +38,25 @@ class AppointmentObserver
                 return;
             }
 
-            $grossAmount = $appointment->consultation_fee ?? 100;
-            $platformFeePercentage = config('app.platform_fee_percentage', 10); // Default 10%
-            $platformFee = ($grossAmount * $platformFeePercentage) / 100;
-            $netAmount = $grossAmount - $platformFee;
+            // Get the lawyer's reservation fee (default to 100 if not set)
+            $lawyer = $appointment->lawyer;
+            $reservationFee = $lawyer->reservation_fee ?? 100;
+            
+            // Use reservation fee for initial earning, will be updated to full fee when completed
+            $grossAmount = $appointment->status === 'completed' 
+                ? ($appointment->consultation_fee ?? 100)
+                : $reservationFee;
+            
+            // No platform fee - lawyers receive money directly from clients
+            // net_amount = gross_amount (no deductions)
 
             Earning::create([
                 'lawyer_id' => $appointment->lawyer_id,
                 'appointment_id' => $appointment->id,
                 'gross_amount' => $grossAmount,
-                'platform_fee' => $platformFee,
-                'net_amount' => $netAmount,
-                'platform_fee_percentage' => $platformFeePercentage,
+                'platform_fee' => 0,
+                'net_amount' => $grossAmount,
+                'platform_fee_percentage' => 0,
                 'status' => $appointment->status === 'completed' ? 'completed' : 'pending',
                 'completed_at' => $appointment->status === 'completed' ? now() : null,
             ]);
@@ -58,7 +65,7 @@ class AppointmentObserver
                 'appointment_id' => $appointment->id,
                 'lawyer_id' => $appointment->lawyer_id,
                 'gross_amount' => $grossAmount,
-                'net_amount' => $netAmount,
+                'net_amount' => $grossAmount,
             ]);
 
         } catch (\Exception $e) {
@@ -79,14 +86,22 @@ class AppointmentObserver
             $earning = Earning::where('appointment_id', $appointment->id)->first();
             
             if ($earning && $earning->status !== 'completed') {
+                // Update to full consultation fee (no platform fee deductions)
+                $grossAmount = $appointment->consultation_fee ?? 100;
+                
                 $earning->update([
+                    'gross_amount' => $grossAmount,
+                    'platform_fee' => 0,
+                    'net_amount' => $grossAmount,
                     'status' => 'completed',
                     'completed_at' => now(),
                 ]);
 
-                Log::info('Earning marked as completed', [
+                Log::info('Earning updated to completed with full consultation fee', [
                     'appointment_id' => $appointment->id,
                     'earning_id' => $earning->id,
+                    'old_amount' => $earning->gross_amount,
+                    'new_amount' => $grossAmount,
                 ]);
             }
 

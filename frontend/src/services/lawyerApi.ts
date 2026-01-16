@@ -501,8 +501,12 @@ export const lawyerApi = {
   },
 
   // Transaction History - Get completed appointments
-  getTransactionHistory: async (page: number = 1) => {
-    const response = await axios.get(`${API_URL}/lawyer/transactions?page=${page}`, {
+  getTransactionHistory: async (page: number = 1, dateFilter?: string) => {
+    const params = new URLSearchParams({ page: page.toString() });
+    if (dateFilter) {
+      params.append('date_filter', dateFilter);
+    }
+    const response = await axios.get(`${API_URL}/lawyer/transactions?${params.toString()}`, {
       headers: getAuthHeader(),
     });
     return response.data;

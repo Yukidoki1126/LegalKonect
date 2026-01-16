@@ -218,13 +218,6 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
     
     // Transaction history (replacing old earnings/payout system)
     Route::get('/transactions', [LawyerDashboardController::class, 'getTransactionHistory']);
-    
-    // Old payout routes - DISABLED (lawyers now receive payment directly)
-    // Route::get('/earnings', [App\\Http\\Controllers\\PayoutController::class, 'getEarnings']);
-    // Route::put('/payout-info', [App\\Http\\Controllers\\PayoutController::class, 'updatePayoutInfo']);
-    // Route::post('/payouts/request', [App\\Http\\Controllers\\PayoutController::class, 'requestPayout']);
-    // Route::get('/payouts', [App\\Http\\Controllers\\PayoutController::class, 'getPayouts']);
-    
     Route::post('/toggle-availability', [LawyerDashboardController::class, 'toggleAvailability']);
     Route::get('/profile', [LawyerDashboardController::class, 'getProfile']);
     Route::put('/profile', [LawyerDashboardController::class, 'updateProfile']);
@@ -264,12 +257,6 @@ Route::middleware(['auth:sanctum', 'lawyer'])->prefix('lawyer')->group(function 
         Route::post('/sync-appointments', [GoogleCalendarController::class, 'syncAppointments']);
         Route::get('/events', [GoogleCalendarController::class, 'getEvents']);
     });
-
-    // Old Earnings and Payout Routes - DISABLED (lawyers receive payments directly now)
-    // Route::get('/earnings', [App\Http\Controllers\PayoutController::class, 'getEarnings']);
-    // Route::put('/payout-info', [App\Http\Controllers\PayoutController::class, 'updatePayoutInfo']);
-    // Route::post('/payouts/request', [App\Http\Controllers\PayoutController::class, 'requestPayout']);
-    // Route::get('/payouts', [App\Http\Controllers\PayoutController::class, 'getPayouts']);
 });
 
 // Google Calendar OAuth callback (must be outside auth middleware for OAuth flow)
@@ -315,13 +302,6 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
         Route::put('/admins/{id}', [App\Http\Controllers\Admin\AdminManagementController::class, 'update']);
         Route::delete('/admins/{id}', [App\Http\Controllers\Admin\AdminManagementController::class, 'destroy']);
     });
-
-    // Payout Management - DISABLED (lawyers receive payments directly now)
-    // Route::get('/payouts/pending', [App\Http\Controllers\PayoutController::class, 'getPendingPayouts']);
-    // Route::get('/payouts', [App\Http\Controllers\PayoutController::class, 'getAllPayouts']);
-    // Route::post('/payouts/{id}/approve', [App\Http\Controllers\PayoutController::class, 'approvePayout']);
-    // Route::post('/payouts/{id}/mark-paid', [App\Http\Controllers\PayoutController::class, 'markAsPaid']);
-    // Route::post('/payouts/{id}/reject', [App\Http\Controllers\PayoutController::class, 'rejectPayout']);
 
     // FAQ Management
     Route::get('/faqs', [FaqController::class, 'index']);

@@ -150,6 +150,30 @@ class AuthController extends Controller
     // Load lawyer relationship with status
     $user->load('lawyer');
 
+    // Check if lawyer verification is rejected
+    if ($user->lawyer && $user->lawyer->verification_status === 'rejected') {
+        $token = $user->createToken('auth-token')->plainTextToken;
+        
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'lawyer' => [
+                    'id' => $user->lawyer->id,
+                    'first_name' => $user->lawyer->first_name,
+                    'last_name' => $user->lawyer->last_name,
+                    'status' => $user->lawyer->status,
+                    'verification_status' => 'rejected',
+                    'verification_notes' => $user->lawyer->verification_notes,
+                ]
+            ],
+            'token' => $token,
+            'redirect' => '/verification-rejected',
+        ]);
+    }
+
     // Check if lawyer account is suspended
     if ($user->lawyer && $user->lawyer->status === 'suspended') {
         throw ValidationException::withMessages([
