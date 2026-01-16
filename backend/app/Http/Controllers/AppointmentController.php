@@ -715,7 +715,7 @@ class AppointmentController extends Controller
 
         // Update appointment fields
         $appointment->appointment_date = $appointment->proposed_date;
-        $appointment->reschedule_status = null; // Clear reschedule status so it shows in Upcoming again
+        $appointment->reschedule_status = 'accepted';
         $appointment->reschedule_responded_at = now();
         $updated = $appointment->save();
 
