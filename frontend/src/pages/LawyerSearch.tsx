@@ -92,79 +92,59 @@ const LawyerSearch: React.FC = () => {
     return R * c;
   };
 
-  // Calculate weighted score for a lawyer based on multiple factors
   const calculateWeightedScore = (lawyer: Lawyer): number => {
-    // Define maximum values for normalization
-    const MAX_DISTANCE = 50; // km
-    const MAX_EXPERIENCE = 30; // years
-    const MAX_REVIEWS = 100; // review count
-    const MAX_PRICE = 5000; // pesos per hour
+    const MAX_DISTANCE = 50;
+    const MAX_EXPERIENCE = 30;
+    const MAX_REVIEWS = 100;
+    const MAX_PRICE = 5000;
 
-    // Check if user has location - if yes, prioritize distance more
     const hasUserLocation = user?.latitude && user?.longitude;
 
-    // 1. Distance Score (0-100)
-    // Closer lawyers score higher
     const distanceScore = lawyer.distance !== undefined
       ? Math.max(0, ((MAX_DISTANCE - lawyer.distance) / MAX_DISTANCE) * 100)
-      : 50; // Neutral score if no distance available
+      : 50;
 
-    // 2. Rating Score (0-100)
-    // Higher rating scores higher
     const rating = lawyer.rating || 0;
     const ratingScore = (rating / 5.0) * 100;
 
-    // 3. Experience Score (0-100)
-    // More experience scores higher
     const experience = lawyer.years_experience || 0;
     const experienceScore = Math.min(100, (experience / MAX_EXPERIENCE) * 100);
 
-    // 4. Review Count Score (0-100)
-    // More reviews = more credibility
     const reviewCount = lawyer.total_reviews || 0;
     const reviewScore = Math.min(100, (reviewCount / MAX_REVIEWS) * 100);
 
-    // 5. Availability Score (0-100)
-    // Available lawyers get a boost
     const availabilityScore = lawyer.is_available ? 100 : 0;
 
-    // 6. Price Score (0-100)
-    // Lower price scores higher
     const price = lawyer.consultation_fee || lawyer.hourly_rate || 0;
     const priceScore = Math.max(0, ((MAX_PRICE - price) / MAX_PRICE) * 100);
 
-    // Adaptive weights based on user location availability
     let totalScore;
 
     if (hasUserLocation && lawyer.distance !== undefined) {
-      // User has location: Prioritize distance heavily (40%), then quality (30%), experience (15%)
       totalScore =
-        (distanceScore * 0.40) +    // 40% - Distance is very important
-        (ratingScore * 0.30) +       // 30% - Quality matters
-        (experienceScore * 0.15) +   // 15% - Experience
-        (reviewScore * 0.08) +       // 8%  - Review count
-        (availabilityScore * 0.05) + // 5%  - Availability
-        (priceScore * 0.02);         // 2%  - Price (least important)
+        (distanceScore * 0.40) +
+        (ratingScore * 0.30) +
+        (experienceScore * 0.15) +
+        (reviewScore * 0.08) +
+        (availabilityScore * 0.05) +
+        (priceScore * 0.02);
     } else {
-      // No user location: Focus on quality (40%), experience (25%), reviews (15%)
       totalScore =
-        (ratingScore * 0.40) +       // 40% - Rating most important
-        (experienceScore * 0.25) +   // 25% - Experience
-        (reviewScore * 0.15) +       // 15% - Review count
-        (distanceScore * 0.10) +     // 10% - Distance (if available)
-        (availabilityScore * 0.05) + // 5%  - Availability
-        (priceScore * 0.05);         // 5%  - Price
+        (ratingScore * 0.40) +
+        (experienceScore * 0.25) +
+        (reviewScore * 0.15) +
+        (distanceScore * 0.10) +
+        (availabilityScore * 0.05) +
+        (priceScore * 0.05);
     }
 
     return totalScore;
   };
 
-  // Listen for online/offline events
   useEffect(() => {
     const handleOnline = () => {
       console.log('🟢 Network connection restored');
       setIsOnline(true);
-      // Auto-retry when connection is restored
       if (error && lawyers.length === 0) {
         handleRetry();
       }
@@ -185,7 +165,6 @@ const LawyerSearch: React.FC = () => {
     };
   }, [error, lawyers.length]);
 
-  // Retry handler
   const handleRetry = async () => {
     setIsRetrying(true);
     setError('');
@@ -193,10 +172,7 @@ const LawyerSearch: React.FC = () => {
     setIsRetrying(false);
   };
 
-  // Fetch lawyers and specializations with caching
-  // Fetch data function (extracted for reuse)
   const fetchData = async (isBackgroundRefresh = false) => {
-    // Check if offline first
     if (!navigator.onLine) {
       console.log('⚠️ Offline - using cached data if available');
       if (cachedLawyers.length > 0) {
@@ -210,11 +186,7 @@ const LawyerSearch: React.FC = () => {
       return;
     }
 
-    // Skip cache check if this is a background refresh
     if (!isBackgroundRefresh && isCached && cachedLawyers.length > 0) {
-      console.log('✅ Using cached lawyers data');
-
-      // Just recalculate distances if needed
       let lawyersData = cachedLawyers;
 
       if (user?.latitude && user?.longitude) {
@@ -236,11 +208,8 @@ const LawyerSearch: React.FC = () => {
       setLawyers(lawyersData);
       setSpecializations(cachedSpecializations);
       setLoading(false);
-      return; // Exit - don't fetch from API
+      return;
     }
-
-    // Fetch from API
-    console.log(isBackgroundRefresh ? '🔄 Auto-refreshing lawyers...' : '📡 Fetching lawyers from API...');
     if (!isBackgroundRefresh) setLoading(true);
     setError('');
 
@@ -249,10 +218,9 @@ const LawyerSearch: React.FC = () => {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        // Fetch both in parallel with timeout
         const cacheBust = `t=${Date.now()}`;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const [lawyersResponse, specsResponse] = await Promise.all([
           api.get(`/lawyers?fresh=1&${cacheBust}`, { signal: controller.signal }),
@@ -261,10 +229,7 @@ const LawyerSearch: React.FC = () => {
 
         clearTimeout(timeoutId);
 
-        // Process lawyers
         let lawyersData = lawyersResponse.data.lawyers || lawyersResponse.data;
-
-        // Calculate distance if user has location
         if (user?.latitude && user?.longitude) {
           console.log(`👤 User location: ${user.latitude}, ${user.longitude}`);
           lawyersData = lawyersData.map((lawyer: Lawyer) => {
@@ -283,11 +248,9 @@ const LawyerSearch: React.FC = () => {
           });
         }
 
-        // Update both local and cached state
         setLawyers(lawyersData);
         setCachedLawyers(lawyersData);
 
-        // Process specializations
         const specsData = specsResponse.data.specializations || specsResponse.data;
         const specsArray = Array.isArray(specsData) ? specsData : [];
 
@@ -295,15 +258,14 @@ const LawyerSearch: React.FC = () => {
         setCachedSpecializations(specsArray);
 
         console.log('✅ Data fetched and cached');
-        setRetryCount(0); // Reset retry count on success
+        setRetryCount(0);
         setLoading(false);
-        return; // Success - exit
+        return;
 
       } catch (err: any) {
         lastError = err;
         console.error(`Attempt ${attempt}/${maxRetries} failed:`, err?.message || err);
 
-        // Check if it's a network error
         const isNetworkError = 
           err.code === 'ERR_NETWORK' ||
           err.code === 'ECONNABORTED' ||
@@ -311,9 +273,8 @@ const LawyerSearch: React.FC = () => {
           err.message?.includes('timeout') ||
           err.name === 'AbortError';
 
-        // If not the last attempt and it's a network error, wait and retry
         if (attempt < maxRetries && (isNetworkError || err.response?.status >= 500)) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff: 1s, 2s, 4s
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
           console.log(`⏳ Retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
@@ -321,17 +282,13 @@ const LawyerSearch: React.FC = () => {
       }
     }
 
-    // All retries failed
     console.error('❌ All retry attempts failed:', lastError);
-    
-    // Use cached data if available
     if (cachedLawyers.length > 0) {
       console.log('📦 Using cached data due to fetch failure');
       setLawyers(cachedLawyers);
       setSpecializations(cachedSpecializations);
       setError('Using cached data. Some information may be outdated.');
     } else {
-      // Set user-friendly error message
       const isNetworkError = 
         lastError?.code === 'ERR_NETWORK' ||
         lastError?.code === 'ECONNABORTED' ||
@@ -354,19 +311,15 @@ const LawyerSearch: React.FC = () => {
     setLoading(false);
   };
 
-  // Initial data fetch
   useEffect(() => {
     fetchData();
-  }, [user?.latitude, user?.longitude]); // Only re-run if user location changes
-
-  // Refetch immediately if cache is invalidated elsewhere (e.g., after profile/location save)
+  }, [user?.latitude, user?.longitude]);
   useEffect(() => {
     if (!isCached) {
       fetchData(true);
     }
   }, [isCached]);
 
-  // Optional: expose a manual refresh request for other pages via a custom event
   useEffect(() => {
     const handler = (e: Event) => {
       const customEvent = e as CustomEvent<string>;
@@ -378,17 +331,13 @@ const LawyerSearch: React.FC = () => {
     return () => window.removeEventListener('lawyers:event', handler as EventListener);
   }, []);
 
-  // Auto-refresh every 10 seconds (was 30 seconds)
   useEffect(() => {
     const refreshInterval = setInterval(() => {
-      fetchData(true); // Background refresh (doesn't show loading state)
-    }, 10000); // 10 seconds
-
-    // Cleanup on unmount
+      fetchData(true);
+    }, 10000);
     return () => clearInterval(refreshInterval);
   }, [user?.latitude, user?.longitude]);
 
-  // Refresh immediately when the tab regains focus or becomes visible
   useEffect(() => {
     const onFocus = () => fetchData(true);
     const onVisibilityChange = () => {
@@ -404,10 +353,8 @@ const LawyerSearch: React.FC = () => {
     };
   }, []);
 
-  // Filter and sort lawyers
   const filteredLawyers = (lawyers || [])
     .filter((lawyer) => {
-      // Handle both old and new data structure
       const lawyerName = lawyer.user?.name || `${lawyer.first_name || ''} ${lawyer.last_name || ''}`.trim();
 
       const matchesSearch = lawyerName
@@ -423,33 +370,27 @@ const LawyerSearch: React.FC = () => {
       return matchesSearch && matchesSpecialization;
     })
     .sort((a, b) => {
-      // Recommended: Weighted scoring algorithm (Best Match)
       if (sortBy === 'recommended') {
         const scoreA = calculateWeightedScore(a);
         const scoreB = calculateWeightedScore(b);
-        return scoreB - scoreA; // Higher score first
+        return scoreB - scoreA;
       }
-
-      // Distance: Nearest first
       if (sortBy === 'distance' && a.distance !== undefined && b.distance !== undefined) {
         return a.distance - b.distance;
       }
 
-      // Price: Lowest first
       if (sortBy === 'price') {
         const priceA = a.consultation_fee || a.hourly_rate || 0;
         const priceB = b.consultation_fee || b.hourly_rate || 0;
         return priceA - priceB;
       }
 
-      // Experience: Most experienced first
       if (sortBy === 'experience') {
         const expA = a.years_experience || a.experience_years || 0;
         const expB = b.years_experience || b.experience_years || 0;
         return expB - expA;
       }
 
-      // Rating: Highest rated first
       if (sortBy === 'rating') {
         const ratingA = a.rating || 0;
         const ratingB = b.rating || 0;

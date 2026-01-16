@@ -1571,7 +1571,7 @@ const LawyerAppointments: React.FC = () => {
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-3 w-full">
                     {/* Primary Action - Complete */}
-                    {appointment.status === 'confirmed' && !appointment.reschedule_status && hasAppointmentPassed(appointment) && (
+                    {appointment.status === 'confirmed' && (!appointment.reschedule_status || appointment.reschedule_status === 'accepted') && hasAppointmentPassed(appointment) && (
                       <button
                         onClick={() => handleCompleteClick(appointment)}
                         disabled={actionLoading}
@@ -1585,7 +1585,7 @@ const LawyerAppointments: React.FC = () => {
                     )}
 
                     {/* Show info when appointment hasn't passed yet */}
-                    {appointment.status === 'confirmed' && !appointment.reschedule_status && !hasAppointmentPassed(appointment) && (
+                    {appointment.status === 'confirmed' && (!appointment.reschedule_status || appointment.reschedule_status === 'accepted') && !hasAppointmentPassed(appointment) && (
                       <div className="w-full bg-blue-50 border border-blue-200 px-4 py-2.5 rounded-xl text-xs">
                         <p className="text-blue-800">
                           <Clock className="w-3.5 h-3.5 inline mr-1" />
@@ -1595,7 +1595,7 @@ const LawyerAppointments: React.FC = () => {
                     )}
 
                     {/* Secondary Actions Row */}
-                    {appointment.status === 'confirmed' && !appointment.reschedule_status && (
+                    {appointment.status === 'confirmed' && (!appointment.reschedule_status || appointment.reschedule_status === 'accepted') && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleRescheduleClick(appointment)}
