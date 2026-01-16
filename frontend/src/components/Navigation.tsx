@@ -4,15 +4,20 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { STORAGE_URL } from '../config/api.config';
-import { Scale } from 'lucide-react';
+import { Scale, Bell } from 'lucide-react';
+import { notificationService, Notification } from '../services/notificationService';
 
 const Navigation: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [logoError, setLogoError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -20,11 +25,36 @@ const Navigation: React.FC = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
       }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Subscribe to notifications
+  useEffect(() => {
+    if (user) {
+      // Start notification polling
+      notificationService.startPolling();
+
+      // Subscribe to notification updates
+      const unsubscribe = notificationService.subscribe((notifs, unread) => {
+        setNotifications(notifs);
+        setUnreadCount(unread);
+      });
+
+      // Initial fetch
+      notificationService.checkNotifications();
+
+      return () => {
+        unsubscribe();
+        notificationService.stopPolling();
+      };
+    }
+  }, [user]);
 
   const isLawyer = !!user?.lawyer;
   const isApprovedLawyer = user?.lawyer?.status === 'approved';
@@ -41,6 +71,21 @@ const Navigation: React.FC = () => {
     logout();
     setShowDropdown(false);
     setShowMobileMenu(false);
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
   };
 
   const getProfilePictureUrl = () => {
@@ -163,6 +208,187 @@ const Navigation: React.FC = () => {
                     </Link>
                   </>
                 )}
+
+                {/* Notification Bell - Facebook Style */}
+                <div className="relative ml-2" ref={notificationRef}>
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="p-2.5 rounded-full hover:bg-gray-100 transition-colors relative"
+                    title="Notifications"
+                  >
+                    <Bell className="w-5 h-5 text-gray-600" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Notification Dropdown - Facebook Style */}
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-96 max-h-[32rem] bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50">
+                      {/* Header */}
+                      <div className="px-4 py-3 border-b border-gray-200 bg-white sticky top-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xl font-bold text-gray-900">Notifications</h3>
+                          <button
+                            onClick={() => setShowNotifications(false)}
+                            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                          >
+                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Notification List */}
+                      <div className="max-h-[28rem] overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="py-12 px-4 text-center">
+                            <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-sm text-gray-500">No notifications yet</p>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-100">
+                            {notifications.map((notification) => (
+                              <button
+                                key={notification.id}
+                                onClick={async () => {
+                                  // Mark as read
+                                  if (!notification.read_at) {
+                                    await notificationService.markAsRead(notification.id);
+                                  }
+                                  
+                                  // Smart redirect based on notification type
+                                  const type = notification.type.toLowerCase();
+                                  const data = notification.data || {};
+                                  
+                                  // Close notification dropdown
+                                  setShowNotifications(false);
+                                  
+                                  // Handle different notification types
+                                  if (type.includes('payment')) {
+                                    // Payment notifications → Appointments with filter
+                                    if (isLawyer) {
+                                      window.location.href = `/lawyer/appointments?status=confirmed&highlight=${data.appointment_id || ''}`;
+                                    } else {
+                                      window.location.href = `/appointments?highlight=${data.appointment_id || ''}`;
+                                    }
+                                  } else if (type.includes('reschedule')) {
+                                    // Reschedule notifications → Appointments page
+                                    if (isLawyer) {
+                                      window.location.href = `/lawyer/appointments?tab=reschedule&highlight=${data.appointment_id || ''}`;
+                                    } else {
+                                      window.location.href = `/appointments?highlight=${data.appointment_id || ''}`;
+                                    }
+                                  } else if (type.includes('appointment_confirmed') || type.includes('appointment_created')) {
+                                    // New/confirmed appointments → Appointments
+                                    if (isLawyer) {
+                                      window.location.href = `/lawyer/appointments?status=confirmed&highlight=${data.appointment_id || ''}`;
+                                    } else {
+                                      window.location.href = `/appointments?highlight=${data.appointment_id || ''}`;
+                                    }
+                                  } else if (type.includes('appointment_cancelled') || type.includes('cancel')) {
+                                    // Cancelled appointments → Appointments with cancelled filter
+                                    if (isLawyer) {
+                                      window.location.href = `/lawyer/appointments?status=cancelled&highlight=${data.appointment_id || ''}`;
+                                    } else {
+                                      window.location.href = `/appointments?highlight=${data.appointment_id || ''}`;
+                                    }
+                                  } else if (type.includes('appointment_completed') || type.includes('complete')) {
+                                    // Completed appointments → Appointments
+                                    if (isLawyer) {
+                                      window.location.href = `/lawyer/appointments?status=completed&highlight=${data.appointment_id || ''}`;
+                                    } else {
+                                      window.location.href = `/appointments?highlight=${data.appointment_id || ''}`;
+                                    }
+                                  } else if (type.includes('review')) {
+                                    // Review notifications → Appointments or profile
+                                    if (isLawyer && data.lawyer_id) {
+                                      window.location.href = `/lawyer/dashboard`;
+                                    } else {
+                                      window.location.href = `/appointments`;
+                                    }
+                                  } else if (type.includes('case')) {
+                                    // Case notifications → Cases page
+                                    window.location.href = `/cases${data.case_id ? `?highlight=${data.case_id}` : ''}`;
+                                  } else if (type.includes('verification')) {
+                                    // Verification notifications → Admin panel or dashboard
+                                    if (user?.role === 'admin' || user?.role === 'super_admin') {
+                                      window.location.href = '/admin/lawyers';
+                                    } else {
+                                      window.location.href = isLawyer ? '/lawyer/dashboard' : '/';
+                                    }
+                                  } else if (data.appointment_id) {
+                                    // Default: Any notification with appointment_id → Appointments
+                                    if (isLawyer) {
+                                      window.location.href = `/lawyer/appointments?highlight=${data.appointment_id}`;
+                                    } else {
+                                      window.location.href = `/appointments?highlight=${data.appointment_id}`;
+                                    }
+                                  } else {
+                                    // Fallback: Go to dashboard
+                                    window.location.href = isLawyer ? '/lawyer/dashboard' : '/appointments';
+                                  }
+                                }}
+                                className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                                  !notification.read_at ? 'bg-blue-50' : 'bg-white'
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  {/* Icon based on notification type */}
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    notification.type.includes('reschedule') ? 'bg-yellow-100' :
+                                    notification.type.includes('cancel') ? 'bg-red-100' :
+                                    notification.type.includes('payment') ? 'bg-green-100' :
+                                    'bg-blue-100'
+                                  }`}>
+                                    {notification.type.includes('reschedule') ? (
+                                      <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                    ) : notification.type.includes('cancel') ? (
+                                      <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    ) : notification.type.includes('payment') ? (
+                                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                    )}
+                                  </div>
+
+                                  {/* Content */}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 mb-1">
+                                      {notification.title}
+                                    </p>
+                                    <p className="text-xs text-gray-600 mb-1">
+                                      {notification.message}
+                                    </p>
+                                    <p className="text-xs text-blue-600 font-medium">
+                                      {getTimeAgo(notification.created_at)}
+                                    </p>
+                                  </div>
+
+                                  {/* Unread indicator */}
+                                  {!notification.read_at && (
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2"></div>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* User Dropdown - Clean */}
                 <div className="relative ml-2" ref={dropdownRef}>

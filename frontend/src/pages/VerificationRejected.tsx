@@ -10,13 +10,14 @@ const VerificationRejected = () => {
   };
 
   const handleGoHome = () => {
+    logout();
     window.location.href = '/';
   };
 
   const verificationNotes = user?.lawyer?.verification_notes || 'Your verification was rejected. Please contact support for more information.';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full">
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">

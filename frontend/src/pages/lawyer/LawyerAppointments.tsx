@@ -1686,8 +1686,10 @@ const LawyerAppointments: React.FC = () => {
                       </button>
                     )}
 
-                    {/* Refund Button for Cancelled Paid Appointments */}
-                    {appointment.status === 'cancelled' && appointment.payment_status === 'paid' && !appointment.refund_receipt && (
+                    {/* Refund Button for Cancelled Appointments with Payment */}
+                    {appointment.status === 'cancelled' && 
+                     (appointment.payment_status === 'paid' || appointment.payment_status === 'partially_paid') && 
+                     !appointment.refund_receipt && (
                       <button
                         onClick={() => handleRefundClick(appointment)}
                         className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-200 animate-pulse"
@@ -2506,6 +2508,60 @@ const LawyerAppointments: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Reject Payment Modal */}
+      {showRejectPaymentModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Reject Payment Receipt
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide a reason for rejecting this payment receipt. The client will be notified and asked to upload a new receipt.
+            </p>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+              <p className="text-xs font-semibold text-gray-700 mb-1">Client:</p>
+              <p className="text-sm text-gray-900">{selectedAppointment.user.name}</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reason for Rejection *
+              </label>
+              <textarea
+                value={rejectPaymentReason}
+                onChange={(e) => setRejectPaymentReason(e.target.value)}
+                placeholder="e.g., Receipt is unclear, Wrong amount shown, Invalid transaction details"
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-yellow-800">
+                <strong>Note:</strong> The client will receive an email notification with your rejection reason and will be able to upload a new receipt.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRejectPaymentModal(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectPaymentSubmit}
+                disabled={actionLoading || !rejectPaymentReason.trim()}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {actionLoading ? 'Rejecting...' : 'Reject Payment'}
+              </button>
+            </div>
           </div>
         </div>
       )}
