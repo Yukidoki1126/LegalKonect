@@ -2470,8 +2470,8 @@ const LawyerAppointments: React.FC = () => {
               </div>
             )}
 
-            {/* Action Buttons - Only show if not yet confirmed or rejected */}
-            {selectedAppointment.payment_confirmed !== true && !(selectedAppointment.payment_status === 'unpaid' && selectedAppointment.payment_confirmed === false) && (
+            {/* Action Buttons - Show if receipt uploaded and not yet confirmed */}
+            {selectedAppointment.payment_proof && selectedAppointment.payment_confirmed !== true && (
               <div className="border-t pt-4 mt-4">
                 <p className="text-sm text-gray-600 mb-3">
                   Please verify the payment receipt and confirm or reject the payment.
@@ -2496,7 +2496,7 @@ const LawyerAppointments: React.FC = () => {
             )}
 
             {/* Close button if already processed */}
-            {(selectedAppointment.payment_confirmed === true || (selectedAppointment.payment_status === 'unpaid' && selectedAppointment.payment_confirmed === false)) && (
+            {(selectedAppointment.payment_confirmed === true || !selectedAppointment.payment_proof) && (
               <div className="border-t pt-4 mt-4">
                 <button
                   onClick={() => setShowPaymentProofModal(false)}

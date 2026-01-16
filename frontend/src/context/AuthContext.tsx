@@ -191,7 +191,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       let redirectPath = redirect || '/lawyers'; // Use backend redirect or default
 
       if (newUser.lawyer) {
-        if (newUser.lawyer.status === 'pending') {
+        // Check verification status first - rejected takes priority
+        if (newUser.lawyer.verification_status === 'rejected') {
+          redirectPath = '/verification-rejected';
+        } else if (newUser.lawyer.status === 'pending') {
           redirectPath = '/pending-approval';
         } else if (newUser.lawyer.status === 'approved') {
           redirectPath = redirect || '/lawyer/dashboard';

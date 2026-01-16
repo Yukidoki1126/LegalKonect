@@ -403,17 +403,14 @@ const confirmToggleStatus = async () => {
                     </td>
                     <td className="px-3 py-3 border-r border-transparent">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                        lawyer.verification_status === 'rejected' ? 'bg-red-100 text-red-700' :
                         lawyer.status === 'approved' ? 'bg-green-100 text-green-700' :
                         lawyer.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-red-100 text-red-700'
                       }`}>
-                        {lawyer.status === 'approved' ? 'verified' : lawyer.status || 'unknown'}
+                        {lawyer.verification_status === 'rejected' ? 'rejected' :
+                         lawyer.status === 'approved' ? 'verified' : lawyer.status || 'unknown'}
                       </span>
-                      {lawyer.verification_status === 'rejected' && (
-                        <span className="ml-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium whitespace-nowrap">
-                          rejected
-                        </span>
-                      )}
                     </td>
                     <td className="px-3 py-3 border-r border-transparent">
                       {lawyer.status === 'approved' ? (
@@ -485,17 +482,14 @@ const confirmToggleStatus = async () => {
                   </div>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                  lawyer.verification_status === 'rejected' ? 'bg-red-100 text-red-700' :
                   lawyer.status === 'approved' ? 'bg-green-100 text-green-700' :
                   lawyer.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                   'bg-red-100 text-red-700'
                 }`}>
-                  {lawyer.status === 'approved' ? 'verified' : lawyer.status || 'unknown'}
+                  {lawyer.verification_status === 'rejected' ? 'rejected' :
+                   lawyer.status === 'approved' ? 'verified' : lawyer.status || 'unknown'}
                 </span>
-                {lawyer.verification_status === 'rejected' && (
-                  <span className="ml-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium flex-shrink-0">
-                    rejected
-                  </span>
-                )}
               </div>
 
               {/* Details Grid */}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, Users, Clock, Star, Calendar, BarChart3, PieChart, AlertCircle } from 'lucide-react';
 import adminApi from '../../services/adminApi';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface DescriptiveAnalytics {
   top_specializations: { name: string; appointment_count: number }[];
@@ -97,7 +97,6 @@ const AdminAnalytics: React.FC = () => {
             value={period}
             onChange={(e) => {
               setPeriod(Number(e.target.value));
-              setDescriptive(null);
             }}
             className="px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
@@ -109,7 +108,7 @@ const AdminAnalytics: React.FC = () => {
         </div>
 
         {/* Reports Content */}
-        {loading ? (
+        {loading && !descriptive ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="text-gray-600 mt-4">Loading analytics...</p>
@@ -117,8 +116,13 @@ const AdminAnalytics: React.FC = () => {
         ) : descriptive ? (
           <>
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+              {loading && (
+                <div className="absolute inset-0 bg-white bg-opacity-50 rounded-xl flex items-center justify-center z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm transition-all duration-300">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Verified Lawyers</p>
@@ -129,7 +133,7 @@ const AdminAnalytics: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm transition-all duration-300">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Total Clients</p>
@@ -140,7 +144,7 @@ const AdminAnalytics: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm transition-all duration-300">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Appointments</p>
@@ -184,14 +188,33 @@ const AdminAnalytics: React.FC = () => {
             </div>
 
             {/* Appointment Trends */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm relative">
+              {loading && (
+                <div className="absolute inset-0 bg-white bg-opacity-75 rounded-xl flex items-center justify-center z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              )}
               <div className="flex items-center space-x-3 mb-6">
                 <TrendingUp className="w-6 h-6 text-blue-600" />
                 <h3 className="text-xl font-bold text-gray-900">Appointment Trends Over Time</h3>
               </div>
               {descriptive.appointment_trends && descriptive.appointment_trends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={descriptive.appointment_trends}>
+                  <AreaChart data={descriptive.appointment_trends}>
+                    <defs>
+                      <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorConfirmed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorCancelled" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                       dataKey="date"
@@ -204,10 +227,10 @@ const AdminAnalytics: React.FC = () => {
                       labelStyle={{ color: '#111827' }}
                     />
                     <Legend />
-                    <Bar dataKey="completed" fill="#10b981" name="Completed" />
-                    <Bar dataKey="confirmed" fill="#3b82f6" name="Confirmed" />
-                    <Bar dataKey="cancelled" fill="#ef4444" name="Cancelled" />
-                  </BarChart>
+                    <Area type="monotone" dataKey="cancelled" stroke="#ef4444" fill="url(#colorCancelled)" name="Cancelled" animationDuration={800} />
+                    <Area type="monotone" dataKey="completed" stroke="#10b981" fill="url(#colorCompleted)" name="Completed" animationDuration={800} />
+                    <Area type="monotone" dataKey="confirmed" stroke="#3b82f6" fill="url(#colorConfirmed)" name="Confirmed" animationDuration={800} />
+                  </AreaChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-400">

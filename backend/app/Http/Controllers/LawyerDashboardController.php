@@ -40,13 +40,13 @@ class LawyerDashboardController extends Controller
                 ->where('status', 'completed')
                 ->count(),
 
-            // Calculate earnings from earning records (properly accounts for reservation fee vs full fee)
+            // Calculate earnings from earning records (only completed appointments with full payment)
             'total_earnings' => $lawyer->earnings()
-                ->whereIn('status', ['pending', 'completed'])
+                ->where('status', 'completed')
                 ->sum('gross_amount'),
 
             'this_month_earnings' => $lawyer->earnings()
-                ->whereIn('status', ['pending', 'completed'])
+                ->where('status', 'completed')
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('gross_amount'),
@@ -115,7 +115,9 @@ class LawyerDashboardController extends Controller
                     'status' => $apt->status,
                     'appointment_date' => $apt->appointment_date,
                     'created_at' => $apt->created_at->diffForHumans(),
-                    'amount' => $apt->consultation_fee ?? 0,
+                    'amount' => $apt->status === 'completed' 
+                        ? ($apt->consultation_fee ?? 0) 
+                        : ($apt->reservation_fee ?? 0),
                 ];
             });
 
@@ -402,17 +404,17 @@ class LawyerDashboardController extends Controller
 
         $earnings = [
             'total' => $lawyer->earnings()
-                ->whereIn('status', ['pending', 'completed'])
+                ->where('status', 'completed')
                 ->sum('gross_amount'),
                 
             'this_month' => $lawyer->earnings()
-                ->whereIn('status', ['pending', 'completed'])
+                ->where('status', 'completed')
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('gross_amount'),
                 
             'last_month' => $lawyer->earnings()
-                ->whereIn('status', ['pending', 'completed'])
+                ->where('status', 'completed')
                 ->whereMonth('created_at', now()->subMonth()->month)
                 ->whereYear('created_at', now()->subMonth()->year)
                 ->sum('gross_amount'),
@@ -423,7 +425,7 @@ class LawyerDashboardController extends Controller
                     DB::raw('MONTH(created_at) as month'),
                     DB::raw('SUM(gross_amount) as total')
                 )
-                ->whereIn('status', ['pending', 'completed'])
+                ->where('status', 'completed')
                 ->groupBy(DB::raw('YEAR(created_at)'), DB::raw('MONTH(created_at)'))
                 ->orderBy('year', 'desc')
                 ->orderBy('month', 'desc')
