@@ -228,14 +228,29 @@ const Navigation: React.FC = () => {
                       <div className="px-4 py-3 border-b border-gray-200 bg-white sticky top-0">
                         <div className="flex items-center justify-between">
                           <h3 className="text-xl font-bold text-gray-900">Notifications</h3>
-                          <button
-                            onClick={() => setShowNotifications(false)}
-                            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                          >
-                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {unreadCount > 0 && (
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await notificationService.markAllAsRead();
+                                  setUnreadCount(0);
+                                  setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date().toISOString() })));
+                                }}
+                                className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors px-2 py-1 rounded hover:bg-blue-50"
+                              >
+                                Mark all read
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setShowNotifications(false)}
+                              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                       </div>
 

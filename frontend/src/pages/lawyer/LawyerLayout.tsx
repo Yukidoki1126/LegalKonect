@@ -71,61 +71,29 @@ const LawyerLayout: React.FC = () => {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read
     await notificationService.markAsRead(notification.id);
-    
-    // Close dropdown
     setShowNotifications(false);
     
-    // Smart redirect based on notification type
     const data = notification.data;
-    const isLawyer = data?.user_type === 'lawyer';
     
-    // Payment-related notifications
+    // Since this is LawyerLayout, always redirect to lawyer routes
     if (data?.type === 'payment' || notification.type === 'payment_submitted' || notification.type === 'payment_approved') {
-      if (isLawyer) {
-        navigate('/lawyer/appointments');
-      } else {
-        navigate('/appointments');
-      }
+      navigate('/lawyer/appointments');
     }
-    // Reschedule notifications
     else if (data?.type === 'reschedule' || notification.type === 'reschedule_requested' || notification.type === 'reschedule_approved' || notification.type === 'reschedule_rejected') {
-      if (isLawyer) {
-        navigate('/lawyer/appointments');
-      } else {
-        navigate('/appointments');
-      }
+      navigate('/lawyer/appointments');
     }
-    // Case notifications
     else if (data?.type === 'case' || notification.type === 'case_created' || notification.type === 'case_updated') {
-      if (isLawyer) {
-        navigate('/lawyer/cases');
-      } else {
-        navigate('/appointments');
-      }
+      navigate('/lawyer/cases');
     }
-    // Verification notifications
     else if (notification.type === 'verification_status_changed') {
-      if (isLawyer) {
-        navigate('/lawyer/dashboard');
-      }
+      navigate('/lawyer/dashboard');
     }
-    // Appointment notifications
     else if (notification.type === 'appointment_created' || notification.type === 'appointment_confirmed' || notification.type === 'appointment_completed' || notification.type === 'appointment_cancelled') {
-      if (isLawyer) {
-        navigate('/lawyer/appointments');
-      } else {
-        navigate('/appointments');
-      }
+      navigate('/lawyer/appointments');
     }
-    // Default redirect
     else {
-      if (isLawyer) {
-        navigate('/lawyer/dashboard');
-      } else {
-        navigate('/');
-      }
+      navigate('/lawyer/dashboard');
     }
   };
 
@@ -330,10 +298,27 @@ const LawyerLayout: React.FC = () => {
                 {showNotifications && (
                   <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                     <div className="p-4 border-b border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                      {unreadCount > 0 && (
-                        <p className="text-sm text-gray-500">{unreadCount} unread</p>
-                      )}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                          {unreadCount > 0 && (
+                            <p className="text-sm text-gray-500">{unreadCount} unread</p>
+                          )}
+                        </div>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await notificationService.markAllAsRead();
+                              setUnreadCount(0);
+                              setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date().toISOString() })));
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {notifications.length === 0 ? (
