@@ -721,6 +721,53 @@ const Appointments: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Reschedule Request Notification (from lawyer) - Show prominently */}
+                    {appointment.reschedule_status === 'pending' && appointment.proposed_date && appointment.reschedule_requested_by === 'lawyer' && (
+                      <div className="mb-4 p-4 bg-orange-50 border-l-4 border-orange-500 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-6 h-6 text-orange-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-orange-900 mb-2">
+                              Lawyer Requested Reschedule
+                            </p>
+                            <p className="text-sm text-orange-800 mb-1">
+                              <strong>Reason:</strong> {appointment.reschedule_reason}
+                            </p>
+                            <p className="text-sm text-orange-800 mb-3">
+                              <strong>New Date:</strong> {formatDate(appointment.proposed_date)} at {formatTime(getTimeFromDateTime(appointment.proposed_date) || appointment.appointment_time)}
+                            </p>
+                            <button
+                              onClick={() => handleViewRescheduleRequest(appointment)}
+                              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
+                            >
+                              Accept or Decline
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cancellation Message */}
+                    {appointment.status === 'cancelled' && appointment.cancellation_reason && (
+                      <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-red-900 mb-1">
+                              Appointment Cancelled
+                            </p>
+                            <p className="text-sm text-red-800">
+                              <strong>Reason:</strong> {appointment.cancellation_reason}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="flex items-center text-gray-700">
                         <svg className="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

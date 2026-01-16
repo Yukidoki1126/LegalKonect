@@ -216,12 +216,36 @@ class GoogleCalendarService
             $event->setSummary('Consultation - ' . $appointment->user->name . ' [' . strtoupper($appointment->status) . ']');
             $event->setDescription("Client: {$appointment->user->name}\nEmail: {$appointment->user->email}\nMeeting Type: {$appointment->meeting_type}\nStatus: {$appointment->status}\n\nClient Notes:\n{$appointment->client_notes}");
 
+            // Update date/time if provided
+            $appointmentDate = Carbon::parse($appointment->appointment_date)->format('Y-m-d');
+            $timeString = $appointment->appointment_time;
+            if (strlen($timeString) > 8) {
+                $appointmentTime = Carbon::parse($timeString)->format('H:i:s');
+            } else {
+                $appointmentTime = $timeString;
+            }
+
+            $startDateTime = Carbon::parse($appointmentDate . ' ' . $appointmentTime, 'Asia/Manila');
+            $endDateTime = $startDateTime->copy()->addMinutes((int) $appointment->duration_minutes);
+
+            $start = new Google_Service_Calendar_EventDateTime();
+            $start->setDateTime($startDateTime->toRfc3339String());
+            $start->setTimeZone('Asia/Manila');
+            $event->setStart($start);
+
+            $end = new Google_Service_Calendar_EventDateTime();
+            $end->setDateTime($endDateTime->toRfc3339String());
+            $end->setTimeZone('Asia/Manila');
+            $event->setEnd($end);
+
             $service->events->update($calendarId, $eventId, $event);
 
             Log::info('Google Calendar event updated', [
                 'lawyer_id' => $lawyer->id,
                 'appointment_id' => $appointment->id,
-                'event_id' => $eventId
+                'event_id' => $eventId,
+                'new_date' => $appointmentDate,
+                'new_time' => $appointmentTime
             ]);
 
             return true;

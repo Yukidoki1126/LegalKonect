@@ -735,6 +735,24 @@ class AppointmentController extends Controller
             'reschedule_status' => $appointment->reschedule_status,
         ]);
 
+        // Update Google Calendar if synced
+        if ($appointment->lawyer && $appointment->lawyer->google_calendar_connected && $appointment->google_event_id) {
+            try {
+                $googleCalendarService = app(\App\Services\GoogleCalendarService::class);
+                $googleCalendarService->updateAppointmentEvent(
+                    $appointment->lawyer,
+                    $appointment,
+                    $appointment->google_event_id
+                );
+                Log::info('Google Calendar updated after reschedule acceptance', [
+                    'appointment_id' => $appointment->id,
+                    'event_id' => $appointment->google_event_id
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to update Google Calendar after reschedule: ' . $e->getMessage());
+            }
+        }
+
         // Create notification for the lawyer about reschedule acceptance
         try {
             $appointment->load(['user', 'lawyer']);
@@ -742,8 +760,6 @@ class AppointmentController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to create reschedule acceptance notification: ' . $e->getMessage());
         }
-
-        // TODO: Send confirmation email to both parties
 
         return response()->json([
             'message' => 'Reschedule accepted successfully',
@@ -872,6 +888,24 @@ class AppointmentController extends Controller
             $appointment->reschedule_status = 'accepted';
             $appointment->reschedule_responded_at = now();
             $appointment->save();
+
+            // Update Google Calendar if synced
+            if ($lawyer->google_calendar_connected && $appointment->google_event_id) {
+                try {
+                    $googleCalendarService = app(\App\Services\GoogleCalendarService::class);
+                    $googleCalendarService->updateAppointmentEvent(
+                        $lawyer,
+                        $appointment,
+                        $appointment->google_event_id
+                    );
+                    Log::info('Google Calendar updated after lawyer accepts client reschedule', [
+                        'appointment_id' => $appointment->id,
+                        'event_id' => $appointment->google_event_id
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to update Google Calendar after lawyer reschedule acceptance: ' . $e->getMessage());
+                }
+            }
 
             // Create notification for the client
             try {
