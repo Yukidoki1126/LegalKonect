@@ -37,8 +37,8 @@ const Navigation: React.FC = () => {
   // Subscribe to notifications
   useEffect(() => {
     if (user) {
-      // Start notification polling
-      notificationService.startPolling();
+      // Start notification polling (this also does initial fetch)
+      notificationService.start();
 
       // Subscribe to notification updates
       const unsubscribe = notificationService.subscribe((notifs, unread) => {
@@ -46,12 +46,9 @@ const Navigation: React.FC = () => {
         setUnreadCount(unread);
       });
 
-      // Initial fetch
-      notificationService.checkNotifications();
-
       return () => {
         unsubscribe();
-        notificationService.stopPolling();
+        notificationService.stop();
       };
     }
   }, [user]);
