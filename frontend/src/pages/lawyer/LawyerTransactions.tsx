@@ -37,6 +37,7 @@ export default function LawyerTransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<TransactionSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | 'confirmed' | 'pending'>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
@@ -45,8 +46,12 @@ export default function LawyerTransactionHistory() {
     fetchTransactions();
   }, [dateFilter]);
 
-  const fetchTransactions = async () => {
-    setLoading(true);
+  const fetchTransactions = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError('');
     try {
       const response = await lawyerApi.getTransactionHistory(1, dateFilter || undefined);
@@ -56,7 +61,11 @@ export default function LawyerTransactionHistory() {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch transaction history';
       setError(errorMessage);
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -102,10 +111,11 @@ export default function LawyerTransactionHistory() {
             <p className="text-gray-600 mt-1">View your completed consultations and payments</p>
           </div>
           <button
-            onClick={fetchTransactions}
-            className="mt-3 md:mt-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => fetchTransactions(true)}
+            disabled={refreshing}
+            className="mt-3 md:mt-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
@@ -196,7 +206,8 @@ export default function LawyerTransactionHistory() {
               <button
                 key={key}
                 onClick={() => setFilter(key as typeof filter)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                disabled={refreshing}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors disabled:opacity-50 ${
                   filter === key
                     ? 'bg-blue-600 text-white'
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -219,7 +230,8 @@ export default function LawyerTransactionHistory() {
               <button
                 key={key}
                 onClick={() => setDateFilter(key)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                disabled={refreshing}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors disabled:opacity-50 ${
                   dateFilter === key
                     ? 'bg-purple-600 text-white'
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -232,10 +244,20 @@ export default function LawyerTransactionHistory() {
         </div>
 
         {/* Transactions List */}
-        {filteredTransactions.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center shadow-sm border border-gray-100">
-            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No transactions found</h3>
+        <div className="relative">
+          {refreshing && (
+            <div className="absolute inset-0 bg-white bg-opacity-75 rounded-xl flex items-center justify-center z-10">
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-lg">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                <span className="text-sm text-gray-600">Loading...</span>
+              </div>
+            </div>
+          )}
+          
+          {filteredTransactions.length === 0 ? (
+            <div className="bg-white rounded-xl p-8 text-center shadow-sm border border-gray-100">
+              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-900 mb-1">No transactions found</h3>
             <p className="text-gray-500">
               {filter === 'all' 
                 ? "You don't have any completed consultations yet." 
@@ -303,7 +325,8 @@ export default function LawyerTransactionHistory() {
               </table>
             </div>
           </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

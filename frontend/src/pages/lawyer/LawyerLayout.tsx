@@ -359,10 +359,10 @@ const LawyerLayout: React.FC = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                                    {notification.data?.title || 'Notification'}
+                                    {notification.title || notification.data?.title || 'Notification'}
                                   </p>
                                   <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                                    {notification.data?.message || notification.data?.body}
+                                    {notification.message || notification.data?.message || notification.data?.body}
                                   </p>
                                   <p className="text-xs text-gray-400 mt-1">
                                     {getTimeAgo(notification.created_at)}
