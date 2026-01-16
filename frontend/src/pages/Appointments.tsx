@@ -809,15 +809,6 @@ const Appointments: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Cancellation Reason */}
-                    {appointment.status === 'cancelled' && appointment.cancellation_reason && (
-                      <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded">
-                        <p className="text-sm text-red-900">
-                          <strong className="text-red-700">Cancellation Reason:</strong> {appointment.cancellation_reason}
-                        </p>
-                      </div>
-                    )}
-
                     {/* Refund Receipt - Show when lawyer has processed refund */}
                     {appointment.status === 'cancelled' && appointment.refund_receipt && (
                       <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
