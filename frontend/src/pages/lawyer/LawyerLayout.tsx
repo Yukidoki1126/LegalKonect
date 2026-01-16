@@ -348,26 +348,53 @@ const LawyerLayout: React.FC = () => {
                               key={notification.id}
                               onClick={() => handleNotificationClick(notification)}
                               className={`w-full text-left p-4 hover:bg-gray-50 transition-colors ${
-                                !notification.read_at ? 'bg-blue-50' : ''
+                                !notification.read_at ? 'bg-blue-50' : 'bg-white'
                               }`}
                             >
                               <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 mt-1">
-                                  {!notification.read_at && (
-                                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                {/* Icon based on notification type */}
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  notification.type.includes('reschedule') ? 'bg-yellow-100' :
+                                  notification.type.includes('cancel') ? 'bg-red-100' :
+                                  notification.type.includes('payment') || notification.type.includes('refund') ? 'bg-green-100' :
+                                  'bg-blue-100'
+                                }`}>
+                                  {notification.type.includes('reschedule') ? (
+                                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                  ) : notification.type.includes('cancel') ? (
+                                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  ) : notification.type.includes('payment') || notification.type.includes('refund') ? (
+                                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
                                   )}
                                 </div>
+
+                                {/* Content */}
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-900 line-clamp-2">
+                                  <p className="text-sm font-medium text-gray-900 mb-1">
                                     {notification.title || notification.data?.title || 'Notification'}
                                   </p>
-                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                  <p className="text-xs text-gray-600 mb-1">
                                     {notification.message || notification.data?.message || notification.data?.body}
                                   </p>
-                                  <p className="text-xs text-gray-400 mt-1">
+                                  <p className="text-xs text-blue-600 font-medium">
                                     {getTimeAgo(notification.created_at)}
                                   </p>
                                 </div>
+
+                                {/* Unread indicator */}
+                                {!notification.read_at && (
+                                  <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2"></div>
+                                )}
                               </div>
                             </button>
                           ))}
