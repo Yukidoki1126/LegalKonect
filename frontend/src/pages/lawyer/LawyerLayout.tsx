@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { lawyerApi } from '../../services/lawyerApi';
 import LawyerRejected from './LawyerRejected';
+import { Bell } from 'lucide-react';
+import { notificationService, Notification } from '../../services/notificationService';
 
 interface LawyerStatus {
   verification_status: 'pending' | 'verified' | 'rejected';
@@ -13,9 +15,119 @@ interface LawyerStatus {
 
 const LawyerLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lawyerStatus, setLawyerStatus] = useState<LawyerStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Notification states
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showNotifications]);
+
+  // Initialize notification service
+  useEffect(() => {
+    notificationService.start();
+    
+    const unsubscribe = notificationService.subscribe((newNotifications) => {
+      setNotifications(newNotifications);
+      setUnreadCount(newNotifications.filter(n => !n.read_at).length);
+    });
+
+    return () => {
+      unsubscribe();
+      notificationService.stop();
+    };
+  }, []);
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read
+    await notificationService.markAsRead(notification.id);
+    
+    // Close dropdown
+    setShowNotifications(false);
+    
+    // Smart redirect based on notification type
+    const data = notification.data;
+    const isLawyer = data?.user_type === 'lawyer';
+    
+    // Payment-related notifications
+    if (data?.type === 'payment' || notification.type === 'payment_submitted' || notification.type === 'payment_approved') {
+      if (isLawyer) {
+        navigate('/lawyer/appointments');
+      } else {
+        navigate('/appointments');
+      }
+    }
+    // Reschedule notifications
+    else if (data?.type === 'reschedule' || notification.type === 'reschedule_requested' || notification.type === 'reschedule_approved' || notification.type === 'reschedule_rejected') {
+      if (isLawyer) {
+        navigate('/lawyer/appointments');
+      } else {
+        navigate('/appointments');
+      }
+    }
+    // Case notifications
+    else if (data?.type === 'case' || notification.type === 'case_created' || notification.type === 'case_updated') {
+      if (isLawyer) {
+        navigate('/lawyer/cases');
+      } else {
+        navigate('/appointments');
+      }
+    }
+    // Verification notifications
+    else if (notification.type === 'verification_status_changed') {
+      if (isLawyer) {
+        navigate('/lawyer/dashboard');
+      }
+    }
+    // Appointment notifications
+    else if (notification.type === 'appointment_created' || notification.type === 'appointment_confirmed' || notification.type === 'appointment_completed' || notification.type === 'appointment_cancelled') {
+      if (isLawyer) {
+        navigate('/lawyer/appointments');
+      } else {
+        navigate('/appointments');
+      }
+    }
+    // Default redirect
+    else {
+      if (isLawyer) {
+        navigate('/lawyer/dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  };
 
   useEffect(() => {
     checkLawyerStatus();
@@ -199,7 +311,73 @@ const LawyerLayout: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center flex-shrink-0 ml-2">
+            <div className="flex items-center flex-shrink-0 ml-2 gap-2">
+              {/* Notification Bell */}
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full border-2 border-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notification Dropdown */}
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <p className="text-sm text-gray-500">{unreadCount} unread</p>
+                      )}
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-8 text-center text-gray-500">
+                          <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                          <p>No notifications yet</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-100">
+                          {notifications.map((notification) => (
+                            <button
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`w-full text-left p-4 hover:bg-gray-50 transition-colors ${
+                                !notification.read_at ? 'bg-blue-50' : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 mt-1">
+                                  {!notification.read_at && (
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 line-clamp-2">
+                                    {notification.data?.title || 'Notification'}
+                                  </p>
+                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                    {notification.data?.message || notification.data?.body}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {getTimeAgo(notification.created_at)}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={handleLogout}
                 className="text-red-600 hover:text-red-700 px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium hover:bg-red-50 rounded-md transition-colors whitespace-nowrap"

@@ -237,7 +237,7 @@ const confirmToggleStatus = async () => {
             <div>
               <p className="text-gray-500 text-xs font-medium">Verified</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5">
-                {(lawyers || []).filter(l => l.status === 'approved').length}
+                {(lawyers || []).filter(l => l.verification_status === 'verified').length}
               </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-50 rounded-lg flex items-center justify-center">
@@ -252,7 +252,7 @@ const confirmToggleStatus = async () => {
             <div>
               <p className="text-gray-500 text-xs font-medium">Pending</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5">
-                {(lawyers || []).filter(l => l.status === 'pending').length}
+                {(lawyers || []).filter(l => l.verification_status === 'pending').length}
               </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 rounded-lg flex items-center justify-center">
@@ -267,7 +267,7 @@ const confirmToggleStatus = async () => {
             <div>
               <p className="text-gray-500 text-xs font-medium">Rejected</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5">
-                {(lawyers || []).filter(l => l.status === 'rejected').length}
+                {(lawyers || []).filter(l => l.verification_status === 'rejected').length}
               </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-50 rounded-lg flex items-center justify-center">

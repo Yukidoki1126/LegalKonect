@@ -18,7 +18,7 @@ class AdminDashboardController extends Controller
         $startDate = now()->subDays($days);
 
         $totalLawyers = Lawyer::count();
-        $totalUsers = User::whereNotIn('role', ['admin', 'super_admin'])->count();
+        $totalUsers = User::whereNotIn('role', ['admin', 'super_admin', 'lawyer'])->count();
         // Scope appointment stats/revenue to the chosen period to match analytics expectations
         $totalAppointments = Appointment::where('created_at', '>=', $startDate)->count();
         $pendingAppointments = Appointment::where('created_at', '>=', $startDate)->where('status', 'pending')->count();

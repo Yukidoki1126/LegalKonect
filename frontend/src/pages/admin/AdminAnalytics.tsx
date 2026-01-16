@@ -321,7 +321,7 @@ const AdminAnalytics: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {descriptive.top_lawyers.map((lawyer, index) => (
+                      {descriptive.top_lawyers.slice(0, 5).map((lawyer, index) => (
                         <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition">
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-2">
@@ -365,8 +365,8 @@ const AdminAnalytics: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">Top Cancellation Reasons</h3>
                 </div>
-                <div className="space-y-3">
-                  {descriptive.cancellation_reasons.map((reason, index) => (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  {descriptive.cancellation_reasons.slice(0, 5).map((reason, index) => (
                     <div key={index} className="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-lg">
                       <span className="text-gray-700 font-medium">{reason.cancellation_reason}</span>
                       <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-bold">
