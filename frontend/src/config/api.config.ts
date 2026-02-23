@@ -7,27 +7,41 @@ const isProduction = window.location.hostname.includes('legalkonect.site') ||
 
 // Determine the base domain
 const getBaseUrl = () => {
-  if (!isProduction) {
-    return process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  // Check for environment variable first (set in Vercel)
+  if (process.env.REACT_APP_API_URL) {
+    // Remove /api suffix if present, we'll add it back later
+    return process.env.REACT_APP_API_URL.replace(/\/api$/, '');
   }
   
-  // If we're on legalkonect.site (without subdomain), use api.legalkonect.site
-  // If we're already on api.legalkonect.site, use it as is
+  if (!isProduction) {
+    return 'http://localhost:8000';
+  }
+  
   const hostname = window.location.hostname;
+  
+  // If on legalkonect-render.vercel.app, use Render backend
+  if (hostname.includes('legalkonect-render.vercel.app')) {
+    return 'https://legalkonect.onrender.com';
+  }
+  
+  // If on legalkonect.vercel.app (without -render), also use Render backend
+  if (hostname.includes('legalkonect.vercel.app')) {
+    return 'https://legalkonect.onrender.com';
+  }
+  
+  // If we're on legalkonect.site, use api.legalkonect.site
   if (hostname === 'legalkonect.site' || hostname === 'www.legalkonect.site') {
     return 'https://api.legalkonect.site';
   }
   
-  // Default to api subdomain
-  return 'https://api.legalkonect.site';
+  // Default to Render backend
+  return 'https://legalkonect.onrender.com';
 };
 
 const BASE_URL = getBaseUrl();
 
 // Use production URLs when on production domain, otherwise use env vars or localhost
-const API_BASE_URL = isProduction 
-  ? `${BASE_URL}/api`
-  : (process.env.REACT_APP_API_URL || 'http://localhost:8000/api');
+const API_BASE_URL = `${BASE_URL}/api`;
 
 const STORAGE_URL = isProduction
   ? BASE_URL
